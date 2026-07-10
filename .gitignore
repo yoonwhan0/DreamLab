@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-admin
 .env
 .env.local
 .env_chat
@@ -9,3 +10,4 @@ Branch/.env
 functions/lib
 .netlify
 .vercel
+public/firebase-messaging-sw.js
