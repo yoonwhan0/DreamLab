@@ -517,7 +517,7 @@ function normalizeStories(
 
 function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
-  const keywords = extractMeaningfulKeywords(text, 5);
+  const keywords = extractHeuristicKeywords(text, 5);
 
 
 
@@ -535,7 +535,7 @@ function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
 
 
-  const kw = keywords[0] ?? extractMeaningfulKeywords(title, 1)[0] ?? "꿈";
+  const kw = keywords[0] ?? extractHeuristicKeywords(title, 1)[0] ?? "꿈";
 
   const totalCount = 400 + (text.length % 900);
 
