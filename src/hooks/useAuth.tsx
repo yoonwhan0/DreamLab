@@ -21,6 +21,7 @@ import {
   type User,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
 import type { UserProfile } from "@/types";
 
@@ -45,13 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const syncProfile = useCallback(async (firebaseUser: User) => {
+    const masterPremium = isMasterAccountEmail(firebaseUser.email);
     const existing = await getUserProfile(firebaseUser.uid);
     if (existing) {
-      if (existing.isAnonymous !== firebaseUser.isAnonymous) {
+      const nextPremium = existing.isPremium || masterPremium;
+      if (
+        existing.isAnonymous !== firebaseUser.isAnonymous ||
+        (masterPremium && !existing.isPremium)
+      ) {
         await upsertUserProfile(firebaseUser.uid, {
           isAnonymous: firebaseUser.isAnonymous,
           displayName: firebaseUser.displayName ?? existing.displayName,
           email: firebaseUser.email ?? existing.email,
+          ...(masterPremium ? { isPremium: true } : {}),
         });
       }
       setProfile({
@@ -59,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName: firebaseUser.displayName ?? existing.displayName,
         email: firebaseUser.email ?? existing.email,
         isAnonymous: firebaseUser.isAnonymous,
+        isPremium: nextPremium,
       });
       return;
     }
@@ -68,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
       isAnonymous: firebaseUser.isAnonymous,
-      isPremium: false,
+      isPremium: masterPremium,
       fcmTokens: [],
       createdAt: new Date(),
     };
@@ -79,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
       isAnonymous: firebaseUser.isAnonymous,
-      isPremium: false,
+      isPremium: masterPremium,
       fcmTokens: [],
       createdAt: profileData.createdAt ?? new Date(),
     } as UserProfile);

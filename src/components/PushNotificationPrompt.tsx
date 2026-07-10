@@ -38,19 +38,19 @@ export function PushNotificationPrompt({ className = "" }: PushNotificationPromp
           </p>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
         <button
           type="button"
           onClick={handleEnable}
           disabled={busy}
-          className="btn-primary flex-1 disabled:opacity-50"
+          className="btn-primary !w-full sm:flex-1 sm:min-w-0 normal-case tracking-normal disabled:opacity-50"
         >
           {busy ? "설정 중…" : "알림 켜기"}
         </button>
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          className="btn-secondary px-4"
+          className="btn-secondary !w-full sm:!w-auto sm:shrink-0 sm:min-w-[5.5rem] normal-case tracking-normal whitespace-nowrap px-5"
         >
           나중에
         </button>

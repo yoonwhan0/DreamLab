@@ -4,6 +4,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import { Layout } from "@/components/Layout";
 import { SplashScreen } from "@/components/SplashScreen";
+import { AdminApp } from "@admin/AdminApp";
+import { isAdminEntryPath } from "@/lib/adminPath";
 
 import { MemberRoute } from "@/components/MemberRoute";
 
@@ -30,79 +32,58 @@ import { MyPage } from "@/pages/MyPage";
 
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(false);
+  const [splashDone, setSplashDone] = useState(() =>
+    isAdminEntryPath(window.location.pathname),
+  );
 
   if (!splashDone) {
     return <SplashScreen onComplete={() => setSplashDone(true)} />;
   }
 
   return (
-
     <DemoProvider>
-
       <AuthProvider>
-
         <SignupSheetProvider>
           <PremiumSheetProvider>
-          <Layout>
-
             <Routes>
-
-              <Route path="/" element={<HomePage />} />
-
-              <Route path="/write" element={<WriteDreamPage />} />
-
-              <Route path="/dream/:id" element={<DreamDetailPage />} />
-
+              <Route path="/superadmin/*" element={<AdminApp />} />
               <Route
-
-                path="/follow-up/:id"
-
+                path="*"
                 element={
-
-                  <MemberRoute>
-
-                    <FollowUpPage />
-
-                  </MemberRoute>
-
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/write" element={<WriteDreamPage />} />
+                      <Route path="/dream/:id" element={<DreamDetailPage />} />
+                      <Route
+                        path="/follow-up/:id"
+                        element={
+                          <MemberRoute>
+                            <FollowUpPage />
+                          </MemberRoute>
+                        }
+                      />
+                      <Route
+                        path="/my-dreams"
+                        element={
+                          <MemberRoute>
+                            <MyDreamsPage />
+                          </MemberRoute>
+                        }
+                      />
+                      <Route path="/explore" element={<ExplorePage />} />
+                      <Route path="/my" element={<MyPage />} />
+                      <Route path="/premium" element={<Navigate to="/my" replace />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
                 }
-
               />
-
-              <Route
-
-                path="/my-dreams"
-
-                element={
-
-                  <MemberRoute>
-
-                    <MyDreamsPage />
-
-                  </MemberRoute>
-
-                }
-
-              />
-
-              <Route path="/explore" element={<ExplorePage />} />
-
-              <Route path="/my" element={<MyPage />} />
-
-              <Route path="/premium" element={<Navigate to="/my" replace />} />
-
             </Routes>
-
-          </Layout>
           </PremiumSheetProvider>
         </SignupSheetProvider>
-
       </AuthProvider>
-
     </DemoProvider>
-
   );
-
 }
 

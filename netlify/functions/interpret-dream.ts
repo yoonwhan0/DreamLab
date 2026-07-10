@@ -18,7 +18,13 @@ import {
 
 } from "./lib/interpretPremium";
 
-import { extractHeuristicKeywords, mergeAiKeywords, extractDreamExcerpts, excerptToStoryTitle } from "./lib/dreamAnchor";
+import { extractHeuristicKeywords, mergeAiKeywords, excerptToStoryTitle } from "./lib/dreamAnchor";
+import {
+  isTemplateStorySnippet,
+  repairStorySnippet,
+  sanitizeAiCommunityStory,
+  pickNeutralSceneLine,
+} from "./lib/communityStoryQuality";
 import { recordAiUsage } from "./lib/recordAiUsage";
 
 
@@ -297,11 +303,28 @@ function normalizeParsed(
     : fallback.keywords;
   const keywords = mergeAiKeywords(aiKeywords, title, content, 6);
 
+  const ra = raw.researchAnchor as Record<string, unknown> | undefined;
+  const researchAnchor =
+    ra && typeof ra.primary === "string"
+      ? {
+          primary: String(ra.primary),
+          secondary: Array.isArray(ra.secondary)
+            ? (ra.secondary as string[]).slice(0, 5)
+            : undefined,
+          scenePhrases: Array.isArray(ra.scenePhrases)
+            ? (ra.scenePhrases as string[]).slice(0, 3)
+            : undefined,
+          clusterLabel:
+            typeof ra.clusterLabel === "string" ? String(ra.clusterLabel) : undefined,
+        }
+      : undefined;
+
   const stories = normalizeStories(
     ce.stories,
     title,
     content,
     fallback.communityEstimate.stories,
+    researchAnchor,
   );
 
   const samples = Array.isArray(ce.samples) && (ce.samples as unknown[]).length >= 2
@@ -323,22 +346,6 @@ function normalizeParsed(
           relatedSearches: Array.isArray(lo.relatedSearches)
             ? (lo.relatedSearches as string[]).slice(0, 5)
             : [],
-        }
-      : undefined;
-
-  const ra = raw.researchAnchor as Record<string, unknown> | undefined;
-  const researchAnchor =
-    ra && typeof ra.primary === "string"
-      ? {
-          primary: String(ra.primary),
-          secondary: Array.isArray(ra.secondary)
-            ? (ra.secondary as string[]).slice(0, 5)
-            : undefined,
-          scenePhrases: Array.isArray(ra.scenePhrases)
-            ? (ra.scenePhrases as string[]).slice(0, 3)
-            : undefined,
-          clusterLabel:
-            typeof ra.clusterLabel === "string" ? String(ra.clusterLabel) : undefined,
         }
       : undefined;
 
@@ -412,27 +419,16 @@ function normalizeParsed(
 
 
 
-const TEMPLATE_STORY_RE =
-  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요/;
-
-
-
 function normalizeStories(
-
   raw: unknown,
-
   title: string,
-
   content: string,
-
   fallback: ParsedInterpretation["communityEstimate"]["stories"],
-
+  researchAnchor?: ParsedInterpretation["researchAnchor"],
 ): ParsedInterpretation["communityEstimate"]["stories"] {
-
   if (!Array.isArray(raw) || raw.length === 0) return fallback;
 
-
-
+  const clusterTitle = researchAnchor?.clusterLabel?.trim();
   const anchor = extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? "꿈";
 
   const profiles = ["20대 · 여", "30대 · 남", "20대 · 남", "40대 · 여", "30대 · 여"];
@@ -459,9 +455,15 @@ function normalizeStories(
 
     const s = item as Record<string, unknown>;
 
-    const dreamTitle = String(s.dreamTitle ?? s.title ?? `${anchor} 관련 꿈`);
-
-    const dreamSnippet = String(s.dreamSnippet ?? s.snippet ?? "");
+    const dreamTitleRaw = String(s.dreamTitle ?? s.title ?? `${anchor} 관련 꿈`);
+    const dreamSnippetRaw = String(s.dreamSnippet ?? s.snippet ?? "");
+    const dreamSnippet = repairStorySnippet(dreamSnippetRaw, i);
+    const dreamTitle =
+      i === 0 && clusterTitle
+        ? clusterTitle
+        : isTemplateStorySnippet(dreamTitleRaw)
+          ? excerptToStoryTitle(dreamSnippet)
+          : dreamTitleRaw;
 
     const afterStory = ensureMultiline(String(s.afterStory ?? ""), 4);
 
@@ -499,18 +501,11 @@ function normalizeStories(
 
 
 
-  const valid = stories.filter(
-    (s) =>
-      s.dreamSnippet.length >= 10 &&
-      !TEMPLATE_STORY_RE.test(s.dreamSnippet) &&
-      !s.dreamTitle.includes("제목") &&
-      !s.dreamSnippet.includes("제목"),
-  );
+  const valid = stories
+    .map((s, i) => sanitizeAiCommunityStory(s, i, clusterTitle))
+    .filter((s): s is NonNullable<typeof s> => s !== null);
 
-
-
-  return valid.length >= 3 ? valid : fallback;
-
+  return valid.length >= 1 ? valid : fallback;
 }
 
 
@@ -519,7 +514,6 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
 
   const fullText = `${title}\n${content}`;
   const keywords = extractHeuristicKeywords(fullText, 5);
-  const excerpts = extractDreamExcerpts(fullText, 3);
   const kw = keywords[0] ?? extractHeuristicKeywords(title, 1)[0] ?? "꿈";
 
   let category = "general";
@@ -538,18 +532,10 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
 
   const withFollowUpCount = Math.round(totalCount * 0.44);
 
-  const storySnippet =
-    excerpts[0] ??
-    "많은 시선이 느껴지는 장면이었어요. 긴장보다 몰입에 가까웠습니다.";
-  const storyTitle = excerpts[0]
-    ? excerptToStoryTitle(excerpts[0])
-    : "비슷한 장면을 꾼 기록";
-  const secondSnippet =
-    excerpts[1] ??
-    "결정적인 순간 뒤 환호나 안도가 밀려오는 꿈이었어요.";
-  const secondTitle = excerpts[1]
-    ? excerptToStoryTitle(excerpts[1])
-    : "새벽에 깨어난 뒤에도 선명했던 꿈";
+  const storySnippet = pickNeutralSceneLine(0);
+  const storyTitle = excerptToStoryTitle(storySnippet);
+  const secondSnippet = pickNeutralSceneLine(1);
+  const secondTitle = excerptToStoryTitle(secondSnippet);
 
 
 

@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDemo } from "@/demo/DemoProvider";
 
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { isMasterAccountEmail } from "@/lib/masterAccounts";
 
 
 
@@ -88,7 +89,9 @@ export function useAccessPolicy(): AccessPolicy & { loading: boolean } {
 
   const isMember = Boolean(user && !user.isAnonymous);
 
-  const isPremium = isMember && Boolean(profile?.isPremium);
+  const isMasterPremium = isMasterAccountEmail(user?.email ?? profile?.email);
+
+  const isPremium = isMember && (Boolean(profile?.isPremium) || isMasterPremium);
 
 
 

@@ -15,19 +15,19 @@ import { BRAND_TAGLINE } from "@/lib/branding";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 
 const NAV_MAIN = [
-  { to: "/", label: "대시보드", icon: LayoutDashboard, end: true },
-  { to: "/monitoring", label: "모니터링", icon: Activity },
-  { to: "/members", label: "회원", icon: Users },
-  { to: "/dreams", label: "꿈 DB", icon: Database },
-  { to: "/follow-up", label: "Follow-up", icon: Waypoints },
-  { to: "/data-exposure", label: "데이터 노출", icon: Sliders },
-  { to: "/ai-usage", label: "AI 사용량", icon: Brain },
+  { to: "", label: "대시보드", icon: LayoutDashboard, end: true },
+  { to: "monitoring", label: "모니터링", icon: Activity },
+  { to: "members", label: "회원", icon: Users },
+  { to: "dreams", label: "꿈 DB", icon: Database },
+  { to: "follow-up", label: "Follow-up", icon: Waypoints },
+  { to: "data-exposure", label: "데이터 노출", icon: Sliders },
+  { to: "ai-usage", label: "AI 사용량", icon: Brain },
 ] as const;
 
 const NAV_SETTINGS = [
-  { to: "/settings/lab-metrics", label: "홈 KPI", icon: LayoutDashboard },
-  { to: "/settings/push", label: "푸시", icon: Bell },
-  { to: "/settings/system", label: "시스템", icon: Settings },
+  { to: "settings/lab-metrics", label: "홈 KPI", icon: LayoutDashboard },
+  { to: "settings/push", label: "푸시", icon: Bell },
+  { to: "settings/system", label: "시스템", icon: Settings },
 ] as const;
 
 export function AdminSidebar() {

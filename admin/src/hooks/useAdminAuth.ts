@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
+import { isMasterAccountEmail } from "@/lib/masterAccounts";
 
 export interface AdminAuthState {
   user: User | null;
@@ -46,7 +47,10 @@ export function useAdminAuth(): AdminAuthState & {
 
       try {
         const snap = await getDoc(doc(db, "users", nextUser.uid));
-        setIsAdmin(snap.exists() && snap.data()?.role === "admin");
+        setIsAdmin(
+          isMasterAccountEmail(nextUser.email) ||
+            (snap.exists() && snap.data()?.role === "admin"),
+        );
       } catch {
         setIsAdmin(false);
       } finally {

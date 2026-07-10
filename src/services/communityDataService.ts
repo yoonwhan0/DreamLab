@@ -10,7 +10,6 @@ import {
 } from "@/services/dreamService";
 import type {
   CommunityEstimate,
-  CommunityStory,
   DreamInterpretation,
   DreamStats,
   SimilarDreamSummary,
@@ -19,6 +18,10 @@ import { MIN_REAL_COMMUNITY_COUNT } from "@/types";
 import { fetchDataExposureConfig } from "@/services/opsConfigService";
 import type { DataExposureConfig } from "@/lib/opsConfig";
 import { DEFAULT_DATA_EXPOSURE } from "@/lib/opsConfig";
+import {
+  mergeCommunityStories,
+  sanitizeAiCommunityStory,
+} from "@/lib/communityStoryQuality";
 
 const EXPOSURE_CACHE_MS = 5 * 60 * 1000;
 let exposureCache: DataExposureConfig | null = null;
@@ -44,18 +47,6 @@ export interface CommunityDataResult {
   isEstimated: boolean;
 }
 
-const TEMPLATE_STORY_RE =
-  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요/;
-
-function isQualityStory(story: CommunityStory): boolean {
-  return (
-    story.dreamSnippet.length >= 10 &&
-    !TEMPLATE_STORY_RE.test(story.dreamSnippet) &&
-    !story.dreamTitle.includes("제목") &&
-    !story.dreamSnippet.includes("제목")
-  );
-}
-
 function mergeEstimate(
   estimate: CommunityEstimate | null | undefined,
   interpretation: DreamInterpretation,
@@ -65,8 +56,12 @@ function mergeEstimate(
   const synthetic = generateSyntheticCommunity(interpretation, title, content);
   if (!estimate) return synthetic;
 
-  const aiStories = estimate.stories?.filter(isQualityStory) ?? [];
-  const stories = aiStories.length >= 3 ? aiStories : synthetic.stories;
+  const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
+
+  const aiStories = (estimate.stories ?? [])
+    .map((story, i) => sanitizeAiCommunityStory(story, i, clusterTitle))
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+  const stories = mergeCommunityStories(aiStories, synthetic.stories);
   const samples =
     estimate.samples?.length >= 3
       ? estimate.samples

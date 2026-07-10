@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LoadingPulse } from "@/components/motion/LoadingPulse";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
@@ -13,11 +13,6 @@ import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { resolveCommunityData } from "@/services/communityDataService";
 import { interpretDream } from "@/services/interpretService";
 import { getOutcomePercentages } from "@/services/dreamService";
-import {
-  estimateToStats,
-  estimateToSummary,
-  previewCommunityForKeyword,
-} from "@/services/syntheticCommunityService";
 import type { DreamStats, SimilarDreamSummary } from "@/types";
 import {
   getExploreDefaultKeyword,
@@ -29,24 +24,7 @@ import {
 function buildExploreDreamContent(query: string): string {
   const q = query.trim();
   if (q.length >= 40) return q;
-  if (q.length >= 20) {
-    return `${q} 장면이 선명하게 남았어요. 깬 뒤에도 그 분위기가 계속 떠올랐어요.`;
-  }
-  return `${q}과(와) 관련된 장면이었어요. 분위기가 오래 남아서 기록해 두었어요.`;
-}
-
-function loadLocalPreview(keyword: string) {
-  const estimate = previewCommunityForKeyword(keyword);
-  const category = /뱀|쫓|추락|시험|불|죽|실직/.test(keyword)
-    ? "anxiety"
-    : /연애|남친|여친|바람|불륜|이별/.test(keyword)
-      ? "love"
-      : "general";
-  return {
-    summary: estimateToSummary(estimate, category),
-    stats: estimateToStats(estimate),
-    isEstimated: true,
-  };
+  return `"${q}"이(가) 떠오르는 꿈을 여러 번 꾼 것 같아요. 장면은 사람마다 다르지만 비슷한 분위기로 기록해 두었어요.`;
 }
 
 export function ExplorePage() {
@@ -54,15 +32,13 @@ export function ExplorePage() {
   const defaultKeyword = useState(() => getExploreDefaultKeyword())[0];
   const [placeholder] = useState(provocativeSearchPlaceholder);
 
-  const initialPreview = useState(() => loadLocalPreview(defaultKeyword))[0];
   const [query, setQuery] = useState(defaultKeyword);
-  const [summary, setSummary] = useState<SimilarDreamSummary | null>(
-    () => initialPreview.summary,
-  );
-  const [stats, setStats] = useState<DreamStats | null>(() => initialPreview.stats);
+  const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
+  const [stats, setStats] = useState<DreamStats | null>(null);
   const [isEstimated, setIsEstimated] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const [searching, setSearching] = useState(true);
   const searchGenRef = useRef(0);
+  const initialSearchDone = useRef(false);
 
   const displayKeyword = previewKeywordLabel(query);
 
@@ -100,6 +76,12 @@ export function ExplorePage() {
       }
     }
   };
+
+  useEffect(() => {
+    if (initialSearchDone.current) return;
+    initialSearchDone.current = true;
+    void handleSearch(defaultKeyword);
+  }, [defaultKeyword]);
 
   return (
     <div className="space-y-5">
