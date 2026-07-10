@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { AppLink } from "@/components/ui/AppLink";
-import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
-import { ConversionGate } from "@/components/ConversionGate";
-import { HomeTodayHero } from "@/components/HomeTodayHero";
+import { HomeFeaturedStoryPanel } from "@/components/HomeFeaturedStoryPanel";
+import { HomeObservatorySignal } from "@/components/HomeObservatorySignal";
 import { Reveal } from "@/components/motion/Reveal";
 import { PageHero } from "@/components/ui/PageHero";
-import { BRAND_TAGLINE, CTA_WRITE_DREAM } from "@/lib/branding";
-import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { CTA_WRITE_DREAM } from "@/lib/branding";
+import { PAGE_COPY } from "@/lib/productIdeas";
 import { HOME_FEATURED_KEYWORDS, getKeywordIcon } from "@/lib/keywordIcons";
 import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
@@ -18,27 +17,34 @@ const homePreviews = HOME_FEATURED_KEYWORDS.map((keyword) => ({
 }));
 
 export function HomePage() {
-  const access = useAccessPolicy();
   const [activeIdx, setActiveIdx] = useState(0);
   const active = homePreviews[activeIdx] ?? homePreviews[0]!;
+  const hero = PAGE_COPY.home;
 
   return (
     <div className="home-page space-y-5 pb-4">
       <Reveal delay={0}>
-        <PageHero title={BRAND_TAGLINE} centered />
+        <PageHero
+          label={hero.label}
+          title={hero.title}
+          descLead={hero.descLead}
+          descMid={hero.descMid}
+          descAccent={hero.descAccent}
+          centered
+        />
       </Reveal>
 
-      <Reveal delay={40}>
+      <Reveal delay={50}>
+        <HomeObservatorySignal />
+      </Reveal>
+
+      <Reveal delay={80}>
         <AppLink to="/write" className="btn-primary !min-h-[3rem] text-base">
           {CTA_WRITE_DREAM}
         </AppLink>
       </Reveal>
 
-      <Reveal delay={80}>
-        <HomeTodayHero />
-      </Reveal>
-
-      <Reveal delay={120}>
+      <Reveal delay={110}>
         <div className="space-y-2.5">
           <p className="text-xs text-text-muted px-1">많이 찾는 꿈</p>
           <div className="flex flex-wrap gap-2">
@@ -60,30 +66,21 @@ export function HomePage() {
       </Reveal>
 
       {active.data.stories[0] && (
-        <Reveal delay={160}>
-          <CommunityStoriesPanel
-            stories={[active.data.stories[0]!]}
-            title={`${active.label} — 30일 후`}
-            variant="minimal"
-            blurLocked={!access.isPremium}
-            lockedCount={Math.max(active.data.stories.length - 1, 48)}
+        <Reveal delay={120}>
+          <HomeFeaturedStoryPanel
             keyword={active.keyword}
+            label={active.label}
+            estimate={active.data}
           />
         </Reveal>
       )}
 
-      {!access.isMember && (
-        <Reveal delay={200}>
-          <ConversionGate step={2} keyword={active.keyword} compact />
-        </Reveal>
-      )}
-
-      <Reveal delay={220}>
+      <Reveal delay={160}>
         <AppLink
           to="/explore"
           className="block text-center text-sm text-text-muted hover:text-primary transition-colors py-2"
         >
-          같은 꿈 · 30일 후 후기 더 보기 →
+          당신만 모르는 결말, 더 보기 →
         </AppLink>
       </Reveal>
     </div>

@@ -4,6 +4,7 @@ import {
   BRAND_HOOK_LEAD,
   BRAND_HOOK_MID,
   BRAND_HOOK_LINE,
+  HOME_HERO_TITLE,
 } from "@/lib/branding";
 
 /** 소비자 여정 */
@@ -22,8 +23,8 @@ export const HOME_HERO_DESC_ACCENT = BRAND_HOOK_LINE;
 
 export const PAGE_COPY = {
   home: {
-    label: "DreamLab · 꿈 결과 연구소",
-    title: SERVICE_TAGLINE,
+    label: "DreamLab",
+    title: HOME_HERO_TITLE,
     descLead: HOME_HERO_DESC_LEAD,
     descMid: HOME_HERO_DESC_MID,
     descAccent: HOME_HERO_DESC_ACCENT,

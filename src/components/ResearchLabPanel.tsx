@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
 import { LiveStat } from "@/components/LiveStat";
 import { BRAND_CLOSING } from "@/lib/branding";
+import { ContributionGrid } from "@/components/ContributionGrid";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
 
 export function ResearchLabPanel() {
@@ -51,48 +51,6 @@ export function ResearchLabPanel() {
       <p className="text-[0.6875rem] text-text-muted text-center copy-lines">
         <LiveStat value={stats.totalDreams} className="text-text-muted font-normal" />
         개의 꿈이 기록되었습니다. {BRAND_CLOSING}
-      </p>
-    </div>
-  );
-}
-
-function ContributionGrid({ grid }: { grid: number[][] }) {
-  return (
-    <div className="research-contrib research-contrib-cyber" aria-label="연구 활동 히트맵">
-      <div className="research-contrib-header">
-        <span className="research-contrib-sys">SYS://OBS_DENSITY</span>
-        <span className="research-contrib-ping" aria-hidden>
-          SCAN
-        </span>
-      </div>
-
-      <div className="research-contrib-viewport">
-        <div className="research-contrib-wave research-contrib-wave-h" aria-hidden />
-        <div className="research-contrib-wave research-contrib-wave-v" aria-hidden />
-        <div className="research-contrib-grid">
-          {grid.map((week, wi) => (
-            <div key={wi} className="research-contrib-week">
-              {week.map((level, di) => (
-                <span
-                  key={`${wi}-${di}`}
-                  className="research-contrib-cell"
-                  data-level={level}
-                  style={
-                    {
-                      "--cell-delay": `${((wi * 7 + di) % 17) * 0.11}s`,
-                      "--cell-wave": `${((wi + di) % 5) * 0.4}s`,
-                    } as CSSProperties
-                  }
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <p className="research-contrib-legend text-[0.5rem] text-text-muted mt-1">
-        <span className="research-contrib-blink">관측 밀도</span> · 최근 {grid.length}주 ·
-        uplink active
       </p>
     </div>
   );
