@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   BRAND_CLOSING,
+  BRAND_MANIFESTO,
   BRAND_TAGLINE,
   RESEARCH_MISSION_BEATS,
-  RESEARCH_MISSION_PILLARS,
+  RESEARCH_MISSION_HOOK,
+  RESEARCH_MISSION_TITLE,
+  RESEARCH_MISSION_TOPICS,
 } from "@/lib/branding";
 import { ContributionGrid } from "@/components/ContributionGrid";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
@@ -25,18 +28,32 @@ export function LabResearchMissionBody({
   const lastBeatIndex = RESEARCH_MISSION_BEATS.length - 1;
 
   return (
-    <div className="space-y-3">
+    <div className="research-mission-body space-y-4">
       {!hideTagline && (
-        <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
+        <div className="space-y-2 text-center">
+          <p className="text-sm font-medium text-text">{BRAND_TAGLINE}</p>
+          <p className="text-xs text-text-secondary copy-lines leading-relaxed">
+            {BRAND_MANIFESTO}
+          </p>
+        </div>
       )}
 
-      <div className="space-y-2">
+      {hideTagline && (
+        <div className="space-y-2 text-center">
+          <p className="research-mission-hook">{RESEARCH_MISSION_HOOK}</p>
+          <p className="text-xs text-text-secondary copy-lines leading-relaxed">
+            {BRAND_MANIFESTO}
+          </p>
+        </div>
+      )}
+
+      <div className="research-mission-beats space-y-2.5">
         {RESEARCH_MISSION_BEATS.map((beat, index) => (
           <p
             key={beat}
             className={`text-xs leading-relaxed copy-lines text-center ${
               index === lastBeatIndex
-                ? "font-medium text-primary"
+                ? "research-mission-beat-accent"
                 : "text-text-secondary"
             }`}
           >
@@ -45,11 +62,11 @@ export function LabResearchMissionBody({
         ))}
       </div>
 
-      <ul className="research-mission-pillars space-y-1.5 border-l-2 border-primary/25 pl-3">
-        {RESEARCH_MISSION_PILLARS.map((pillar) => (
-          <li key={pillar.label} className="text-[0.6875rem] leading-relaxed">
-            <span className="font-semibold text-primary">{pillar.label}</span>
-            <span className="text-text-secondary"> — {pillar.text}</span>
+      <ul className="research-mission-topics space-y-2">
+        {RESEARCH_MISSION_TOPICS.map((item) => (
+          <li key={item.title} className="research-mission-topic">
+            <p className="research-mission-topic-title">{item.title}</p>
+            <p className="research-mission-topic-body">{item.body}</p>
           </li>
         ))}
       </ul>
@@ -67,7 +84,7 @@ export function LabResearchMissionBody({
       )}
 
       {hideDensity && (
-        <p className="text-[0.6875rem] text-text-muted text-center copy-lines">{BRAND_CLOSING}</p>
+        <p className="research-mission-closing">{BRAND_CLOSING}</p>
       )}
     </div>
   );
@@ -79,7 +96,7 @@ interface LabResearchMissionProps {
   openOnHash?: boolean;
 }
 
-/** 홈 히어로 아래 · 마이 — 「우리는 어떤 것을 연구하나」 아코디언 */
+/** 홈 히어로 아래 · 마이 — 「우리는 어떤 것을 연구하는가」 */
 export function LabResearchMission({
   variant = "card",
   defaultOpen = false,
@@ -111,24 +128,21 @@ export function LabResearchMission({
 
   if (variant === "hero") {
     return (
-      <div id={RESEARCH_MISSION_HASH} className="mx-auto max-w-[21rem] text-center">
+      <div id={RESEARCH_MISSION_HASH} className="research-mission-hero">
         <button
           type="button"
           onClick={toggle}
-          className="research-mission-trigger w-full text-sm font-medium text-primary py-1.5 transition-colors hover:text-primary/80"
+          className="research-mission-hero-trigger"
           aria-expanded={open}
         >
-          우리는 어떤 것을 연구하나
-          <span className="ml-1 text-text-muted text-xs" aria-hidden>
-            {open ? "▲" : "▼"}
-          </span>
+          <span className="section-label research-mission-label">DreamLab Research</span>
+          <span className="research-mission-question">{RESEARCH_MISSION_TITLE}</span>
+          <span className="research-mission-hint">{open ? "접기" : "열어보기"}</span>
         </button>
 
         {open && (
-          <div className="motion-accordion-open mt-3 text-left">
-            <div className="card card-bezel p-4">
-              <LabResearchMissionBody hideTagline hideDensity />
-            </div>
+          <div className="research-mission-panel motion-accordion-open">
+            <LabResearchMissionBody hideTagline hideDensity />
           </div>
         )}
       </div>
@@ -143,12 +157,12 @@ export function LabResearchMission({
         className="w-full px-4 py-3.5 text-left flex items-center justify-between gap-2 hover:bg-surface-2/50 transition-colors"
         aria-expanded={open}
       >
-        <span className="text-sm font-semibold text-text">우리는 어떤 것을 연구하나</span>
+        <span className="text-sm font-semibold text-text">{RESEARCH_MISSION_TITLE}</span>
         <span className="text-xs text-text-muted shrink-0">{open ? "접기 ▲" : "펼치기 ▼"}</span>
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/60 motion-accordion-open">
+        <div className="px-4 pb-4 border-t border-border/60 motion-accordion-open">
           <div className="pt-3">
             <LabResearchMissionBody />
           </div>

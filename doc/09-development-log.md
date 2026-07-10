@@ -14,13 +14,14 @@
 4. [Phase 3 — 브랜드 · UI · 홈 경험](#4-phase-3--브랜드--ui--홈-경험)
 5. [Phase 4 — AI 해몽 · 커뮤니티 데이터](#5-phase-4--ai-해몽--커뮤니티-데이터)
 6. [Phase 5 — Admin ERP](#6-phase-5--admin-erp)
-7. [Phase 6 — researchAnchor (AI 1차 키워드)](#7-phase-6--researchanchor-ai-1차-키워드)
+7. [Phase 6 — researchAnchor](#7-phase-6--researchanchor-ai-1차-키워드)
 8. [Phase 7 — 로컬 개발 · Vercel](#8-phase-7--로컬-개발--vercel)
 9. [Phase 8 — DreamLab 브랜드 표기](#9-phase-8--dreamlab-브랜드-표기)
-10. [라우트 · 페이지 상세](#10-라우트--페이지-상세)
-11. [환경변수 · 스크립트](#11-환경변수--스크립트)
-12. [알려진 이슈 · 미완](#12-알려진-이슈--미완)
-13. [핵심 파일 색인](#13-핵심-파일-색인)
+10. [Phase 9–12 — 2026-07 최신](#phase-9--ux-단순화--홈탐색-2026-07)
+11. [라우트 · 페이지 상세](#10-라우트--페이지-상세)
+12. [환경변수 · 스크립트](#11-환경변수--스크립트)
+13. [알려진 이슈 · 미완](#12-알려진-이슈--미완)
+14. [핵심 파일 색인](#13-핵심-파일-색인)
 
 ---
 
@@ -456,15 +457,16 @@ interface ResearchAnchor {
 
 | 경로 | 컴포넌트 | 주요 기능 |
 |------|----------|-----------|
-| `/` | HomePage | PageHero, KPI, previewKeywords, CommunityStories 1건, StickyHomeCta |
-| `/write` | WriteDreamPage | 감정 선택, 본문, AI 해석, Firestore 저장 |
-| `/dream/:id` | DreamDetailPage | 해석 전체, researchAnchor, SimilarDreams, PushPrompt |
-| `/dream/preview` | DreamDetailPage | 데모 sessionStorage |
-| `/follow-up/:id` | FollowUpPage | outcomeCategory, note, emotions |
-| `/explore` | ExplorePage | 키워드·카테고리 탐색 |
-| `/my` | MyPage | 프로필, 프리미엄, JourneyOnboarding |
-| `/my-dreams` | MyDreamsPage | 내 꿈 아카이브 |
-| `/premium` | Navigate | → `/my` |
+| `/` | HomePage | 히어로, LabResearchMission, HomeObservatorySignal, 키워드12, 후기1건 |
+| `/write` | WriteDreamPage | 감정, 본문, AI, 저장 |
+| `/dream/:id` | DreamDetailPage | 해석, 운세, 유사꿈 |
+| `/follow-up/:id` | FollowUpPage | 후기 8자+ |
+| `/explore` | ExplorePage | 칩20, AI+실DB, 운세 |
+| `/my` | MyPage | 아카이브, 달력, 운세, 연구미션 |
+| `/my-dreams` | MyDreamsPage | 전체 아카이브 |
+| `/about` | Navigate | → `/#research` |
+| `/premium` | Navigate | → `/my#pricing` |
+| `/superadmin/*` | AdminApp | 대시보드·회원·꿈DB |
 
 ### 10.2 Admin
 
@@ -533,15 +535,13 @@ VITE_DEV_SHORT_FOLLOWUP=false   # true → 30일 = 1분
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| Firebase 프로덕션 연결 | 🟡 | env·rules 배포 필요 |
-| Vercel 프로덕션 | 🟡 | |
-| 결제 (Stripe/토스/IAP) | ❌ | `isPremium` 수동 |
-| `kpi_daily` 야간 집계 | ❌ | Admin 500건 샘플만 |
-| `followUpPush` → Functions | ❌ | UI·Firestore만 |
-| interpret rate limit | ❌ | system config에 숫자만 |
-| push_logs | ❌ | |
-| Git push 403 | 🟡 | repo 권한 이슈 가능 |
-| 앱스토어 / Play | ❌ | TWA·Capacitor 검토 |
+| Netlify 프로덕션 | ✅ | GitHub main 자동 배포 |
+| Firestore rules | 🟡 | 배포 후 Admin 시드 확인 |
+| Cloud Functions 푸시 | 🟡 | Blaze |
+| 스토어 IAP | ❌ | 토스 제거됨 |
+| `kpi_daily` | ❌ | |
+| `followUpPush` → Functions | ❌ | |
+| Admin 설정 페이지 라우터 | 🟡 | 파일만 존재 |
 
 ---
 
@@ -613,18 +613,119 @@ scripts/sync-branch-env.mjs
 
 ---
 
+## Phase 9 — UX 단순화 · 홈·탐색 (2026-07)
+
+### 9.1 홈
+
+- 히어로: 「같은 꿈을 꾼 사람들」+ 30일 질문
+- FOMO 숫자·과한 블러 제거
+- `HomeObservatorySignal` — 관측 밀도만
+- 키워드 칩 **12개** — `fetchPopularDreamKeywords` + 랜덤
+- `LabResearchMission` — 히어로 아래 아코디언 (`/#research`)
+
+### 9.2 탐색
+
+- 검색 칩 **20개**, 미리보기 **6건**
+- `useFeaturedKeywords` 공용 훅
+- `AiWritingPulse` — 로딩 카피 정리
+
+### 9.3 마이 · 아카이브
+
+- `DreamArchiveCard` 슬림
+- `DreamArchiveCalendar` — 월별 잔디 MVP
+- `MyDreamFortuneSection` — 최근 꿈 운세
+
+---
+
+## Phase 10 — 프리미엄 운세 · 결제 정리 (2026-07)
+
+### 10.1 프리미엄 재정의
+
+- **30일 운세 추이** — 7축 8주 (`DreamFortuneTrendPanel`)
+- AI 재해석 패널 **제거**
+- 탐색·상세·마이·프리미엄 페이지 노출
+
+### 10.2 결제
+
+- **토스페이먼츠 SDK·Functions 제거**
+- 방향: App Store / Play IAP
+- `story_payment_orders` 컬렉션 rules 예약
+
+### 10.3 후기 정책
+
+- 「별일 없었음」카테고리 제거 → `other`
+- FollowUp 원탭 제거, 후기 8자 이상
+
+---
+
+## Phase 11 — Admin 꿈 DB · 시드 (2026-07)
+
+### 11.1 엑셀 스프레드시트
+
+- `DreamSpreadsheet.tsx` — 32열 (문서ID~프로필)
+- `dreamlab-seed-data` 시드 userId
+- 추가 저장만 (덮어쓰기 없음)
+- `isPublic: true` 고정
+
+### 11.2 Server API
+
+- `admin-import-dreams.ts` — Admin SDK bulk set
+- `admin-delete-dreams.ts` — Admin SDK bulk delete
+- `firebaseAdmin.ts` — verifyBearerAdmin, PEM 정규화
+- Netlify redirects + `vite-dev-api-plugin`
+
+### 11.3 Firestore rules
+
+- `isMasterAdmin` — 마스터 이메일
+- `isAdminSeedCreate` — 시드 create
+- admin delete 권한
+
+### 11.4 Admin 슬림화
+
+- 메뉴 3개: 대시보드 · 회원 · 꿈 DB
+- `/superadmin` PWA 임베드
+- 레거시 설정 페이지 라우터 분리
+
+---
+
+## Phase 12 — 커뮤니티 품질 · 브랜드 페르소나 (2026-07)
+
+### 12.1 AI·커뮤니티
+
+- `communityStoryQuality` — 사용자 원문 겹침 필터
+- `similarDreamVariation` — 같은 결·다른 장면
+- `communityReviewPrompt` — believable 변주 지시
+- **AI 출력 DB 미저장** — 무한 루프 없음
+
+### 12.2 시드 → 탐색
+
+- `MIN_REAL_COMMUNITY_COUNT = 5`
+- `communityDataService` real_first
+- `fetchPopularDreamKeywords` — 홈·탐색 칩
+
+### 12.3 브랜드 카피
+
+- `RESEARCH_MISSION_BEATS` / `RESEARCH_MISSION_TOPICS`
+- 연구 미션 아코디언 — 관측 밀도 중복 제거 (홈)
+
+---
+
 ## 부록 — 개발 타임라인 요약
 
 | 시기 | 마일스톤 |
 |------|----------|
-| 초기 | PWA + React + Tailwind + 4탭 |
-| Phase 2 | Firebase Auth(익명) + Firestore + 30일 Functions |
-| Phase 3 | 브랜드·로고·스플래시·홈 KPI·커뮤니티 UI |
-| Phase 4 | interpret-dream + keywordNarratives + labObservations |
-| Phase 5 | Admin ERP + config/* + ai_usage |
-| Phase 6 | researchAnchor AI 1차 아키텍처 |
-| Phase 7 | Vite 로컬 API (3000), Vercel 배포 경로 |
-| Phase 8 | DreamLab 표기 (uppercase 제거) |
+| 초기 | PWA + React + 4탭 |
+| Phase 2 | Firebase + 30일 Functions |
+| Phase 3 | 브랜드·로고·홈 KPI |
+| Phase 4 | interpret-dream + 커뮤니티 |
+| Phase 5 | Admin ERP + config/* |
+| Phase 6 | researchAnchor AI 1차 |
+| Phase 7 | 로컬 API · Vercel 경로 |
+| Phase 8 | DreamLab 표기 |
+| **Phase 9** | **홈·탐색 UX · DB 키워드 칩** |
+| **Phase 10** | **운세 7축 · 토스 제거** |
+| **Phase 11** | **Admin 엑셀 시드 · import/delete API** |
+| **Phase 12** | **커뮤니티 품질 · 연구 미션 페르소나** |
 
 ---
 

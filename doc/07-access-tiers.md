@@ -2,69 +2,66 @@
 
 ## 요약
 
-| 티어 | DB 적재 | 유사 꿈 | 30일 푸시 | 후기 작성 | 마이페이지 |
-|------|---------|---------|-----------|-----------|------------|
-| **비회원** (익명 Auth) | 꿈 내용 ✅ | ❌ | ❌ | ❌ | 저장된 꿈 목록만 |
-| **회원** | ✅ | ✅ | ✅ | ✅ | 내 꿈 전체 |
-| **프리미엄** | ✅ | ✅ | ✅ | ✅ | 통계·후기 전체 열람 |
+| 티어 | DB 적재 | 유사 꿈·탐색 | 30일 푸시 | 후기 작성 | 후기 열람 | 운세 그래프 |
+|------|---------|-------------|-----------|-----------|-----------|-------------|
+| **비회원** | ✅ 익명 | 미리보기+블러 | ❌ | ❌ | 1건 | 1축 블러 |
+| **회원** | ✅ | ✅ | ✅ | ✅ | **키워드당 4건** | 3축 |
+| **프리미엄** | ✅ | ✅ | ✅ | ✅ | **전체** | **7축 8주** |
 
-## 기술 구현
+구현: `src/hooks/useAccessPolicy.ts`
 
-### 비회원
-- 앱 로드 시 Firebase **익명 로그인** (`signInAnonymously`) 자동 실행
-- `saveDream` → Firestore `dreams` 컬렉션에 `userId` = 익명 uid
-- Google/이메일 가입 시 **계정 연결** (`linkWithPopup` / `linkWithCredential`) — uid 유지, 꿈 데이터 이전 불필요
+---
 
-### 회원
-- 익명이 아닌 Firebase Auth (Google / 이메일)
-- 유사 꿈 패널, 커뮤니티 스토리 (일부 블러)
-- 꿈 저장 직후 **푸시 알림 등록** UI (`PushNotificationPrompt`)
-- 30일 후 Cloud Functions `sendFollowUpReminders` → FCM 푸시
-- `/follow-up/:id` 에서 후기 적재
+## 비회원
 
-### 프리미엄
-- Firestore `users/{uid}.isPremium = true` (결제 연동 전 수동 설정)
-- 한 달 뒤 통계·후기 전체 열람 (`canViewOutcomeStats`)
+- `signInAnonymously()` 자동
+- 꿈 저장 → Firestore
+- 탐색: 후기 1건 + 블러, ConversionGate
+- 가입 시 `linkWithPopup` — uid 유지
 
-## 데모 모드
+## 회원
 
-`VITE_DEMO_MODE=true` 이면 Firebase 없이 UI만 동작합니다.
-- 비회원 꿈은 `sessionStorage.pendingDream` → `/dream/preview` 미리보기
-- Admin 티어 스위치로 guest/member/premium 시뮬레이션
+- 유사 꿈 · 커뮤니티 스토리
+- `/follow-up/:id` 후기 (8자 이상, nothing 카테고리 없음)
+- **후기 열람 한도:** `MEMBER_FREE_STORY_VIEWS = 4` / 키워드
+  - API: `story-access`, `register-story-views`
+  - Firestore: `users/{uid}/story_unlocks/{keywordKey}`
 
-## Firebase Console 체크리스트
+## 프리미엄
 
-1. **Authentication** → 익명 로그인 활성화
-2. **Authentication** → Google 로그인 활성화
-3. **Authentication** → 승인 도메인에 **Vercel/Netlify URL** 추가
-4. **Cloud Messaging** → Web Push VAPID 키 생성 → `VITE_FIREBASE_VAPID_KEY`
-5. **Firestore** → `firebase deploy --only firestore`
-6. **Functions** (Blaze) → `firebase deploy --only functions`
-7. **Admin** → `users/{uid}.role = "admin"` 수동 설정
+- `users.isPremium = true` (수동 또는 **스토어 IAP 예정**)
+- `DreamFortuneTrendPanel` 7축 전체
+- 후기·통계 전체 (`canViewOutcomeStats`)
+- **토스페이먼츠 웹 결제 제거됨** (2026-07)
 
-## Vercel / Netlify 환경변수
+---
 
-빌드 시 `VITE_*` 가 번들에 포함됩니다. Site settings → Environment variables:
+## 운세 그래프 티어 (`DreamFortuneTrendPanel`)
 
-```
-VITE_FIREBASE_API_KEY
-VITE_FIREBASE_AUTH_DOMAIN
-VITE_FIREBASE_PROJECT_ID
-VITE_FIREBASE_STORAGE_BUCKET
-VITE_FIREBASE_MESSAGING_SENDER_ID
-VITE_FIREBASE_APP_ID
-VITE_FIREBASE_VAPID_KEY
-VITE_DEMO_MODE=false
-OPENAI_API_KEY
-GEMINI_API_KEY
-```
+| 티어 | 노출 |
+|------|------|
+| guest | 종합운 1축, 나머지 블러 |
+| member | 3축, 마지막 살짝 블러 |
+| premium | 7축 전체 · 8주 스파크라인 |
 
-빌드 시 `scripts/inject-firebase-sw.mjs` 가 `public/firebase-messaging-sw.js` 를 생성합니다.
+파일: `src/lib/dreamFortuneTrends.ts`
 
-## 프리미엄 수동 부여 (테스트)
+---
 
-Firebase Console → Firestore → `users/{uid}` → `isPremium: true`
+## 결제 방향 (2026-07)
 
-또는 Admin Firestore에서 (추후 UI 추가 예정) `isPremium: true` 설정.
+- ❌ 토스페이먼츠 (제거)
+- ✅ App Store / Google Play IAP
+- `story_payment_orders` — rules write:false (예약)
+
+---
+
+## Firebase · Netlify 체크리스트
+
+1. Auth — 익명·Google 활성화
+2. 승인 도메인 — Netlify URL
+3. `VITE_FIREBASE_VAPID_KEY`
+4. `firebase deploy --only firestore`
+5. Admin — `role=admin` 또는 마스터 이메일
 
 마지막 업데이트: **2026-07-10**

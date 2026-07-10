@@ -494,15 +494,120 @@ body {
   text-shadow: 0 0 20px rgba(212, 160, 74, 0.2);
 }
 
-.research-mission-trigger {
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
-  text-underline-offset: 0.3rem;
-  text-decoration-thickness: 1px;
+.research-mission-hero {
+  max-width: 21rem;
+  margin-inline: auto;
+  text-align: center;
 }
 
-.research-mission-trigger:hover {
-  text-decoration-color: var(--color-primary);
+.research-mission-label {
+  margin-bottom: 0.35rem !important;
+  font-size: 0.625rem !important;
+  letter-spacing: 0.16em !important;
+}
+
+.research-mission-hero-trigger {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 40%, transparent);
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.research-mission-hero-trigger:hover,
+.research-mission-hero-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--brand-amber) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--brand-amber) 6%, var(--color-surface));
+  box-shadow: 0 0 24px rgba(212, 160, 74, 0.08);
+}
+
+.research-mission-question {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+  transition: color 0.2s ease;
+}
+
+.research-mission-hero-trigger:hover .research-mission-question,
+.research-mission-hero-trigger[aria-expanded="true"] .research-mission-question {
+  color: var(--brand-gold-light);
+  text-shadow: 0 0 18px rgba(212, 160, 74, 0.15);
+}
+
+.research-mission-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.research-mission-panel {
+  margin-top: 0.75rem;
+  padding: 1rem 1rem 1.125rem;
+  text-align: left;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--brand-amber) 16%, var(--color-border));
+  background: linear-gradient(
+    165deg,
+    rgba(212, 160, 74, 0.07) 0%,
+    rgba(15, 15, 15, 0.72) 48%,
+    rgba(10, 10, 10, 0.88) 100%
+  );
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.research-mission-hook {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.research-mission-beat-accent {
+  font-weight: 600;
+  color: var(--brand-gold-light);
+  text-shadow: 0 0 16px rgba(212, 160, 74, 0.12);
+}
+
+.research-mission-topic {
+  border-radius: 0.625rem;
+  border: 1px solid var(--color-border);
+  background: rgba(20, 20, 20, 0.65);
+  padding: 0.625rem 0.75rem;
+}
+
+.research-mission-topic-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-amber);
+  line-height: 1.35;
+}
+
+.research-mission-topic-body {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.research-mission-closing {
+  text-align: center;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .page-desc-block .space-y-1 > * + * {

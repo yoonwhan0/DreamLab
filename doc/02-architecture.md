@@ -5,130 +5,103 @@
 | 레이어 | 기술 |
 |--------|------|
 | Frontend | React 19 + TypeScript + Vite 6 |
-| 스타일 | Tailwind CSS v4 (`src/index.css` + `@theme`) |
+| 스타일 | Tailwind CSS v4 |
 | 라우팅 | react-router-dom v7 |
-| 아이콘 | lucide-react |
-| PWA | vite-plugin-pwa + FCM service worker |
+| PWA | vite-plugin-pwa + FCM SW |
 | Auth / DB | Firebase Auth, Firestore |
-| Push | FCM + Firebase Cloud Functions |
-| AI (서버) | `netlify/functions/interpret-dream.ts` (Netlify/Vercel 공용) |
-| AI 모델 | OpenAI gpt-4o-mini + text-embedding-3-small (Gemini fallback) |
-| 배포 (프론트) | **Vercel** (`dist/`) — Netlify도 `netlify.toml` 유지 |
-| 배포 (API) | Vercel `api/interpret-dream.ts` → Netlify 핸들러 재사용 |
-| 배포 (백엔드) | Firebase (`functions/`, Firestore rules) |
-| Admin | 별도 Vite 앱 `admin/` (port 5174) |
+| Push | FCM + Cloud Functions |
+| AI | `netlify/functions/interpret-dream.ts` |
+| AI 모델 | OpenAI gpt-4o-mini + embedding (Gemini fallback) |
+| **배포 (프론트)** | **Netlify** (`netlify.toml`, `dist/`) |
+| **배포 (API)** | Netlify Functions 5종 |
+| **배포 (백엔드)** | Firebase (rules, indexes, Functions) |
+| Admin | `admin/` + 메인 PWA `/superadmin/*` |
+| 엑셀 | `xlsx` — Admin 꿈 DB |
 
 ## 런타임 다이어그램
 
 ```
-[브라우저 PWA — localhost:3000 / Vercel]
+[브라우저 PWA — Netlify]
     │
-    ├─► Firebase Auth / Firestore (직접)
-    │       └─ config/* 읽기 (공개 read) — 홈 KPI·데이터 노출 정책
-    ├─► FCM (푸시 토큰 → users.fcmTokens)
-    └─► POST /api/interpret-dream
-              │
-              ├─ OpenAI Chat + Embedding
-              ├─ researchAnchor JSON (AI 1차 키워드)
-              ├─ communityEstimate (AI 추정, isEstimated: true)
-              └─ ai_usage/{YYYY-MM-DD} 집계 (Admin SDK, env 있을 때)
+    ├─► Firebase Auth / Firestore
+    │       ├─ dreams (유저 + dreamlab-seed-data 시드)
+    │       ├─ config/* (홈 KPI, dataExposure)
+    │       └─ users/{uid}/story_unlocks
+    │
+    └─► Netlify Functions
+            ├─ POST /api/interpret-dream        → AI 해몽
+            ├─ POST /api/story-access           → 후기 열람 상태
+            ├─ POST /api/register-story-views   → 열람 등록
+            ├─ POST /api/admin-import-dreams    → Admin 시드 업로드
+            └─ POST /api/admin-delete-dreams      → Admin 시드 삭제
 
 [Firebase Cloud Functions]
-    sendFollowUpReminders (매일 KST 00:00)
-        └─ followUpDueAt 지난 dreams → FCM multicast (익명 스킵)
-    onFollowUpSubmitted
-        └─ users.hasFollowUpDiscount 등 업데이트
+    sendFollowUpReminders · onFollowUpSubmitted
 
-[Admin ERP — localhost:5174]
-    Firebase Auth (Google/이메일) + users.role == "admin"
-    Firestore read/write — users, dreams, config/*, ai_usage
+[Admin /superadmin]
+    DreamSpreadsheet → admin-import/delete API (우선) → Firestore 폴백
 ```
 
-## 로컬 개발 (Vercel 로그인 불필요)
+## Netlify Functions
 
-```
-npm run dev
-  → Vite port 3000
-  → scripts/vite-local-api-plugin.ts
-       POST /api/interpret-dream → netlify/functions/interpret-dream.handler
-  → .env / .env.local 서버 키 (OPENAI_API_KEY 등) process.env 주입
-```
+| Function | 인증 | Admin SDK |
+|----------|------|-------------|
+| interpret-dream | Bearer (선택) | ai_usage 집계 |
+| story-access | Bearer uid | ✅ |
+| register-story-views | Bearer uid | ✅ |
+| admin-import-dreams | Bearer admin | ✅ |
+| admin-delete-dreams | Bearer admin | ✅ |
 
-선택: `npm run dev:vercel` — Vercel dev와 동일 환경 (최초 `vercel login` 필요)
+공통 lib: `firebaseAdmin.ts`, `firebasePrivateKey.ts` (PEM `\n` 정규화)
 
-## 주요 API / 서비스
+## 주요 클라이언트 서비스
 
-| 경로 | 역할 |
+| 모듈 | 역할 |
 |------|------|
-| `src/services/dreamService.ts` | 꿈 CRUD, 통계, 유사 꿈 |
-| `src/services/interpretService.ts` | AI 해석 호출 + mock fallback |
-| `src/services/communityDataService.ts` | 실데이터 vs 합성 병합 (`config/dataExposure`) |
-| `src/services/syntheticCommunityService.ts` | 데모·초기 합성 커뮤니티 |
-| `src/services/opsConfigService.ts` | Firestore `config/*` CRUD |
-| `src/lib/dreamAnchor.ts` | AI 앵커 정리·폴백 (`researchAnchor` 1차) |
-| `netlify/functions/interpret-dream.ts` | AI 프롬프트 + JSON 파싱 + ai_usage |
-| `netlify/functions/lib/interpretPremium.ts` | 프리미엄 프롬프트·researchAnchor 스키마 |
-| `netlify/functions/lib/recordAiUsage.ts` | `ai_usage` 일별 집계 |
-| `api/interpret-dream.ts` | Vercel Serverless 래퍼 |
-| `functions/src/index.ts` | 30일 푸시, follow-up 후처리 |
+| `dreamService.ts` | CRUD, 유사 꿈, `fetchPopularDreamKeywords` |
+| `interpretService.ts` | AI 호출 + mock fallback |
+| `communityDataService.ts` | 실DB + AI + 합성 병합 |
+| `syntheticCommunityService.ts` | 합성 커뮤니티·미리보기 |
+| `storyUnlockService.ts` | 키워드별 후기 열람 API |
+| `opsConfigService.ts` | `config/*` |
+| `adminDreamDb.ts` | Admin 시드 import/delete |
 
-## AI 해석 파이프라인 (`researchAnchor`)
-
-**설계 원칙 (2026-07):** 키워드·DB 클러스터는 **AI 1차**, 코드는 정리·폴백만.
+## 커뮤니티 데이터 흐름
 
 ```
-꿈 본문 + 감정
-    ↓
-interpretPremium 프롬프트 → JSON
-    ├─ usualTake, alternativeLens, symbol, psychology, reflection
-    ├─ keywords[] (보조)
-    ├─ labObservations (장면 인용, 행동, 연관 검색)
-    └─ researchAnchor { primary, secondary[], scenePhrases[], clusterLabel }
-    ↓
-normalizeResearchAnchor() — 조사 정리, 메타(생년월일) 제외
-    ↓
-resolveResearchAnchor() — AI primary > keywords > 휴리스틱
-    ↓
-DreamDetailPage / 통계 / 유사 꿈 — clusterLabel 또는 primary 표시
+사용자 꿈 → interpretDream → communityEstimate (메모리만)
+         → saveDream → dreams (userId=uid)
+
+Admin 엑셀 → admin-import-dreams → dreams (userId=dreamlab-seed-data)
+
+탐색/상세 → resolveCommunityData
+    → findSimilarDreams (isPublic, keywords)
+    → ≥5건: 실데이터 / 미만: 합성+AI
+
+※ AI 스토리 → DB 재저장 없음 (학습 루프 없음)
 ```
 
-## 데모 모드
+## AI 파이프라인 (`researchAnchor`)
 
-| 환경변수 | 효과 |
-|----------|------|
-| `VITE_DEMO_MODE=true` | Firebase 없이 UI, 비회원 → `sessionStorage` 미리보기 |
-| `VITE_DEMO_MODE=false` | 프로덕션 — 익명 Auth + Firestore 저장 |
-| `VITE_DEV_SHORT_FOLLOWUP=true` | 30일 → 1분 (테스트) |
+키워드·클러스터 = **AI 1차**, 코드 = 정리·폴백 (`dreamAnchor.ts`)
 
-데모 티어 스위처: `DemoTierSwitcher` (개발용)
+## 로컬 개발
 
-## 앱 진입 흐름
-
-```
-[SplashScreen] ~1.8s LOADING (DreamLab / 꿈연구소)
-    ↓
-[AuthProvider] 익명 자동 로그인 (Firebase 설정 시)
-    ↓
-[Layout + Routes] — 4탭: 홈 · 기록 · 탐색 · 마이
-```
-
-## Admin ERP
-
-| 메뉴 | 경로 | 상태 |
+| 명령 | 포트 | 설명 |
 |------|------|------|
-| 대시보드 | `/` | ✅ 실DB 샘플 KPI + 합성 KPI 비교 |
-| 모니터링 | `/monitoring` | ✅ |
-| 회원 | `/members` | ✅ |
-| 꿈 DB | `/dreams` | ✅ |
-| Follow-up | `/follow-up` | ✅ |
-| 데이터 노출 | `/data-exposure` | ✅ Firestore 저장 |
-| AI 사용량 | `/ai-usage` | ✅ `ai_usage` |
-| 홈 KPI | `/settings/lab-metrics` | ✅ |
-| 푸시 | `/settings/push` | ✅ UI (Functions 연동 예정) |
-| 시스템 | `/settings/system` | ✅ |
+| `npm run dev` | 5173 | Vite만 |
+| `npm run dev:netlify` | 8888 | Functions 포함 (**권장**) |
+| `npm run dev:admin` | 5174 | Admin standalone |
 
-인증: `admin/src/hooks/useAdminAuth.ts` — `users/{uid}.role === "admin"`
+로컬 API: `scripts/vite-dev-api-plugin.ts` — `/api/*` → Netlify handler
 
-상세: [07-admin-roadmap.md](./07-admin-roadmap.md)
+## Admin
+
+| 진입 | 경로 |
+|------|------|
+| PWA 임베드 | `/superadmin`, `/superadmin/members`, `/superadmin/dreams` |
+| Standalone | `admin.bat` → :5174 |
+
+인증: `useAdminAuth` + `isMasterAdmin` / `role=admin`
 
 마지막 업데이트: **2026-07-10**

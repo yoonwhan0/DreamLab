@@ -1,129 +1,104 @@
 # 04. 폴더 구조
 
+> 2026-07-10 동기화. 상세 기능: [10-features-reference.md](./10-features-reference.md)
+
 ```
-새 폴더/
-├── assets/
-│   └── icons/brand/
-│       └── dreamlab-app-icon.png       # 로고 마스터 (달·전자 UI)
-│
-├── api/
-│   └── interpret-dream.ts              # Vercel Serverless → Netlify handler 재사용
-│
-├── admin/                              # Admin ERP (port 5174)
-│   ├── index.html
+DreamLab/
+├── admin/                          # Admin (standalone :5174 + /superadmin 임베드)
 │   └── src/
-│       ├── App.tsx                     # 라우터 + AdminGate
-│       ├── main.tsx                    # ../src/index.css 공유
-│       ├── layout/
-│       │   ├── AdminLayout.tsx
-│       │   └── AdminSidebar.tsx        # DreamLab · ERP
-│       ├── pages/
-│       │   ├── LoginPage.tsx
-│       │   ├── DashboardPage.tsx       # 실DB + 합성 KPI
-│       │   ├── MonitoringPage.tsx
-│       │   ├── MembersPage.tsx
-│       │   ├── DreamsPage.tsx
-│       │   ├── FollowUpPage.tsx
-│       │   ├── DataExposurePage.tsx
-│       │   ├── AiUsagePage.tsx
-│       │   ├── LabMetricsPage.tsx
-│       │   ├── PushSettingsPage.tsx
-│       │   └── SystemSettingsPage.tsx
-│       ├── hooks/
-│       │   ├── useAdminAuth.ts         # role === "admin"
-│       │   └── useOpsConfig.ts
-│       ├── services/
-│       │   └── adminMetrics.ts         # KPI 샘플, ai_usage
+│       ├── AdminApp.tsx            # 3메뉴 라우터
 │       ├── components/
-│       │   └── AdminUi.tsx
-│       └── LabMetricsEditor.tsx
-│
-├── doc/                                # 📁 프로젝트 문서 (단일 소스)
-│
-├── functions/src/
-│   └── index.ts                        # sendFollowUpReminders, onFollowUpSubmitted
+│       │   └── DreamSpreadsheet.tsx
+│       ├── lib/
+│       │   ├── dreamSpreadsheetSchema.ts   # 32열
+│       │   └── adminRoutes.ts
+│       ├── services/
+│       │   └── adminDreamDb.ts     # import/delete API
+│       └── pages/
+│           ├── DashboardPage.tsx
+│           ├── MembersPage.tsx
+│           └── DreamsPage.tsx
 │
 ├── netlify/functions/
-│   ├── interpret-dream.ts              # AI 해몽 API (핵심)
+│   ├── interpret-dream.ts
+│   ├── story-access.ts
+│   ├── register-story-views.ts
+│   ├── admin-import-dreams.ts
+│   ├── admin-delete-dreams.ts
 │   └── lib/
-│       ├── interpretPremium.ts         # 프롬프트 + researchAnchor
-│       ├── dreamAnchor.ts              # → src/lib/dreamAnchor re-export
-│       └── recordAiUsage.ts            # ai_usage/{date}
-│
-├── public/
-│   ├── favicon-*.png, pwa-*.png
-│   ├── firebase-messaging-sw.js        # prebuild inject
-│   └── lab-metrics.json                # 홈 KPI 폴백 (config 없을 때)
+│       ├── firebaseAdmin.ts
+│       ├── firebasePrivateKey.ts
+│       ├── interpretPremium.ts
+│       ├── communityReviewPrompt.ts
+│       ├── communityStoryQuality.ts
+│       └── recordAiUsage.ts
 │
 ├── scripts/
-│   ├── sync-branch-env.mjs             # Branch/.env → .env.local
-│   ├── inject-firebase-sw.mjs          # FCM SW config 주입
-│   ├── generate-icons.mjs              # 로고 → public 아이콘
-│   └── vite-local-api-plugin.ts        # 로컬 /api/interpret-dream
+│   ├── vite-dev-api-plugin.ts      # 로컬 /api/* → Functions
+│   ├── inject-firebase-sw.mjs
+│   ├── generate-icons.mjs
+│   └── sync-branch-env.mjs
 │
 ├── src/
-│   ├── App.tsx                         # 스플래시 → 라우트
-│   ├── main.tsx
-│   ├── index.css                       # Tailwind v4 + brand-wordmark
-│   ├── types/index.ts                  # Dream, ResearchAnchor, CommunityEstimate
+│   ├── App.tsx                     # /superadmin/* + 사용자 라우트
 │   ├── components/
-│   │   ├── SplashScreen.tsx
-│   │   ├── Layout.tsx                  # 헤더 DreamLab + 4탭
-│   │   ├── InterpretationCard.tsx      # labObservations UI
-│   │   ├── AppBackground.tsx
-│   │   ├── PushNotificationPrompt.tsx
-│   │   ├── ConversionGate.tsx
+│   │   ├── LabResearchMission.tsx  # 연구 미션 아코디언
+│   │   ├── HomeObservatorySignal.tsx
+│   │   ├── HomeFeaturedStoryPanel.tsx
+│   │   ├── DreamFortuneTrendPanel.tsx
+│   │   ├── DreamArchiveCalendar.tsx
 │   │   ├── CommunityStoriesPanel.tsx
-│   │   ├── ResearchLabPanel.tsx
-│   │   └── ui/
+│   │   ├── ExploreDiscoverSection.tsx
+│   │   └── motion/AiWritingPulse.tsx
+│   ├── hooks/
+│   │   ├── useFeaturedKeywords.ts
+│   │   ├── useHomeFeaturedKeywords.ts
+│   │   ├── useAccessPolicy.ts
+│   │   └── useAuth.tsx
+│   ├── lib/
+│   │   ├── branding.ts             # RESEARCH_MISSION_*
+│   │   ├── dreamSeedImport.ts      # 시드 페이로드
+│   │   ├── dreamFortuneTrends.ts
+│   │   ├── communityStoryQuality.ts
+│   │   ├── similarDreamVariation.ts
+│   │   ├── storyAccessPricing.ts
+│   │   ├── previewKeywords.ts
+│   │   ├── masterAccounts.ts
+│   │   └── adminPath.ts            # /superadmin
 │   ├── pages/
 │   │   ├── HomePage.tsx
-│   │   ├── WriteDreamPage.tsx
-│   │   ├── DreamDetailPage.tsx         # clusterLabel / researchAnchor
-│   │   ├── FollowUpPage.tsx
 │   │   ├── ExplorePage.tsx
 │   │   ├── MyPage.tsx
-│   │   └── MyDreamsPage.tsx
-│   ├── hooks/
-│   │   ├── useAuth.tsx
-│   │   ├── useAccessPolicy.ts
-│   │   ├── usePushNotifications.ts
-│   │   ├── useLiveLabMetrics.ts
-│   │   └── usePremiumSheet.tsx
-│   ├── services/
-│   │   ├── dreamService.ts
-│   │   ├── interpretService.ts
-│   │   ├── communityDataService.ts
-│   │   ├── syntheticCommunityService.ts
-│   │   └── opsConfigService.ts         # config/*
-│   └── lib/
-│       ├── branding.ts
-│       ├── dreamAnchor.ts              # AI 앵커 정리·폴백
-│       ├── opsConfig.ts
-│       ├── labMetricsConfig.ts
-│       ├── keywordNarratives.ts
-│       ├── previewKeywords.ts
-│       └── firebase.ts
+│   │   ├── DreamDetailPage.tsx
+│   │   ├── FollowUpPage.tsx
+│   │   └── WriteDreamPage.tsx
+│   └── services/
+│       ├── dreamService.ts         # fetchPopularDreamKeywords
+│       ├── communityDataService.ts
+│       ├── storyUnlockService.ts
+│       └── interpretService.ts
 │
-├── firestore.rules                     # admin, config, ai_usage
+├── doc/                            # 📁 프로젝트 문서
+├── firestore.rules
 ├── firestore.indexes.json
-├── firebase.json
-├── netlify.toml                        # Netlify 배포 (선택)
-├── vercel.json                         # Vercel 배포
-├── vite.config.ts                      # port 3000, PWA, local API
-├── vite.admin.config.ts                # Admin port 5174
-├── index.html
-├── DEPLOY.md                           # Firebase + Vercel 체크리스트
-├── package.json
-├── 실행.bat                            # npm run dev → 3000
-└── admin.bat                           # npm run dev:admin → 5174
+├── netlify.toml
+├── vite.config.ts
+└── package.json
 ```
 
-## 삭제·변경된 항목
+## 삭제·변경 (2026-07)
 
-- `ConversionFunnelStrip.tsx` — 제거 (홈 3단계 퍼널 스트립)
-- 로컬 dev 포트 **8888 → 3000** (Vite 단독, Netlify dev 선택)
-- Admin: `LabMetricsEditor` 단독 → **ERP 전체 페이지**로 확장
-- 키워드: 고정 lexicon 우선 → **`researchAnchor` AI 1차**
+| 항목 | 내용 |
+|------|------|
+| 토스 결제 | SDK·Functions 제거 |
+| `ReinterpretRecentPanel` | 제거 → 운세 그래프 |
+| `HOME_FEATURED_KEYWORDS` 4개 고정 | → DB 랜덤 칩 |
+| Admin ERP 10메뉴 | → 3메뉴 슬림화 |
+| `/about` 페이지 | → `/#research` |
+| outcome `nothing` | 제거 → `other` |
+
+## Admin 레거시 (라우터 미연결)
+
+`admin/src/pages/` — Monitoring, DataExposure, AiUsage, LabMetrics, PushSettings, SystemSettings, FollowUpPage(standalone)
 
 마지막 업데이트: **2026-07-10**

@@ -13,14 +13,15 @@
 | [02-architecture.md](./02-architecture.md) | 기술 스택, 런타임, API, Admin 구조 |
 | [03-development-status.md](./03-development-status.md) | **구현 완료 / 부분 / 미완** 체크리스트 |
 | [04-folder-structure.md](./04-folder-structure.md) | 폴더·파일 맵 (앱 + Admin + API) |
-| [05-data-model.md](./05-data-model.md) | Firestore 스키마 (`users`, `dreams`, `config`, `ai_usage`) |
-| [06-deployment.md](./06-deployment.md) | Firebase + Vercel 배포, 로컬 개발 |
+| [05-data-model.md](./05-data-model.md) | Firestore 스키마, 시드 DB, story_unlocks |
+| [06-deployment.md](./06-deployment.md) | Firebase + **Netlify** 배포, 로컬 개발 |
 | [07-access-tiers.md](./07-access-tiers.md) | **비회원·회원·프리미엄** 정책·구현 |
-| [07-admin-roadmap.md](./07-admin-roadmap.md) | Admin ERP — 설계 vs **구현 현황** |
+| [07-admin-roadmap.md](./07-admin-roadmap.md) | Admin — 설계 vs **구현 현황** |
 | [08-kpi-metrics.md](./08-kpi-metrics.md) | 운영 KPI 정의·집계 방식 |
-| [09-development-log.md](./09-development-log.md) | **처음부터 지금까지 개발 전체 상세 기록** ⭐ |
+| [09-development-log.md](./09-development-log.md) | **처음부터 지금까지 개발 전체 상세 기록** |
+| [10-features-reference.md](./10-features-reference.md) | **기능 레퍼런스 전체** (페이지·API·데이터 흐름) ⭐ |
 
-루트 배포 메모: [`../DEPLOY.md`](../DEPLOY.md) (Firebase + Vercel 체크리스트)
+루트 배포 메모: [`../DEPLOY.md`](../DEPLOY.md)
 
 ---
 
@@ -28,13 +29,14 @@
 
 | 항목 | 내용 |
 |------|------|
-| **앱** | React 19 PWA — Vite 빌드 → Vercel `dist/` + `/api/interpret-dream` |
+| **앱** | React 19 PWA — Vite 빌드 → **Netlify** `dist/` |
 | **백엔드** | Firebase Auth / Firestore / FCM / Cloud Functions |
-| **Admin** | 별도 Vite 앱 `admin/` — ERP형 운영 대시보드 (Firestore `config/*` 실시간 반영) |
-| **AI** | OpenAI gpt-4o-mini + embedding — `researchAnchor` 1차 키워드 |
-| **로컬** | `npm run dev` → **http://localhost:3000** (Vercel 로그인 불필요) |
-| **Admin 로컬** | `admin.bat` / `npm run dev:admin` → **http://localhost:5174** |
-| **브랜드** | 한글 **꿈연구소** · 영문 **DreamLab** (전체 대문자 아님) |
+| **API** | Netlify Functions 5종 (AI·후기열람·Admin 시드) |
+| **Admin** | `/superadmin` 임베드 — 대시보드 · 회원 · **꿈 DB 엑셀** |
+| **AI** | OpenAI gpt-4o-mini — `researchAnchor` 1차 키워드 |
+| **시드 DB** | Admin 엑셀 32열 → `dreamlab-seed-data` (~100건+) |
+| **프리미엄** | 30일 **운세 7축 그래프** (토스 제거 → 스토어 IAP 예정) |
+| **브랜드** | 한글 **꿈연구소** · 영문 **DreamLab** |
 
 ---
 
@@ -42,23 +44,23 @@
 
 ```bash
 npm install
-cp .env.example .env          # 또는 Branch/.env → sync-branch-env
-npm run dev                   # http://localhost:3000
-npm run dev:admin             # http://localhost:5174
+cp .env.example .env
+npm run dev                   # Vite :5173
+npm run dev:netlify           # Functions 포함 :8888
+npm run dev:admin             # Admin :5174
 ```
 
-Windows: `실행.bat` (사용자 앱) · `admin.bat` (Admin)
+Windows: `실행.bat` · `admin.bat`
 
 ---
 
 ## 다음 권장 순서
 
-1. Firebase 프로젝트 연결 + `VITE_DEMO_MODE=false` ([06](./06-deployment.md))
-2. Firestore rules 배포 + Admin `users/{uid}.role = "admin"` 설정
-3. Vercel 프로덕션 배포 (`VITE_*` + `OPENAI_API_KEY`)
-4. `firebase deploy --only functions` (30일 푸시)
-5. 결제 연동 (`isPremium` 자동화)
-6. `kpi_daily` 야간 집계 Function
-7. 앱스토어 / Play (TWA·Capacitor) — 별도 검토
+1. Firestore rules 배포 — `npm run deploy:rules`
+2. Netlify env — `VITE_*` + `OPENAI_API_KEY` + `FIREBASE_*` (Admin API)
+3. Admin 시드 DB 업로드 — `/superadmin/dreams`
+4. Cloud Functions 배포 — 30일 푸시
+5. App Store / Play IAP 연동
+6. `kpi_daily` 야간 집계
 
 마지막 업데이트: **2026-07-10**

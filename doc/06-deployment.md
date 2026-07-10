@@ -1,112 +1,99 @@
 # 06. 배포 가이드
 
-> Firebase + **Vercel** 기준. Netlify(`netlify.toml`)도 유지 — 동일 `dist` + Functions 구조.  
-> 빠른 체크리스트: [DEPLOY.md](../DEPLOY.md)
+> **프로덕션: Netlify** (`netlify.toml`) — GitHub `main` push 시 자동 배포  
+> Firebase: rules · indexes · Functions  
+> 체크리스트: [DEPLOY.md](../DEPLOY.md)
 
 ---
 
-## DB 종류
-
-| 서비스 | 사용 |
-|--------|------|
-| **Cloud Firestore** | ✅ `users`, `dreams`, `config`, `ai_usage` |
-| **Realtime Database** | ❌ |
-| **Cloud Storage** | ❌ (코드에서 `getStorage()` 미사용) |
-
----
-
-## 1. 사용자 앱 — Vercel
+## 1. Netlify (사용자 앱 + API)
 
 ### 빌드
 
 ```bash
-npm run build    # dist/ + PWA + firebase-messaging-sw inject
-vercel           # 또는 GitHub 연동
+npm run build    # dist/ + PWA + firebase-messaging-sw
 ```
 
 - **Publish:** `dist/`
-- **API:** `api/interpret-dream.ts` → `netlify/functions/interpret-dream`
-- **설정:** `vercel.json`
+- **Functions:** `netlify/functions/`
+- **Node:** 20 (`netlify.toml`)
 
-### Vercel 환경변수
+### Redirects (`/api/*`)
 
-#### 클라이언트 (`VITE_` — 빌드에 포함)
+| from | function |
+|------|----------|
+| `/api/interpret-dream` | interpret-dream |
+| `/api/story-access` | story-access |
+| `/api/register-story-views` | register-story-views |
+| `/api/admin-import-dreams` | admin-import-dreams |
+| `/api/admin-delete-dreams` | admin-delete-dreams |
 
-| 변수 | 설명 |
-|------|------|
-| `VITE_FIREBASE_API_KEY` | Firebase 웹 API 키 |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `프로젝트ID.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | |
-| `VITE_FIREBASE_STORAGE_BUCKET` | 콘솔 기본값 (Storage 미사용이어도 복사) |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | |
-| `VITE_FIREBASE_APP_ID` | |
-| `VITE_FIREBASE_VAPID_KEY` | 웹 푸시 VAPID |
-| `VITE_DEMO_MODE` | 프로덕션: **`false`** |
+### Netlify 환경변수
 
-#### 서버 (브라우저 노출 금지)
+#### 클라이언트 (`VITE_*`)
 
-| 변수 | 설명 |
-|------|------|
-| `OPENAI_API_KEY` | AI 해몽 + embedding (권장) |
-| `GEMINI_API_KEY` | OpenAI 없을 때 fallback |
-| `FIREBASE_PROJECT_ID` | `ai_usage` 로깅용 Admin SDK |
-| `FIREBASE_CLIENT_EMAIL` | |
-| `FIREBASE_PRIVATE_KEY` | `\n` 이스케이프 |
+```
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_VAPID_KEY
+VITE_DEMO_MODE=false
+```
+
+#### 서버 (Functions — 브라우저 노출 금지)
+
+```
+OPENAI_API_KEY
+GEMINI_API_KEY                    # fallback
+FIREBASE_PROJECT_ID               # Admin SDK
+FIREBASE_CLIENT_EMAIL
+FIREBASE_PRIVATE_KEY              # JSON private_key 문자열만, \n 이스케이프
+```
+
+> `FIREBASE_PRIVATE_KEY` — `firebasePrivateKey.ts`가 PEM 정규화  
+> Scopes: **Functions, Runtime** (Builds 불필요)
 
 ---
 
 ## 2. Firebase
 
-### Console 설정
-
-1. **Authentication** — 익명, Google, 이메일 활성화
-2. **승인 도메인** — `localhost`, `*.vercel.app`, 커스텀 도메인
-3. **Cloud Messaging** — VAPID → `VITE_FIREBASE_VAPID_KEY`
-4. **Firestore** — Native 모드 DB 생성
-
-### Rules · Indexes 배포
-
 ```bash
 firebase login
-firebase use --add
-firebase deploy --only firestore
+firebase use dreamlab-b6a8e   # 프로젝트 ID
+npm run deploy:rules          # firestore:rules
+firebase deploy --only firestore:indexes
+firebase deploy --only functions   # Blaze — 30일 푸시
 ```
 
-`firestore.rules` — admin, `config/*`, `ai_usage` 포함 ([05-data-model.md](./05-data-model.md))
+### Auth 승인 도메인
 
-### Cloud Functions (30일 푸시)
+- Netlify URL (`*.netlify.app`)
+- 커스텀 도메인
+- `localhost`
 
-```bash
-firebase deploy --only functions
-```
+### Admin 권한
 
-- `sendFollowUpReminders` — 매일 KST 00:00
-- `onFollowUpSubmitted` — 후기 제출 후처리
-- **Blaze 요금제** 필요 (스케줄)
-
-> `config/followUpPush` 연동은 **UI만** — Functions는 아직 하드코드 스케줄
+1. `yoonwhan0@gmail.com` 마스터 (rules) 또는
+2. Firestore `users/{uid}.role = "admin"`
 
 ---
 
-## 3. Admin 배포
+## 3. Admin 접근
 
-### Phase A (현재 — 로컬)
+| 방식 | URL |
+|------|-----|
+| **프로덕션** | `https://{사이트}/superadmin` |
+| 로컬 standalone | `npm run dev:admin` → :5174 |
+| 로컬 임베드 | `npm run dev:netlify` + `/superadmin` |
 
-```bash
-npm run dev:admin    # http://localhost:5174
-# 또는 admin.bat
-```
+시드 DB 업로드 전 확인:
 
-### Phase B (권장 — 운영)
-
-- **별도 Vercel 프로젝트** 또는 Netlify 사이트: `admin.dreamlab.kr`
-- Build: `npm run build:admin`
-- 동일 Firebase env (`VITE_FIREBASE_*`)
-- 사용자 PWA에 Admin 링크 **노출하지 않음**
-
-### Admin 권한 부여
-
-Firestore → `users/{uid}` → `role: "admin"`
+- [ ] Netlify `FIREBASE_*` 3종 설정
+- [ ] rules 배포 (`isAdminSeedCreate`)
+- [ ] 마스터 계정 로그인
 
 ---
 
@@ -114,53 +101,34 @@ Firestore → `users/{uid}` → `role: "admin"`
 
 ```bash
 npm install
-cp .env.example .env          # 또는 Branch/.env
-npm run dev                   # http://localhost:3000
+cp .env.example .env
+npm run dev:netlify    # :8888 — API 포함 (권장)
 ```
 
-| 명령 | 포트 | 설명 |
-|------|------|------|
-| `npm run dev` | **3000** | Vite + 로컬 `/api/interpret-dream` (**권장**) |
-| `npm run dev:vercel` | 3000 | Vercel dev (로그인 필요, 선택) |
-| `npm run dev:netlify` | 8888 | Netlify dev (레거시) |
-| `npm run dev:admin` | **5174** | Admin ERP |
-
-**predev:** `sync-branch-env.mjs` + `inject-firebase-sw.mjs`
-
-로컬 API: `scripts/vite-local-api-plugin.ts` — Vercel/Netlify 없이 AI 테스트 가능
-
----
-
-## 5. Netlify (선택)
-
-기존 `netlify.toml` 유지:
-
-- Build: `npm run build`
-- Publish: `dist`
-- Functions: `netlify/functions`
-- env: Vercel과 동일
-
----
-
-## 6. 배포 직전 체크리스트
-
-- [ ] Firestore rules 배포
-- [ ] Vercel `VITE_*` + `OPENAI_API_KEY` (+ AI usage용 Firebase Admin 키)
-- [ ] `VITE_DEMO_MODE=false`
-- [ ] Firebase Auth 승인 도메인에 Vercel URL
-- [ ] `npm run build` 성공
-- [ ] Admin `role: "admin"` 설정
-- [ ] (선택) Functions 배포 — 푸시
-- [ ] iOS PWA 홈화면 + 16.4+ (웹 푸시)
-
----
-
-## 7. 비용 대략
-
-| 항목 | 비고 |
+| 명령 | 포트 |
 |------|------|
-| Vercel | Hobby~Pro (Serverless 호출) |
-| Firebase | Spark → Blaze (Functions 스케줄, FCM) |
-| OpenAI | interpret 호출당 — Admin `ai_usage`로 추적 |
+| `npm run dev` | 5173 |
+| `npm run dev:netlify` | 8888 |
+| `npm run dev:admin` | 5174 |
+
+로컬 API: `scripts/vite-dev-api-plugin.ts`
+
+---
+
+## 5. 배포 직전 체크리스트
+
+- [ ] `npm run build` 성공
+- [ ] Firestore rules 배포
+- [ ] Netlify `VITE_*` + `OPENAI_API_KEY` + `FIREBASE_*`
+- [ ] `VITE_DEMO_MODE=false`
+- [ ] Auth 승인 도메인
+- [ ] Admin `/superadmin/dreams` 업로드·삭제 테스트
+- [ ] (선택) Functions — 푸시
+
+---
+
+## 6. Vercel (레거시)
+
+`api/interpret-dream.ts`, `vercel.json` 유지 가능하나 **현재 운영은 Netlify 기준**으로 문서화합니다.
 
 마지막 업데이트: **2026-07-10**

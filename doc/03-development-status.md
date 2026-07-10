@@ -1,6 +1,7 @@
 # 03. 개발 현황
 
-> **전체 개발 이력 (처음부터 상세)**: [09-development-log.md](./09-development-log.md)  
+> **전체 이력:** [09-development-log.md](./09-development-log.md)  
+> **기능 레퍼런스:** [10-features-reference.md](./10-features-reference.md)  
 > 빌드: `npm run build` ✅ (2026-07-10)
 
 ---
@@ -9,96 +10,91 @@
 
 ### 인프라
 
-- [x] Vite 6 + React 19 + TS + Tailwind v4
-- [x] PWA (manifest, SW, 아이콘 `npm run icons`)
-- [x] Firebase (`firebase.json`, rules, indexes, Functions)
-- [x] Vercel API (`api/interpret-dream.ts`) + Netlify Functions 공용 로직
-- [x] **로컬 dev** — Vite port **3000** + `vite-local-api-plugin` (Vercel 로그인 불필요)
-- [x] `.env.example` + `sync-branch-env` + `inject-firebase-sw`
-- [x] 스플래시 (DreamLab / 꿈연구소, LOADING) — NaN% 버그 수정
+- [x] Vite 6 + React 19 + TS + Tailwind v4 + PWA
+- [x] Firebase (rules, indexes, Functions 스켈레톤)
+- [x] **Netlify** 배포 (`netlify.toml`, Functions 5종)
+- [x] 로컬 `dev:netlify` + `vite-dev-api-plugin`
 
-### 인증 · 티어 ([07-access-tiers.md](./07-access-tiers.md))
+### 인증 · 티어
 
-- [x] 익명 Auth 자동 로그인 → 비회원 꿈 DB 저장
-- [x] Google/이메일 가입 시 익명 계정 연결 (`linkWithPopup`)
+- [x] 익명 Auth → 꿈 DB 저장
+- [x] Google/이메일 + `linkWithPopup`
 - [x] `useAccessPolicy` — guest / member / premium
-- [x] `PushNotificationPrompt` — 회원 FCM 토큰 등록
-- [x] Functions — 익명 사용자 푸시 스킵
-- [x] 데모 모드 + 티어 스위처
+- [x] FCM 푸시 (회원)
+- [x] **후기 열람 한도** — 키워드당 4건 (`story-access` API)
 
-### 페이지
+### 페이지 (2026-07 최신)
 
-| 경로 | 상태 |
-|------|------|
-| `/` 홈 | ✅ KPI, 키워드, 후기 미리보기, ResearchLab |
-| `/write` | ✅ AI 해몽 + 저장 |
-| `/dream/:id` | ✅ 상세, researchAnchor 표시, 유사 꿈 |
-| `/follow-up/:id` | ✅ 30일 후기 (회원) |
-| `/explore` | ✅ 패턴 탐색 |
-| `/my`, `/my-dreams` | ✅ 마이·아카이브 |
-| `/premium` | ✅ → `/my` 리다이렉트 |
+| 경로 | 상태 | 비고 |
+|------|------|------|
+| `/` 홈 | ✅ | 히어로·연구미션·관측밀도·키워드12·후기1건 |
+| `/write` | ✅ | AI 해몽 |
+| `/dream/:id` | ✅ | 운세 그래프·유사 꿈 |
+| `/follow-up/:id` | ✅ | 후기 8자+, nothing 제거 |
+| `/explore` | ✅ | 칩20·미리보기6·DB키워드 |
+| `/my` | ✅ | 아카이브·달력·운세·연구미션 |
+| `/my-dreams` | ✅ | 전체 아카이브 |
+| `/#research` | ✅ | 연구 미션 딥링크 |
 
-### UI / 브랜드
+### UX · 브랜드 (2026-07)
 
-- [x] 로고 (달·전자 UI) — favicon/PWA 전체
-- [x] 시뮬레이션 배경 (그리드, 레이더, 스캔라인)
-- [x] 황금·주황 컬러 시스템
-- [x] **DreamLab** 영문 표기 (uppercase 제거, `.brand-wordmark`)
-- [x] 히어로 3줄, CTA 직관화 (`branding.ts`)
-- [x] 네비: 홈 → **기록** → 탐색 → 마이
+- [x] 홈 단순화 — FOMO 숫자·과한 블러 완화
+- [x] `LabResearchMission` — 히어로 아래 아코디언
+- [x] `AiWritingPulse` — 「데이터 검색·결과 정리」 톤
+- [x] **DreamFortuneTrendPanel** — 프리미엄 7축 8주 운세
+- [x] **ReinterpretRecentPanel 제거**
+- [x] 아카이브 슬림 카드 · 월별 잔디 달력
+- [x] DB 키워드 랜덤 칩 (`useFeaturedKeywords`)
 
 ### 데이터 · AI
 
-- [x] `interpret-dream` (OpenAI / Gemini fallback)
-- [x] **`researchAnchor`** — AI 1차 키워드·클러스터
-- [x] `labObservations` — 장면 인용 UI (`InterpretationCard`)
-- [x] `keywordNarratives` — 내태몽·보살·연꽃 등 팩
-- [x] 홈 KPI — `lab-metrics.json` + Firestore `config/labMetrics`
-- [x] `opsConfigService` — 데이터 노출 정책 런타임 반영
-- [x] Firestore CRUD, 30일 푸시 스케줄, follow-up 트리거
-- [x] **`ai_usage`** 일별 AI 호출 로깅 (서버 env 있을 때)
+- [x] `researchAnchor` AI 1차
+- [x] `communityStoryQuality` — 원문 겹침 필터
+- [x] `similarDreamVariation` — 같은 결·다른 장면
+- [x] 시드 DB 탐색 반영 (`MIN_REAL_COMMUNITY_COUNT=5`)
+- [x] `normalizeOutcomeCategory` — nothing → other
+
+### 결제
+
+- [x] **토스페이먼츠 제거**
+- [ ] App Store / Play IAP (예정)
 
 ---
 
-## ✅ 구현 완료 — Admin ERP
+## ✅ 구현 완료 — Admin
 
-- [x] 별도 Vite 앱 `admin/` (port 5174)
-- [x] 사이드바 + react-router 라우팅
-- [x] Google/이메일 로그인 + `role === "admin"` 게이트
-- [x] Firestore rules — admin read/write, `config/*` 공개 read
-- [x] **대시보드** — 실DB 샘플(500건) + 합성 KPI 비교
-- [x] **모니터링** — 시스템 상태
-- [x] **회원** — users 목록
-- [x] **꿈 DB** — dreams 목록·필터
-- [x] **Follow-up** — due/완료/대기
-- [x] **데이터 노출** — `config/dataExposure` 저장
-- [x] **AI 사용량** — `ai_usage` 조회
-- [x] **설정** — 홈 KPI / 푸시 / 시스템 (`config/*`)
+- [x] `/superadmin` PWA 임베드 (대시보드·회원·꿈 DB)
+- [x] **DreamSpreadsheet** — 엑셀 32열 CRUD
+- [x] 시드 `dreamlab-seed-data` 업로드·삭제
+- [x] **admin-import-dreams** / **admin-delete-dreams** API
+- [x] 클라이언트 폴백 + 배치 8건 (rules get 제한)
+- [x] 마스터 계정 + `isAdminSeedCreate` rules
+
+### Admin 레거시 (파일만 존재, 라우터 미연결)
+
+- DataExposure, Monitoring, AiUsage, LabMetrics, Push, System 페이지
 
 ---
 
-## 🟡 배포 전 / 부분 구현
+## 🟡 배포 전 / 부분
 
-- [ ] Firebase 프로젝트 실연결 + 프로덕션 env
-- [ ] `firebase deploy --only firestore,functions`
-- [ ] Vercel 프로덕션 배포
-- [ ] 결제 연동 (프리미엄 `isPremium` 수동)
-- [ ] 홈 KPI → **전체** 실 DB 집계 (Admin은 500건 샘플)
-- [ ] `kpi_daily` / `kpi_snapshots` 야간 배치
-- [ ] `config/followUpPush` → Cloud Functions 연동
-- [ ] `interpret-dream` rate limit / 사용자 인증
-- [ ] Analytics, 이메일 리마인더
-- [ ] Git push (권한 이슈 시 별도 계정)
+- [ ] Netlify `FIREBASE_*` Admin 키 프로덕션 확인
+- [ ] Firestore rules 프로덕션 최신 배포
+- [ ] Cloud Functions 30일 푸시 운영
+- [ ] `isPremium` 스토어 IAP 자동화
+- [ ] `kpi_daily` 야간 배치
+- [ ] `followUpPush` → Functions 연동
+- [ ] interpret rate limit
 
 ---
 
 ## ❌ 미구현
 
-- [ ] 주간 AI 연구 리포트 (Admin)
-- [ ] Premium 결제·구독 관리 화면
+- [ ] 앱스토어 / Play 출시 (TWA·Capacitor)
+- [ ] Premium 결제 UI (웹)
 - [ ] 신고·moderation
-- [ ] 앱스토어 / Google Play (TWA·Capacitor)
-- [ ] pgvector, 카카오/Apple 로그인
+- [ ] pgvector 검색
+- [ ] AI 출력 → DB 자동 재적재 (의도적 미구현)
 
 ---
 
@@ -106,15 +102,13 @@
 
 | 파일 | 역할 |
 |------|------|
-| `src/lib/branding.ts` | 슬로건, CTA, APP_NAME_EN |
-| `src/lib/dreamAnchor.ts` | researchAnchor 정리·폴백 |
-| `src/lib/opsConfig.ts` | config/* 타입·기본값 |
-| `src/services/opsConfigService.ts` | Firestore config CRUD |
-| `src/hooks/useAuth.tsx` | Auth + 익명 + 연결 |
-| `src/hooks/useAccessPolicy.ts` | 티어 정책 |
-| `netlify/functions/interpret-dream.ts` | AI API |
-| `scripts/vite-local-api-plugin.ts` | 로컬 /api |
-| `admin/src/App.tsx` | Admin 라우터 |
-| `firestore.rules` | admin + config 규칙 |
+| `src/lib/branding.ts` | 슬로건, RESEARCH_MISSION_* |
+| `src/components/LabResearchMission.tsx` | 연구 미션 아코디언 |
+| `src/hooks/useFeaturedKeywords.ts` | DB 키워드 랜덤 |
+| `src/lib/dreamFortuneTrends.ts` | 운세 7축 |
+| `admin/src/lib/dreamSpreadsheetSchema.ts` | 32열 스키마 |
+| `src/lib/dreamSeedImport.ts` | 시드 페이로드 |
+| `netlify/functions/admin-*.ts` | Admin API |
+| `firestore.rules` | master + seed create |
 
 마지막 업데이트: **2026-07-10**
