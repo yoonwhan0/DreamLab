@@ -47,18 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const syncProfile = useCallback(async (firebaseUser: User) => {
     const masterPremium = isMasterAccountEmail(firebaseUser.email);
+    const masterAdmin = masterPremium;
     const existing = await getUserProfile(firebaseUser.uid);
     if (existing) {
       const nextPremium = existing.isPremium || masterPremium;
+      const needsRoleSync = masterAdmin && existing.role !== "admin";
       if (
         existing.isAnonymous !== firebaseUser.isAnonymous ||
-        (masterPremium && !existing.isPremium)
+        (masterPremium && !existing.isPremium) ||
+        needsRoleSync
       ) {
         await upsertUserProfile(firebaseUser.uid, {
           isAnonymous: firebaseUser.isAnonymous,
           displayName: firebaseUser.displayName ?? existing.displayName,
           email: firebaseUser.email ?? existing.email,
           ...(masterPremium ? { isPremium: true } : {}),
+          ...(masterAdmin ? { role: "admin" } : {}),
         });
       }
       setProfile({
@@ -67,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: firebaseUser.email ?? existing.email,
         isAnonymous: firebaseUser.isAnonymous,
         isPremium: nextPremium,
+        role: masterAdmin ? "admin" : existing.role,
       });
       return;
     }
@@ -77,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: firebaseUser.email,
       isAnonymous: firebaseUser.isAnonymous,
       isPremium: masterPremium,
+      ...(masterAdmin ? { role: "admin" as const } : {}),
       fcmTokens: [],
       createdAt: new Date(),
     };
@@ -88,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: firebaseUser.email,
       isAnonymous: firebaseUser.isAnonymous,
       isPremium: masterPremium,
+      role: masterAdmin ? "admin" : profileData.role,
       fcmTokens: [],
       createdAt: profileData.createdAt ?? new Date(),
     } as UserProfile);

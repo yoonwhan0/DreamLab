@@ -70,6 +70,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     gender: data.gender,
     ageRange: data.ageRange,
     country: data.country,
+    role: data.role === "admin" ? "admin" : "user",
     createdAt: data.createdAt?.toDate() ?? new Date(),
   };
 }
