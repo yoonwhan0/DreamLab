@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.local
+.env_chat
+Branch/.env
+*.local
+.firebase
+functions/lib
+.netlify
+.vercel

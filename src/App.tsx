@@ -1,0 +1,108 @@
+import { useState } from "react";
+
+import { Routes, Route, Navigate } from "react-router-dom";
+
+import { Layout } from "@/components/Layout";
+import { SplashScreen } from "@/components/SplashScreen";
+
+import { MemberRoute } from "@/components/MemberRoute";
+
+import { DemoProvider } from "@/demo/DemoProvider";
+
+import { AuthProvider } from "@/hooks/useAuth";
+
+import { SignupSheetProvider } from "@/hooks/useSignupSheet";
+import { PremiumSheetProvider } from "@/hooks/usePremiumSheet";
+
+import { HomePage } from "@/pages/HomePage";
+
+import { WriteDreamPage } from "@/pages/WriteDreamPage";
+
+import { DreamDetailPage } from "@/pages/DreamDetailPage";
+
+import { FollowUpPage } from "@/pages/FollowUpPage";
+
+import { MyDreamsPage } from "@/pages/MyDreamsPage";
+
+import { ExplorePage } from "@/pages/ExplorePage";
+import { MyPage } from "@/pages/MyPage";
+
+
+
+export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
+
+  if (!splashDone) {
+    return <SplashScreen onComplete={() => setSplashDone(true)} />;
+  }
+
+  return (
+
+    <DemoProvider>
+
+      <AuthProvider>
+
+        <SignupSheetProvider>
+          <PremiumSheetProvider>
+          <Layout>
+
+            <Routes>
+
+              <Route path="/" element={<HomePage />} />
+
+              <Route path="/write" element={<WriteDreamPage />} />
+
+              <Route path="/dream/:id" element={<DreamDetailPage />} />
+
+              <Route
+
+                path="/follow-up/:id"
+
+                element={
+
+                  <MemberRoute>
+
+                    <FollowUpPage />
+
+                  </MemberRoute>
+
+                }
+
+              />
+
+              <Route
+
+                path="/my-dreams"
+
+                element={
+
+                  <MemberRoute>
+
+                    <MyDreamsPage />
+
+                  </MemberRoute>
+
+                }
+
+              />
+
+              <Route path="/explore" element={<ExplorePage />} />
+
+              <Route path="/my" element={<MyPage />} />
+
+              <Route path="/premium" element={<Navigate to="/my" replace />} />
+
+            </Routes>
+
+          </Layout>
+          </PremiumSheetProvider>
+        </SignupSheetProvider>
+
+      </AuthProvider>
+
+    </DemoProvider>
+
+  );
+
+}
+

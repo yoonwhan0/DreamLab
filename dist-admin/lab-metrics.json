@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "liveEnabled": true,
+  "labLaunchDate": "2022-11-01",
+  "baseDreams": 12491,
+  "baseResults": 4812,
+  "baseResearchDays": 1283,
+  "dreamsPerDay": 12,
+  "resultsPerDay": 3,
+  "dailyDreamJitter": 90,
+  "dailyResultJitter": 30,
+  "todayNewDreams": { "base": 380, "max": 520, "tickMs": 42000 },
+  "todayFollowUpDue": { "base": 70, "max": 130, "tickMs": 95000 },
+  "todayNewPatterns": { "base": 1, "max": 6, "tickMs": 180000 },
+  "totalDreamsLive": { "base": 0, "max": 999999999, "tickMs": 28000 },
+  "contributionWeeks": 24
+}
