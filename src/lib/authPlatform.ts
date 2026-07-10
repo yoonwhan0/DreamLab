@@ -5,20 +5,6 @@ const AUTH_REDIRECT_PENDING_KEY = "dreamlab-auth-redirect-pending";
 const AUTH_REDIRECT_PENDING_AT_KEY = "dreamlab-auth-redirect-pending-at";
 const AUTH_REDIRECT_TIMEOUT_MS = 120_000;
 
-function isMobileUa(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-}
-
-function isStandalonePwa(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in navigator &&
-      Boolean((navigator as Navigator & { standalone?: boolean }).standalone))
-  );
-}
-
 function isInAppBrowser(): boolean {
   if (typeof navigator === "undefined") return false;
   return /FBAN|FBAV|Instagram|KAKAOTALK|Line\/|NAVER|Twitter/i.test(navigator.userAgent);
@@ -26,14 +12,9 @@ function isInAppBrowser(): boolean {
 
 export { isInAppBrowser };
 
-/** 모바일 브라우저 — redirect. iOS PWA·인앱은 세션 유실로 popup 우선 */
+/** Netlify COOP 헤더 적용 후 popup 우선 — redirect는 popup 차단 시에만 */
 export function prefersAuthRedirect(): boolean {
-  if (typeof window === "undefined") return false;
-  if (isInAppBrowser()) return false;
-  if (isStandalonePwa() && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    return false;
-  }
-  return isMobileUa();
+  return false;
 }
 
 export function markAuthRedirectPending(): void {

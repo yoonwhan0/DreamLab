@@ -20,7 +20,7 @@ import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import {
   clearAuthRedirectPending,
   isAuthRedirectPending,
-  prefersAuthRedirect,
+  isInAppBrowser,
   startGoogleRedirect,
 } from "@/lib/authPlatform";
 import { getAuthRedirectResult } from "@/lib/authRedirectBootstrap";
@@ -262,20 +262,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
     setAuthError(null);
 
-    if (prefersAuthRedirect()) {
-      try {
-        await startGoogleRedirect();
-      } catch (err) {
-        const msg =
-          err instanceof Error
-            ? err.message
-            : "Google 로그인에 실패했습니다. Safari·Chrome에서 다시 시도해 주세요.";
-        setAuthError(msg);
-        throw err;
-      }
-      return;
-    }
-
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
 
@@ -297,6 +283,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
+        if (isInAppBrowser()) {
+          const msg =
+            "카카오톡·인스타 등 앱 안 브라우저에서는 Google 로그인이 막히는 경우가 많아요. Safari·Chrome에서 이 사이트를 열어 주세요.";
+          setAuthError(msg);
+          throw new Error(msg);
+        }
         await startGoogleRedirect();
         return;
       }

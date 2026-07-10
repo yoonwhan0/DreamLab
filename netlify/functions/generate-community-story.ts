@@ -40,7 +40,7 @@ const handler: Handler = async (event) => {
   const openaiKey = process.env.OPENAI_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const anchor =
-    extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? title.trim() || "꿈";
+    (extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? title.trim()) || "꿈";
 
   let story: Record<string, unknown> | null = null;
   let aiProvider: "openai" | "gemini" | "fallback" = "fallback";

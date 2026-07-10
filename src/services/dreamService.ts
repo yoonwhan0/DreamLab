@@ -26,7 +26,8 @@ import type {
   OutcomeCategory,
   UserProfile,
 } from "@/types";
-import { getFollowUpDueDate, MIN_REAL_COMMUNITY_COUNT, normalizeOutcomeCategory, OUTCOME_CATEGORIES } from "@/types";
+import { getFollowUpDueDate } from "@/lib/followUpTiming";
+import { MIN_REAL_COMMUNITY_COUNT, normalizeOutcomeCategory, OUTCOME_CATEGORIES } from "@/types";
 
 const DREAMS = "dreams";
 const USERS = "users";

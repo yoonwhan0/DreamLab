@@ -190,15 +190,6 @@ export function getEmotionLabel(id: DreamEmotionId | FollowUpEmotionId): string 
   );
 }
 
-export function getFollowUpDueDate(from: Date = new Date()): Date {
-  const due = new Date(from);
-  const devShort = import.meta.env.VITE_DEV_SHORT_FOLLOWUP === "true";
-  due.setTime(
-    due.getTime() + (devShort ? 60_000 : FOLLOWUP_DAYS * 24 * 60 * 60 * 1000),
-  );
-  return due;
-}
-
 export function formatDaysUntil(dueDate: Date): string {
   const now = new Date();
   const diff = dueDate.getTime() - now.getTime();
