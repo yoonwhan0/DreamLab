@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDemo } from "@/demo/DemoProvider";
 
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { isLinkedAuthUser } from "@/lib/authUser";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 
 
@@ -85,9 +86,10 @@ export function useAccessPolicy(): AccessPolicy & { loading: boolean } {
 
 
 
-  const isGuest = !user || user.isAnonymous;
-
-  const isMember = Boolean(user && !user.isAnonymous);
+  const isMember =
+    isLinkedAuthUser(user) ||
+    Boolean(profile?.email && profile.isAnonymous === false);
+  const isGuest = !isMember;
 
   const isMasterPremium = isMasterAccountEmail(user?.email ?? profile?.email);
 
@@ -130,5 +132,3 @@ export function useAccessPolicy(): AccessPolicy & { loading: boolean } {
   };
 
 }
-
-

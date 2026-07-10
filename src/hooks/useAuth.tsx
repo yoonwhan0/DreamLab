@@ -15,18 +15,23 @@ import {
   linkWithPopup,
   onAuthStateChanged,
   signInAnonymously,
+  signInWithCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
+import type { FirebaseError } from "firebase/app";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import {
   clearAuthRedirectPending,
+  clearPreAuthUid,
+  isAuthRedirectPending,
   prefersAuthRedirect,
   startGoogleRedirect,
 } from "@/lib/authPlatform";
+import { isLinkedAuthUser } from "@/lib/authUser";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
 import type { UserProfile } from "@/types";
@@ -46,14 +51,64 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function finalizeGoogleUser(firebaseUser: User, syncProfile: (u: User) => Promise<void>) {
-  if (firebaseUser.isAnonymous) return;
-  await upsertUserProfile(firebaseUser.uid, {
+async function reloadAuthUser(user: User): Promise<User> {
+  try {
+    await user.reload();
+  } catch {
+    /* ignore */
+  }
+  return auth?.currentUser ?? user;
+}
+
+async function finalizeGoogleUser(
+  firebaseUser: User,
+  syncProfile: (u: User) => Promise<void>,
+): Promise<User> {
+  const refreshed = await reloadAuthUser(firebaseUser);
+  if (!isLinkedAuthUser(refreshed)) return refreshed;
+
+  await upsertUserProfile(refreshed.uid, {
     isAnonymous: false,
-    displayName: firebaseUser.displayName,
-    email: firebaseUser.email,
+    displayName: refreshed.displayName,
+    email: refreshed.email,
   });
-  await syncProfile(firebaseUser);
+  await syncProfile(refreshed);
+  clearPreAuthUid();
+  return refreshed;
+}
+
+async function handleRedirectSignIn(
+  syncProfile: (u: User) => Promise<void>,
+): Promise<User | null> {
+  if (!auth) return null;
+
+  try {
+    const redirectResult = await getRedirectResult(auth);
+    clearAuthRedirectPending();
+
+    if (redirectResult?.user) {
+      return finalizeGoogleUser(redirectResult.user, syncProfile);
+    }
+    return auth.currentUser;
+  } catch (err: unknown) {
+    clearAuthRedirectPending();
+    const fbErr = err as FirebaseError;
+    const code = fbErr?.code ?? "";
+
+    if (
+      code === "auth/credential-already-in-use" ||
+      code === "auth/email-already-in-use"
+    ) {
+      const credential = GoogleAuthProvider.credentialFromError(fbErr);
+      if (credential && auth) {
+        const result = await signInWithCredential(auth, credential);
+        return finalizeGoogleUser(result.user, syncProfile);
+      }
+    }
+
+    console.error("Google redirect sign-in failed:", err);
+    return auth.currentUser;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -62,41 +117,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const syncProfile = useCallback(async (firebaseUser: User) => {
+    const linked = isLinkedAuthUser(firebaseUser);
     const masterPremium = isMasterAccountEmail(firebaseUser.email);
     const masterAdmin = masterPremium;
     const existing = await getUserProfile(firebaseUser.uid);
+
     if (existing) {
       const nextPremium = existing.isPremium || masterPremium;
       const needsRoleSync = masterAdmin && existing.role !== "admin";
+      const profileAnonymous = linked ? false : firebaseUser.isAnonymous;
+
       if (
-        existing.isAnonymous !== firebaseUser.isAnonymous ||
+        existing.isAnonymous !== profileAnonymous ||
         (masterPremium && !existing.isPremium) ||
-        needsRoleSync
+        needsRoleSync ||
+        (linked && existing.email !== firebaseUser.email)
       ) {
         await upsertUserProfile(firebaseUser.uid, {
-          isAnonymous: firebaseUser.isAnonymous,
+          isAnonymous: profileAnonymous,
           displayName: firebaseUser.displayName ?? existing.displayName,
           email: firebaseUser.email ?? existing.email,
           ...(masterPremium ? { isPremium: true } : {}),
           ...(masterAdmin ? { role: "admin" } : {}),
         });
       }
+
       setProfile({
         ...existing,
         displayName: firebaseUser.displayName ?? existing.displayName,
         email: firebaseUser.email ?? existing.email,
-        isAnonymous: firebaseUser.isAnonymous,
+        isAnonymous: profileAnonymous,
         isPremium: nextPremium,
         role: masterAdmin ? "admin" : existing.role,
       });
       return;
     }
 
+    const profileAnonymous = linked ? false : firebaseUser.isAnonymous;
     const profileData: Partial<UserProfile> = {
       uid: firebaseUser.uid,
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
-      isAnonymous: firebaseUser.isAnonymous,
+      isAnonymous: profileAnonymous,
       isPremium: masterPremium,
       ...(masterAdmin ? { role: "admin" as const } : {}),
       fcmTokens: [],
@@ -108,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: firebaseUser.uid,
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
-      isAnonymous: firebaseUser.isAnonymous,
+      isAnonymous: profileAnonymous,
       isPremium: masterPremium,
       role: masterAdmin ? "admin" : profileData.role,
       fcmTokens: [],
@@ -127,27 +189,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     void (async () => {
-      try {
-        const redirectResult = await getRedirectResult(authInstance);
-        clearAuthRedirectPending();
-        if (redirectResult?.user && mounted) {
-          setUser(redirectResult.user);
-          await finalizeGoogleUser(redirectResult.user, syncProfile);
-        }
-      } catch (err) {
-        clearAuthRedirectPending();
-        console.error("Google redirect sign-in failed:", err);
-      }
-
+      const redirectUser = await handleRedirectSignIn(syncProfile);
       if (!mounted) return;
+
+      if (redirectUser && isLinkedAuthUser(redirectUser)) {
+        setUser(redirectUser);
+        setLoading(false);
+      }
 
       unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
         if (!mounted) return;
 
         if (firebaseUser) {
-          setUser(firebaseUser);
-          await syncProfile(firebaseUser);
+          const refreshed = await reloadAuthUser(firebaseUser);
+          setUser(refreshed);
+          await syncProfile(refreshed);
+          if (isLinkedAuthUser(refreshed)) {
+            clearPreAuthUid();
+          }
           setLoading(false);
+          return;
+        }
+
+        if (isAuthRedirectPending()) {
+          setLoading(true);
           return;
         }
 
@@ -180,6 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInGoogle = useCallback(async () => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
     const current = auth.currentUser;
 
     if (prefersAuthRedirect()) {
@@ -191,7 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (current?.isAnonymous) {
         try {
           const result = await linkWithPopup(current, provider);
-          await finalizeGoogleUser(result.user, syncProfile);
+          const linked = await finalizeGoogleUser(result.user, syncProfile);
+          setUser(linked);
           return;
         } catch (err: unknown) {
           const code =
@@ -203,7 +270,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             code === "auth/email-already-in-use"
           ) {
             const result = await signInWithPopup(auth, provider);
-            await finalizeGoogleUser(result.user, syncProfile);
+            const linked = await finalizeGoogleUser(result.user, syncProfile);
+            setUser(linked);
             return;
           }
           if (
@@ -219,7 +287,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const result = await signInWithPopup(auth, provider);
-      await finalizeGoogleUser(result.user, syncProfile);
+      const linked = await finalizeGoogleUser(result.user, syncProfile);
+      setUser(linked);
     } catch (err: unknown) {
       const code =
         err && typeof err === "object" && "code" in err

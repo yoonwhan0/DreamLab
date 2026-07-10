@@ -1,4 +1,5 @@
 const AUTH_REDIRECT_PENDING_KEY = "dreamlab-auth-redirect-pending";
+const PRE_AUTH_UID_KEY = "dreamlab:preAuthUid";
 
 function isMobileUa(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -19,18 +20,18 @@ function isInAppBrowser(): boolean {
   return /FBAN|FBAV|Instagram|KAKAOTALK|Line\/|NAVER|Twitter/i.test(navigator.userAgent);
 }
 
-/**
- * popup COOP 이슈·모바일·PWA·인앱 브라우저 — redirect 로그인
- * (Netlify 등에서 signInWithPopup + window.closed 가 막히는 경우)
- */
+/** popup COOP 이슈·모바일·PWA·인앱 브라우저 — redirect 로그인 */
 export function prefersAuthRedirect(): boolean {
   if (typeof window === "undefined") return false;
   return isInAppBrowser() || isMobileUa() || isStandalonePwa();
 }
 
-export function markAuthRedirectPending(): void {
+export function markAuthRedirectPending(anonymousUid?: string): void {
   try {
     sessionStorage.setItem(AUTH_REDIRECT_PENDING_KEY, "1");
+    if (anonymousUid) {
+      localStorage.setItem(PRE_AUTH_UID_KEY, anonymousUid);
+    }
   } catch {
     /* ignore */
   }
@@ -52,6 +53,22 @@ export function isAuthRedirectPending(): boolean {
   }
 }
 
+export function peekPreAuthUid(): string | null {
+  try {
+    return localStorage.getItem(PRE_AUTH_UID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearPreAuthUid(): void {
+  try {
+    localStorage.removeItem(PRE_AUTH_UID_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function startGoogleRedirect(
   linkAnonymous: boolean,
 ): Promise<void> {
@@ -61,9 +78,11 @@ export async function startGoogleRedirect(
   const { auth } = await import("@/lib/firebase");
   if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
 
-  markAuthRedirectPending();
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
   const current = auth.currentUser;
+
+  markAuthRedirectPending(current?.uid);
 
   if (linkAnonymous && current?.isAnonymous) {
     await linkWithRedirect(current, provider);

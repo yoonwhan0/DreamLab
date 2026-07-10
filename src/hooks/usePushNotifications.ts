@@ -3,10 +3,11 @@ import { getToken } from "firebase/messaging";
 import { getMessagingInstance } from "@/lib/firebase";
 import { saveFcmToken } from "@/services/dreamService";
 import { useAuth } from "@/hooks/useAuth";
+import { isLinkedAuthUser } from "@/lib/authUser";
 
 export function usePushNotifications() {
   const { user } = useAuth();
-  const isMember = Boolean(user && !user.isAnonymous);
+  const isMember = isLinkedAuthUser(user);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
   const [token, setToken] = useState<string | null>(null);

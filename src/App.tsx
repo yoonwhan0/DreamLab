@@ -15,6 +15,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 
 import { SignupSheetProvider } from "@/hooks/useSignupSheet";
 import { PremiumSheetProvider } from "@/hooks/usePremiumSheet";
+import { PendingDreamLinker } from "@/components/PendingDreamLinker";
 
 import { HomePage } from "@/pages/HomePage";
 
@@ -43,6 +44,7 @@ export default function App() {
   return (
     <DemoProvider>
       <AuthProvider>
+        <PendingDreamLinker />
         <SignupSheetProvider>
           <PremiumSheetProvider>
             <Routes>

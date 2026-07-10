@@ -3,6 +3,7 @@ import { CTA_AUTH_GOOGLE } from "@/lib/branding";
 import { isAuthRedirectPending } from "@/lib/authPlatform";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
+import { isLinkedAuthUser } from "@/lib/authUser";
 
 interface AuthSheetBodyProps {
   message?: string;
@@ -11,15 +12,15 @@ interface AuthSheetBodyProps {
 
 /** 바텀시트 — Google 로그인/가입 전용 */
 export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) {
-  const { signInGoogle } = useAuth();
+  const { signInGoogle, user } = useAuth();
   const access = useAccessPolicy();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [redirecting, setRedirecting] = useState(() => isAuthRedirectPending());
 
   useEffect(() => {
-    if (access.isMember) onAuthenticated?.();
-  }, [access.isMember, onAuthenticated]);
+    if (access.isMember || isLinkedAuthUser(user)) onAuthenticated?.();
+  }, [access.isMember, user, onAuthenticated]);
 
   const handleGoogle = async () => {
     setError("");

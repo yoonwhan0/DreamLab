@@ -17,12 +17,13 @@ import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { CTA_SIGNUP } from "@/lib/branding";
-import { clearPendingDream, getPendingDreamRaw } from "@/lib/pendingDreamStorage";
+import { getPendingDreamRaw } from "@/lib/pendingDreamStorage";
+import { isLinkedAuthUser } from "@/lib/authUser";
 import {
   getDream,
   getOutcomePercentages,
-  saveDream,
 } from "@/services/dreamService";
+import { flushPendingDream } from "@/services/pendingDreamService";
 import { resolveCommunityData } from "@/services/communityDataService";
 import { resolveAnchorKeyword } from "@/services/syntheticCommunityService";
 import { DEMO_DREAM } from "@/demo/demoData";
@@ -159,21 +160,14 @@ export function DreamDetailPage() {
   useEffect(() => {
     async function saveAfterSignup() {
       const raw = getPendingDreamRaw();
-      if (!isPreview || !raw || !user || user.isAnonymous) return;
+      if (!isPreview || !raw || !user || !isLinkedAuthUser(user)) return;
 
       setSaving(true);
       try {
-        const data = JSON.parse(raw);
-        const dreamId = await saveDream(
-          user.uid,
-          data.title,
-          data.content,
-          data.emotions ?? [],
-          data.interpretation,
-          data.embedding ?? [],
-        );
-        clearPendingDream();
-        navigate(`/dream/${dreamId}?new=1`, { replace: true });
+        const dreamId = await flushPendingDream(user.uid);
+        if (dreamId) {
+          navigate(`/dream/${dreamId}?new=1`, { replace: true });
+        }
       } finally {
         setSaving(false);
       }
