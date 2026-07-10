@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CuriosityTease } from "@/components/CuriosityTease";
-import { LoadingPulse } from "@/components/motion/LoadingPulse";
+import { AiWritingPulse } from "@/components/motion/AiWritingPulse";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
@@ -100,7 +100,7 @@ export function WriteDreamPage() {
         </div>
 
         {submitting ? (
-          <LoadingPulse label="꿈 내용 분석 중..." />
+          <AiWritingPulse variant="inline" />
         ) : (
           <>
             {error && <p className="text-sm text-red-600">{error}</p>}

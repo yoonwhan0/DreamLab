@@ -27,7 +27,7 @@ interface CommunityStoriesPanelProps {
 
 export function CommunityStoriesPanel({
   stories,
-  title = "한 달 뒤, 실제로 어땠는지",
+  title = "유사한 내용의 한 달 뒤, 실제로 어땠는지",
   variant,
   compact = false,
   blurLocked = false,

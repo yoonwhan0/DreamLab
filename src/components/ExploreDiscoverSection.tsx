@@ -47,7 +47,7 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
         <p id="explore-discover-heading" className="section-label">
           탐색 미리보기
         </p>
-        <h2 className="text-base font-semibold text-text">이런 꿈, 한 달 뒤는?</h2>
+        <h2 className="text-base font-semibold text-text">유사한 내용의 한 달 뒤는?</h2>
         <p className="text-xs text-text-muted copy-lines px-2">
           아래는 실제 탐색 결과 예시예요. 키워드를 누르면 더 많은 후기·통계를 볼 수
           있습니다.
@@ -79,7 +79,7 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
 
           <CommunityStoriesPanel
             stories={[estimate.stories[0]!]}
-            title={`"${label}" — 한 달 뒤는?`}
+            title={`"${label}" — 유사한 내용의 한 달 뒤는?`}
             variant="compact"
             dreamTeaseBlur={access.isGuest}
             blurLocked={access.isGuest}

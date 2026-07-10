@@ -40,7 +40,7 @@ import { KEYWORD_RAIL_COUNT, provocativeSearchPlaceholder, previewKeywordLabel }
 function buildExploreDreamContent(query: string): string {
   const q = query.trim();
   if (q.length >= 40) return q;
-  return `"${q}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 비슷한 키워드로 기록해 두었어요.`;
+  return "낯선 장소에서 짧은 장면이 지나갔는데 깬 뒤에도 감정이 오래 남았습니다. 소리나 대사는 거의 기억나지 않았고, 몸이 먼저 긴장했던 느낌만 선명했습니다. 아침에 잊기 전에 꿈 내용을 메모해 두었습니다.";
 }
 
 const AI_WRITING_MIN_MS = 2200;
@@ -292,7 +292,7 @@ export function ExplorePage() {
       </div>
 
       <KeywordChipRail
-        label="이런 꿈, 한 달 뒤는?"
+        label="유사한 내용의 한 달 뒤는?"
         keywords={exploreKeywords}
         activeKeyword={activeQuery || pendingKeyword}
         variant="explore"
@@ -309,14 +309,14 @@ export function ExplorePage() {
       {access.isMember && !access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
           회원 — 키워드당 후기 <strong className="text-text">{MEMBER_FREE_STORY_VIEWS}건</strong>
-          (1건씩 AI 작성 · 추가는 {STORY_PAID_UNLOCK_PRICE_WON}원)
+          (1건씩 불러오기 · 추가는 {STORY_PAID_UNLOCK_PRICE_WON}원)
         </p>
       )}
 
       {access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
           프리미엄 — 키워드당 최대 <strong className="text-text">{PREMIUM_MAX_STORY_VIEWS}건</strong>
-          , 통계는 한 번에 · 후기는 1건씩 AI 작성
+          , 통계는 한 번에 · 후기는 1건씩 불러오기
         </p>
       )}
 
@@ -341,7 +341,7 @@ export function ExplorePage() {
           <div className="space-y-4">
             {storyAccess?.aiBlocked && !access.isPremium && access.isMember && (
               <p className="text-xs text-center text-text-muted card p-3">
-                이 키워드는 무료 {MEMBER_FREE_STORY_VIEWS}건 열람 기록이 있어 AI 재생성 없이 캐시·합성
+                이 키워드는 무료 {MEMBER_FREE_STORY_VIEWS}건 열람 기록이 있어 재생성 없이 캐시·합성
                 데이터를 사용합니다.
               </p>
             )}
@@ -368,7 +368,7 @@ export function ExplorePage() {
               <>
                 <CommunityStoriesPanel
                   stories={visibleStories}
-                  title={`"${displayKeyword}" — 한 달 뒤는?`}
+                  title={`"${displayKeyword}" — 유사한 내용의 한 달 뒤는?`}
                   variant="compact"
                   dreamTeaseBlur={access.isGuest}
                   blurLocked={!access.isPremium && (access.isGuest || needsPaywall)}
@@ -407,7 +407,7 @@ export function ExplorePage() {
                     className="btn-secondary !min-h-[2.75rem] text-sm !normal-case !tracking-normal disabled:opacity-60"
                   >
                     {isLoadingStory
-                      ? "후기 작성 중…"
+                      ? "유사한 후기를 찾는 중…"
                       : access.isGuest
                         ? "Google 가입하고 후기 더 보기"
                         : access.isPremium

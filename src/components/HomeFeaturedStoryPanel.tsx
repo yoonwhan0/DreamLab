@@ -32,7 +32,7 @@ export function HomeFeaturedStoryPanel({
 
       <CommunityStoriesPanel
         stories={visibleStories}
-        title={`"${keyword}" 꿈 — 한 달 뒤는?`}
+        title={`"${keyword}" 꿈 — 유사한 내용의 한 달 뒤는?`}
         variant="compact"
         dreamTeaseBlur={access.isGuest}
         blurLocked={!access.isPremium}

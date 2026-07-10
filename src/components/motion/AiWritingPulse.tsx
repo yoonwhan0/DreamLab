@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_LINES = [
-  "비슷한 꿈 데이터를 검색하는 중",
-  "한 달 뒤 후기 통계를 정리하는 중",
-  "공개된 후기 목록을 모으는 중",
+  "유사한 꿈을 찾는 중",
+  "비슷한 내용의 한 달 뒤 기록을 모으는 중",
+  "같은 유형 꿈 통계를 정리하는 중",
+  "공개된 후기 목록을 살펴보는 중",
   "결말 비율을 계산하는 중",
-  "키워드에 맞는 기록을 분류하는 중",
 ];
 
 interface AiWritingPulseProps {
@@ -14,14 +14,14 @@ interface AiWritingPulseProps {
   variant?: "card" | "inline";
 }
 
-/** 탐색·AI 해몽 — 타이핑 + 최소 대기 연출 */
+/** 탐색·해몽 — 유사 꿈 검색 연출 */
 export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProps) {
   const lines = useMemo(() => {
     if (!keyword?.trim()) return DEFAULT_LINES;
     const q = keyword.trim();
     return [
-      `"${q}" 관련 꿈 데이터 검색 중`,
-      `"${q}" 후기·통계 정리 중`,
+      `"${q}"와 비슷한 꿈을 찾는 중`,
+      `"${q}" 유사 내용의 한 달 뒤 기록 정리 중`,
       ...DEFAULT_LINES.slice(2),
     ];
   }, [keyword]);
@@ -62,7 +62,7 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
         <span />
         <span />
       </div>
-      <p className="text-sm font-semibold text-text motion-shimmer">데이터 검색 · 결과 정리 중</p>
+      <p className="text-sm font-semibold text-text motion-shimmer">유사한 꿈 · 한 달 뒤 기록 검색 중</p>
       <p className="ai-writing-type text-xs text-text-secondary min-h-[1.25rem]" aria-live="polite">
         {typed}
         <span className="ai-writing-cursor" aria-hidden>

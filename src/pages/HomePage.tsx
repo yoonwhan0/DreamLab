@@ -58,7 +58,7 @@ export function HomePage() {
 
       <Reveal delay={110}>
         <KeywordChipRail
-          label="이런 꿈, 한 달 뒤는?"
+          label="유사한 내용의 한 달 뒤는?"
           keywords={keywords}
           activeKeyword={activeKeyword}
           variant="home"

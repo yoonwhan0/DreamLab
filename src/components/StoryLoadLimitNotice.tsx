@@ -30,12 +30,12 @@ export function StoryLoadLimitNotice({
     <div className="rounded-xl border border-border/70 bg-surface-2/80 p-3.5 space-y-2 text-xs text-text-secondary leading-relaxed">
       <p className="font-semibold text-text text-sm">{tierLabel}</p>
       <p>
-        통계·그래프는 한 번에 정리하고, <strong className="text-text">꿈 유형 후기는 한 건씩</strong>{" "}
-        AI가 작성합니다. 말투·맞춤법을 정제하고, 확실한 정보만 단계적으로 보여 드리기 위한
-        제한된 방식이에요.
+        통계·그래프는 한 번에 정리하고, <strong className="text-text">비슷한 꿈 유형의 후기는 한 건씩</strong>{" "}
+        불러옵니다. 말투를 정제하고 확실한 정보만 단계적으로 보여 드리기 위한 제한된
+        방식이에요.
       </p>
       {isLoadingMore && (
-        <p className="text-text-muted">다음 후기를 작성 중이에요…</p>
+        <p className="text-text-muted">유사한 후기를 찾는 중…</p>
       )}
       {atCap && !access.isPremium && access.isMember && (
         <p>
