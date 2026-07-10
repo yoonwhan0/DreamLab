@@ -48,11 +48,26 @@ function AdminGate({ children }: { children: ReactNode }) {
 /** 사용자 PWA `/superadmin/*` 또는 standalone Admin에서 공용 */
 export function AdminApp() {
   if (!isFirebaseConfigured) {
+    const isProd = import.meta.env.PROD;
     return (
       <div className="min-h-dvh flex items-center justify-center p-6 bg-bg">
-        <StatusBanner type="warn">
-          Firebase 미설정 — <code>VITE_FIREBASE_*</code> 환경변수를 확인하세요.
-        </StatusBanner>
+        <div className="max-w-md space-y-3 text-sm text-text-secondary">
+          <StatusBanner type="warn">
+            Firebase 미설정 — <code>VITE_FIREBASE_*</code> 환경변수가 빌드에 없습니다.
+          </StatusBanner>
+          {isProd ? (
+            <p>
+              Netlify → Environment variables → <code>VITE_FIREBASE_*</code> 6개 +
+              <code> VITE_DEMO_MODE=false</code> (Scope: <strong>Builds</strong>) 저장 후{" "}
+              <strong>Redeploy</strong> 하세요.
+            </p>
+          ) : (
+            <p>
+              프로젝트 루트 <code>.env</code>에 Firebase 웹 설정을 넣고{" "}
+              <code>npm run dev</code>를 다시 실행하세요.
+            </p>
+          )}
+        </div>
       </div>
     );
   }
