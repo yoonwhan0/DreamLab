@@ -49,7 +49,7 @@ function keywordDreamTitle(anchor: string): string {
 function genericKeywordSnippet(anchor: string): string {
   const k = anchor.trim() || "꿈";
   return ensureMultiline(
-    `"${k}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 같은 키워드로 기록됐습니다.`,
+    `"${k}"이(가) 꿈의 중심이었어요. 장면은 선명했는데, 깨고 나니 왜 그 단어가 남았는지 계속 생각났습니다.`,
   );
 }
 
@@ -313,7 +313,7 @@ export function estimateToStats(estimate: CommunityEstimate): DreamStats {
 export function previewCommunityForKeyword(keyword: string) {
   const anchor = keyword.trim() || "꿈";
   const pack = resolveNarrativePack(anchor);
-  const content = `"${anchor}" 꿈 검색하다가 여기 후기 보고 소름 — 장면은 제각각인데 기분은 비슷하더라고요.`;
+  const content = `"${anchor}" 꿈을 기록해 두고 한 달 뒤에 다시 읽었습니다. 장면은 제각각이어도 남는 감정이 비슷한 경우가 있더라고요.`;
   const interpretation: DreamInterpretation = {
     usualTake: "",
     symbol: "",

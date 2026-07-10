@@ -54,7 +54,7 @@ export function DreamDetailPage() {
     () => (dream ? isOwnDreamRecord(dream, user?.uid) : false),
     [dream, user?.uid],
   );
-  const showCommunity = !isOwnDream && (isPreview || access.canViewSimilarTypes);
+  const showCommunity = !isOwnDream && (isPreview || access.canViewSimilarTypes || access.isGuest);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +138,7 @@ export function DreamDetailPage() {
       setLoading(false);
 
       const own = d ? isOwnDreamRecord(d, user?.uid) : false;
-      if (d && access.canViewSimilarTypes) {
+      if (d && (access.canViewSimilarTypes || access.isGuest)) {
         void loadCommunity(d.interpretation, {
           embedding: d.embedding,
           title: d.title,
@@ -154,7 +154,7 @@ export function DreamDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, isPreview, access.canViewSimilarTypes, user?.uid]);
+  }, [id, isPreview, access.canViewSimilarTypes, access.isGuest, user?.uid]);
 
   useEffect(() => {
     async function saveAfterSignup() {
@@ -265,7 +265,7 @@ export function DreamDetailPage() {
               <div className="text-center space-y-1">
                 <p className="section-label">비슷한 꿈을 꾼 사람들</p>
                 <p className="text-xs text-text-muted copy-lines px-2">
-                  AI 해몽과 별도 — 같은 유형·키워드로 기록된 사람들의 한 달 뒤 데이터입니다.
+                  꿈연구소 해몽과 별도 — 같은 유형·키워드로 기록된 사람들의 한 달 뒤 데이터입니다.
                 </p>
               </div>
               <CommunityStatPreview
@@ -312,22 +312,32 @@ export function DreamDetailPage() {
             totalCount={summary.totalCount}
             withFollowUpCount={summary.withFollowUpCount}
             stats={stats}
+            lockOutcomes={!access.isPremium}
             isEstimated={isEstimated}
           />
           <DreamFortuneTrendPanel
             snapshot={buildDreamFortuneSnapshot(keyword, stats)}
             compact={!access.isPremium}
           />
+          {summary.stories.length > 0 && (
+            <CommunityStoriesPanel
+              stories={summary.stories.slice(0, access.isPremium ? summary.stories.length : 1)}
+              blurLocked={!access.isPremium}
+              lockedCount={Math.max(summary.stories.length - 1, 8)}
+              blurPreviewStory={summary.stories[1]}
+              isEstimated={isEstimated}
+            />
+          )}
         </>
       )}
 
       {isPreview ? (
         <UpgradeGate
-          title="로그인 · 가입하면 저장됩니다"
-          description="30일 타이머 · 유사 꿈 탐색 · (프리미엄) 한 달 뒤 통계가 열립니다"
+          title="Google로 가입하면 저장됩니다"
+          description="꿈연구소 해몽은 이미 보셨어요. 가입하면 30일 타이머·탐색·저장이 열립니다."
           ctaLabel={CTA_SIGNUP}
           onCta={() =>
-            openSignupSheet("가입하거나 로그인하면 이 꿈이 저장되고 30일 여정이 시작됩니다.")
+            openSignupSheet("Google로 가입하면 이 꿈이 저장되고 30일 여정이 시작됩니다.")
           }
         />
       ) : (
@@ -335,26 +345,17 @@ export function DreamDetailPage() {
           <>
             {access.isGuest && (
               <UpgradeGate
-                title="로그인 · 가입하면 더 열립니다"
-                description="유사 꿈 패턴 · 30일 푸시 알림 · 한 달 뒤 후기 작성"
+                title="Google로 가입하면 더 열립니다"
+                description="꿈연구소장의 관점 전체 · 30일 푸시 · 한 달 뒤 후기 작성"
                 ctaLabel={CTA_SIGNUP}
                 onCta={() =>
-                  openSignupSheet("로그인하거나 가입하면 유사 꿈·30일 알림·후기 작성이 열립니다.")
+                  openSignupSheet("Google로 가입하면 유사 꿈·30일 알림·후기 작성이 열립니다.")
                 }
               />
             )}
 
-            {summary && summary.totalCount > 0 && (
+            {access.canViewSimilarTypes && summary && summary.totalCount > 0 && (
               <SimilarDreamsPanel summary={summary} />
-            )}
-
-            {summary && summary.stories.length > 0 && (
-              <CommunityStoriesPanel
-                stories={summary.stories}
-                blurLocked={!access.isPremium}
-                lockedCount={Math.max(summary.stories.length - 1, 20)}
-                isEstimated={isEstimated}
-              />
             )}
 
             {access.canViewOutcomeStats && stats && stats.totalDreams > 0 && (

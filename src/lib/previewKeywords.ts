@@ -1,6 +1,6 @@
 import { hashSeed } from "@/lib/seededRandom";
 
-/** 호기심·불안을 자극하는 키워드 — 홈·탐색·마이 티저 전용 */
+/** 홈·탐색·마이 티저용 관심 키워드 */
 export const PROVOCATIVE_KEYWORDS = [
   "시험",
   "로또",
@@ -24,7 +24,7 @@ export const PROVOCATIVE_KEYWORDS = [
   "암",
 ] as const;
 
-/** 탐색 인기 검색 — 전부 자극 키워드 */
+/** 탐색 인기 검색 — 후기 데이터가 잘 모이는 키워드 */
 export const POPULAR_SEARCHES: string[] = [
   "시험",
   "로또",
@@ -134,7 +134,7 @@ function pickFromPool(pool: string[], count: number, random: boolean): string[] 
   return picked;
 }
 
-/** 방문마다 다른 자극 키워드 — 홈 칩 */
+/** 방문마다 다른 관심 키워드 — 홈 칩 */
 export function getRandomProvocativeKeywords(count = 4): string[] {
   return pickFromPool([...PROVOCATIVE_KEYWORDS], count, true);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ConversionGate } from "@/components/ConversionGate";
 import { KeywordChipRail } from "@/components/KeywordChipRail";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
@@ -18,12 +18,12 @@ import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useFeaturedKeywords } from "@/hooks/useFeaturedKeywords";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
-import { CTA_SIGNUP } from "@/lib/branding";
 import { resolveCommunityData } from "@/services/communityDataService";
 import { interpretDream } from "@/services/interpretService";
 import { getOutcomePercentages } from "@/services/dreamService";
 import {
   MEMBER_FREE_STORY_VIEWS,
+  STORY_PAID_UNLOCK_PRICE_WON,
   initialStoryVisibleCount,
   storyLoadChunk,
 } from "@/lib/storyAccessPricing";
@@ -88,11 +88,6 @@ export function ExplorePage() {
     setLimitMessage("");
     setActiveQuery(q);
 
-    if (access.isGuest) {
-      setIsFetching(false);
-      return;
-    }
-
     let accessState = accessOverride ?? null;
     if (access.isMember && !access.isPremium) {
       try {
@@ -106,7 +101,9 @@ export function ExplorePage() {
     if (gen !== searchGenRef.current) return;
 
     const restored = accessState?.viewedStoryIds.length ?? 0;
-    const initialVisible = initialStoryVisibleCount(access.isPremium, restored);
+    const initialVisible = access.isGuest
+      ? 1
+      : initialStoryVisibleCount(access.isPremium, restored);
     setVisibleStoryCount(initialVisible);
 
     try {
@@ -142,10 +139,7 @@ export function ExplorePage() {
       setIsEstimated(community.isEstimated);
 
       const storyCap = community.summary.stories.length;
-      const initialShown = Math.min(
-        initialVisible,
-        storyCap,
-      );
+      const initialShown = Math.min(initialVisible, storyCap);
 
       if (access.isMember && !access.isPremium && storyCap > 0) {
         const synced = await syncVisibleStories(initialShown, community.summary, q);
@@ -203,13 +197,20 @@ export function ExplorePage() {
   };
 
   const handleLoadMoreStories = async () => {
-    if (!summary || !activeQuery || !access.isMember) return;
+    if (!summary || !activeQuery) return;
+    if (access.isGuest) {
+      openSignupSheet("Google로 가입하면 같은 꿈 후기를 더 볼 수 있어요.");
+      return;
+    }
+    if (!access.isMember) return;
 
     const chunk = storyLoadChunk(visibleStoryCount);
     const target = visibleStoryCount + chunk;
 
     if (!access.isPremium && target > maxSlots) {
-      setLimitMessage("무료 한도를 모두 썼습니다. 프리미엄으로 더 볼 수 있어요.");
+      setLimitMessage(
+        `무료 ${MEMBER_FREE_STORY_VIEWS}건을 모두 봤습니다. 추가 1건은 ${STORY_PAID_UNLOCK_PRICE_WON}원 · 프리미엄은 전체 열람.`,
+      );
       return;
     }
 
@@ -235,15 +236,14 @@ export function ExplorePage() {
   };
 
   const visibleStories =
-    access.isMember && summary
+    summary != null
       ? summary.stories.slice(0, Math.min(visibleStoryCount, summary.stories.length))
       : [];
 
   const canLoadMore =
-    access.isMember &&
     summary != null &&
     visibleStoryCount < summary.stories.length &&
-    (access.isPremium || visibleStoryCount < maxSlots);
+    (access.isPremium || (access.isMember && visibleStoryCount < maxSlots) || access.isGuest);
 
   const needsPaywall =
     access.isMember &&
@@ -289,15 +289,16 @@ export function ExplorePage() {
 
       {access.isGuest && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
-          비회원은 <strong className="text-text">내 꿈 해몽</strong>만 가능합니다. 다른 사람 후기·탐색은
-          가입 후 열립니다.
+          비회원도 탐색 미리보기는 볼 수 있어요. <strong className="text-text">중간부터 블러</strong>
+          되며, Google 가입 시 더 열립니다.
         </p>
       )}
 
       {access.isMember && !access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
           회원 — 키워드당 후기 <strong className="text-text">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>
-          . 한 건씩 집중해서 봅니다. 더 보려면 <strong className="text-primary">프리미엄</strong>
+          , 이후 1건씩 불러오기 · 추가 1건{" "}
+          <strong className="text-text">{STORY_PAID_UNLOCK_PRICE_WON}원</strong>
         </p>
       )}
 
@@ -307,39 +308,12 @@ export function ExplorePage() {
         </p>
       )}
 
-      {hasSearched && access.isGuest && activeQuery && (
-        <div className="space-y-4">
-          <div className="card p-5 text-center space-y-3">
-            <p className="text-sm font-semibold text-text">
-              &ldquo;{displayKeyword}&rdquo; — 탐색은 회원 전용
-            </p>
-            <p className="text-xs text-text-secondary copy-lines leading-relaxed">
-              비슷한 꿈·한 달 뒤 후기는 가입 후 볼 수 있어요. 지금은 내 꿈만 해몽할 수 있습니다.
-            </p>
-            <Link to="/write" className="btn-secondary text-sm inline-block">
-              내 꿈 기록·해몽하기
-            </Link>
-            <button
-              type="button"
-              className="btn-primary text-sm w-full"
-              onClick={() =>
-                openSignupSheet("로그인하거나 가입하면 탐색·한 달 뒤 후기를 볼 수 있어요.")
-              }
-            >
-              {CTA_SIGNUP}
-            </button>
-          </div>
-          <ConversionGate step={2} keyword={activeQuery} />
-        </div>
-      )}
-
-      {hasSearched && isSearchBusy && access.isMember && (
+      {hasSearched && isSearchBusy && activeQuery && (
         <AiWritingPulse keyword={displayKeyword} />
       )}
 
       {hasSearched &&
         !isSearchBusy &&
-        access.isMember &&
         activeQuery &&
         !summary &&
         !stats && (
@@ -348,12 +322,12 @@ export function ExplorePage() {
           </p>
         )}
 
-      {hasSearched && summary && stats && activeQuery && access.isMember && (
+      {hasSearched && summary && stats && activeQuery && (
         <div className="space-y-4 explore-ai-reveal" aria-busy={isSearchBusy}>
           {access.isMember && !access.isPremium && <MemberUnlockBanner />}
 
           <div className="space-y-4">
-            {storyAccess?.aiBlocked && !access.isPremium && (
+            {storyAccess?.aiBlocked && !access.isPremium && access.isMember && (
               <p className="text-xs text-center text-text-muted card p-3">
                 이 키워드는 무료 {MEMBER_FREE_STORY_VIEWS}건 열람 기록이 있어 AI 재생성 없이 캐시·합성
                 데이터를 사용합니다.
@@ -384,14 +358,14 @@ export function ExplorePage() {
                   stories={visibleStories}
                   title={`"${displayKeyword}" — 한 달 뒤는?`}
                   variant="compact"
-                  blurLocked={!access.isPremium && needsPaywall}
+                  blurLocked={!access.isPremium && (access.isGuest || needsPaywall)}
                   lockedCount={
                     access.isPremium
                       ? 0
                       : Math.max(
                           summary.stories.length - visibleStories.length,
                           summary.withFollowUpCount - visibleStories.length,
-                          4,
+                          access.isGuest ? 8 : 4,
                         )
                   }
                   blurPreviewStory={summary.stories[visibleStories.length]}
@@ -399,7 +373,7 @@ export function ExplorePage() {
                   isEstimated={isEstimated}
                 />
 
-                {!access.isPremium && storyAccess && (
+                {!access.isPremium && storyAccess && access.isMember && (
                   <p className="text-xs text-center text-text-muted tabular-nums">
                     열람 {visibleStories.length} / {maxSlots}건
                     {storyAccess.paidUnlockCount > 0 &&
@@ -413,18 +387,24 @@ export function ExplorePage() {
                     onClick={() => void handleLoadMoreStories()}
                     className="btn-secondary !min-h-[2.75rem] text-sm !normal-case !tracking-normal"
                   >
-                    후기 1건 더 보기
+                    {access.isGuest
+                      ? "Google 가입하고 후기 더 보기"
+                      : access.isPremium
+                        ? "후기 1건 더 보기"
+                        : visibleStoryCount >= MEMBER_FREE_STORY_VIEWS
+                          ? `후기 1건 더 보기 (${STORY_PAID_UNLOCK_PRICE_WON}원)`
+                          : "후기 1건 더 보기"}
                   </button>
                 )}
 
-                {needsPaywall && (
+                {needsPaywall && access.isMember && !access.isPremium && (
                   <div className="card border border-accent/20 p-4 space-y-3 text-center">
                     <p className="text-sm font-semibold text-text">
                       무료 {MEMBER_FREE_STORY_VIEWS}건을 다 봤습니다
                     </p>
                     <p className="text-xs text-text-secondary copy-lines">
-                      후기·통계 전체는 프리미엄 구독으로 열립니다. iOS·Android 앱에서는 App Store /
-                      Google Play 결제를 사용합니다.
+                      추가 1건은 {STORY_PAID_UNLOCK_PRICE_WON}원 · 전체는 프리미엄 구독(앱스토어·Play)으로
+                      열립니다.
                     </p>
                     <button
                       type="button"
@@ -438,6 +418,10 @@ export function ExplorePage() {
                       프리미엄 구독 안내
                     </button>
                   </div>
+                )}
+
+                {access.isGuest && summary.stories.length > visibleStories.length && (
+                  <ConversionGate step={2} keyword={activeQuery} />
                 )}
 
                 {limitMessage && (

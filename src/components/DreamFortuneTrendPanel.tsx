@@ -33,7 +33,7 @@ function resolveTier(
   return "member";
 }
 
-/** guest 1축 · member 3축 · premium 전체 — 운세 트렌드 그래프 */
+/** premium 전체 · guest/member 중간까지 보이고 하단 블러 */
 export function DreamFortuneTrendPanel({
   snapshot,
   tier,
@@ -46,19 +46,18 @@ export function DreamFortuneTrendPanel({
   const { openPremiumSheet } = usePremiumSheet();
 
   const resolved = resolveTier(tier, access.isGuest, access.isPremium);
-  const visibleCount =
-    resolved === "premium" ? snapshot.axes.length : resolved === "member" ? 3 : 1;
+  const isPremium = resolved === "premium";
+
+  const visibleCount = isPremium
+    ? snapshot.axes.length
+    : Math.max(1, Math.ceil(snapshot.axes.length / 2));
 
   const visible = snapshot.axes.slice(0, visibleCount);
-  const locked = snapshot.axes.slice(visibleCount);
+  const locked = isPremium ? [] : snapshot.axes.slice(visibleCount);
 
   const isArchive = variant === "archive" || snapshot.fromArchive;
 
   const headerLabel = isArchive ? "내 아카이브 · 누적 운세" : "30일 뒤 · 운세 추이";
-
-  const titleLine = isArchive
-    ? snapshot.keyword
-    : `"${snapshot.keyword}" 꿈을 꾼 사람들`;
 
   const subtitleLine = isArchive
     ? `${snapshot.archiveDreamCount ?? snapshot.sampleCount}개 꿈 누적 · 30일 후기 ${snapshot.followUpCount}건 — 기록이 쌓일수록 그래프가 자라요`
@@ -96,7 +95,11 @@ export function DreamFortuneTrendPanel({
       <header className={compact ? "space-y-1" : "text-center space-y-1.5"}>
         <p className="section-label">{headerLabel}</p>
         <h3 className={`font-bold text-text ${compact ? "text-sm" : "text-base"}`}>
-          {isArchive ? titleLine : <>&ldquo;{snapshot.keyword}&rdquo; 꿈을 꾼 사람들</>}
+          {isArchive ? (
+            snapshot.keyword
+          ) : (
+            <>&ldquo;{snapshot.keyword}&rdquo; 꿈을 꾼 사람들</>
+          )}
         </h3>
         <p className="text-xs text-text-muted copy-lines">
           {subtitleLine}
@@ -114,9 +117,8 @@ export function DreamFortuneTrendPanel({
           <AxisRow
             key={axis.id}
             axis={axis}
-            fadeTail={resolved === "guest" && i === 0}
-            partialBlur={resolved === "member" && i === visible.length - 1}
-            showFull={resolved === "premium"}
+            partialBlur={!isPremium && i === visible.length - 1 && locked.length > 0}
+            showFull={isPremium}
           />
         ))}
       </div>
@@ -142,7 +144,7 @@ export function DreamFortuneTrendPanel({
         </div>
       )}
 
-      {resolved !== "premium" && visible.length > 0 && locked.length === 0 && (
+      {!isPremium && visible.length > 0 && locked.length === 0 && (
         <p className="text-[0.625rem] text-center text-text-muted">
           프리미엄 — 8주 그래프·전 축 상승/하락 비교
         </p>
@@ -154,13 +156,11 @@ export function DreamFortuneTrendPanel({
 function AxisRow({
   axis,
   ghost = false,
-  fadeTail = false,
   partialBlur = false,
   showFull,
 }: {
   axis: FortuneAxisTrend;
   ghost?: boolean;
-  fadeTail?: boolean;
   partialBlur?: boolean;
   showFull: boolean;
 }) {
@@ -172,7 +172,7 @@ function AxisRow({
     >
       {partialBlur && (
         <div
-          className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-surface/95 to-transparent pointer-events-none"
+          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-surface/95 to-transparent pointer-events-none"
           aria-hidden
         />
       )}
@@ -185,8 +185,8 @@ function AxisRow({
           <Sparkline
             values={axis.series}
             direction={axis.direction}
-            fadeTail={fadeTail}
             muted={!showFull}
+            fadeTail={partialBlur}
           />
         </div>
         <div className="text-right shrink-0 tabular-nums">

@@ -110,8 +110,6 @@ export function MyPage() {
         <MyDreamFortuneSection dreams={dreams} />
       )}
 
-      <MyPricingSection />
-
       {access.isMember && !access.isPremium && dreams.length > 0 && (
         <ConversionGate step={3} compact />
       )}
@@ -127,11 +125,11 @@ export function MyPage() {
 
       {access.isGuest && (
         <CuriosityTease
-          title="로그인 · 가입 · 꿈 저장"
-          body="로그인하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
+          title="Google로 가입 · 꿈 저장"
+          body="Google로 가입하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
           cta={CTA_SIGNUP}
           onAction={() =>
-            openSignupSheet("로그인하거나 가입하면 꿈 저장·30일 알림·탐색이 열립니다.")
+            openSignupSheet("Google로 가입하면 꿈 저장·30일 알림·탐색이 열립니다.")
           }
         />
       )}
@@ -140,7 +138,7 @@ export function MyPage() {
         <button
           type="button"
           onClick={() =>
-            openSignupSheet("가입하면 꿈이 계정에 안전하게 보관되고, 30일 후기·알림이 열립니다.")
+            openSignupSheet("Google로 가입하면 꿈이 계정에 안전하게 보관되고, 30일 후기·알림이 열립니다.")
           }
           className="card w-full p-4 text-left ring-1 ring-accent/30"
         >
@@ -153,12 +151,14 @@ export function MyPage() {
       {!access.isMember && dreams.length === 0 && (
         <button
           type="button"
-          onClick={() => openSignupSheet("가입하면 꿈 저장·30일 알림·후기 작성이 열립니다.")}
+          onClick={() => openSignupSheet("Google로 가입하면 꿈 저장·30일 알림·후기 작성이 열립니다.")}
           className="btn-secondary w-full text-sm"
         >
           {CTA_SIGNUP}
         </button>
       )}
+
+      <MyPricingSection />
     </div>
   );
 }

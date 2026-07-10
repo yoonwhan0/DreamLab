@@ -24,7 +24,12 @@ import {
   type User,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { prefersAuthRedirect } from "@/lib/authPlatform";
+import {
+  clearAuthRedirectPending,
+  isAuthRedirectPending,
+  markAuthRedirectPending,
+  prefersAuthRedirect,
+} from "@/lib/authPlatform";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
 import type { UserProfile } from "@/types";
@@ -126,16 +131,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const redirectResult = await getRedirectResult(authInstance);
+        clearAuthRedirectPending();
         if (redirectResult?.user && mounted) {
+          setUser(redirectResult.user);
           await finalizeGoogleUser(redirectResult.user, syncProfile);
+          setLoading(false);
         }
       } catch (err) {
+        clearAuthRedirectPending();
         console.error("Google redirect sign-in failed:", err);
       }
     })();
 
     const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
       if (!mounted) return;
+
+      if (isAuthRedirectPending()) {
+        setLoading(true);
+        return;
+      }
 
       if (firebaseUser) {
         setUser(firebaseUser);
@@ -176,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const useRedirect = prefersAuthRedirect();
 
     if (useRedirect) {
+      markAuthRedirectPending();
       if (current?.isAnonymous) {
         await linkWithRedirect(current, provider);
       } else {
@@ -185,9 +200,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (current?.isAnonymous) {
-      const result = await linkWithPopup(current, provider);
-      await finalizeGoogleUser(result.user, syncProfile);
-      return;
+      try {
+        const result = await linkWithPopup(current, provider);
+        await finalizeGoogleUser(result.user, syncProfile);
+        return;
+      } catch (err: unknown) {
+        const code =
+          err && typeof err === "object" && "code" in err
+            ? String((err as { code: string }).code)
+            : "";
+        if (
+          code === "auth/credential-already-in-use" ||
+          code === "auth/email-already-in-use"
+        ) {
+          const result = await signInWithPopup(auth, provider);
+          await finalizeGoogleUser(result.user, syncProfile);
+          return;
+        }
+        throw err;
+      }
     }
 
     const result = await signInWithPopup(auth, provider);

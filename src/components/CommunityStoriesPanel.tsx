@@ -100,11 +100,11 @@ export function CommunityStoriesPanel({
       {showBlur && (
         <div className="rounded-xl border border-dashed border-border bg-surface-2 p-4 text-center space-y-2">
           <p className="text-sm font-medium text-text">
-            {access.isGuest ? "로그인 · 가입 후 후기를 더 볼 수 있어요" : "프리미엄에서 전체 공개"}
+            {access.isGuest ? "Google 가입 후 후기를 더 볼 수 있어요" : "프리미엄에서 전체 공개"}
           </p>
           <p className="text-xs text-text-secondary copy-lines max-w-[16rem] mx-auto">
             {access.isGuest
-              ? "로그인하거나 가입하면 같은 꿈 후기·탐색 한도가 열립니다."
+              ? "Google로 가입하면 같은 꿈 후기·탐색 한도가 열립니다."
               : "결말·통계·8주 운세 그래프는 프리미엄 구독에서 볼 수 있어요."}
           </p>
           <button
@@ -112,7 +112,7 @@ export function CommunityStoriesPanel({
             className="btn-primary mt-1 text-sm"
             onClick={() =>
               access.isGuest
-                ? openSignupSheet("가입하면 같은 꿈 후기를 더 볼 수 있어요.")
+                ? openSignupSheet("Google로 가입하면 같은 꿈 후기를 더 볼 수 있어요.")
                 : openPremiumSheet("후기·통계 전체는 프리미엄 구독에서 볼 수 있어요.")
             }
           >

@@ -64,42 +64,42 @@ export const SERVICE_PROMISE = BRAND_MANIFESTO;
 export const CURIOSITY_HOOKS = [
   {
     id: "forbidden",
-    title: "금단의 영역",
-    body: "해몽은 입구에서 끝났습니다. 꿈이 현실에서 어떻게 풀렸는지 — 그 결말은 아무도 끝까지 말해주지 않았습니다. 우리만 열었습니다.",
+    title: "해몽 다음 기록",
+    body: "꿈은 보통 해몽에서 끝납니다. 꿈연구소는 그 뒤 한 달 동안 실제로 무엇이 달라졌는지, 사용자가 남긴 문장으로 다시 봅니다.",
   },
   {
     id: "fomo",
-    title: "당신만 모릅니다",
-    body: "같은 꿈을 꾼 수만 명이 이미 한 달 뒤를 남겼습니다. 별일 없었음 몇 %, 나쁜 일 몇 % — 당신만 아직 그 숫자를 모릅니다.",
+    title: "같은 꿈의 한 달",
+    body: "같은 키워드로 기록된 꿈도 30일 뒤 이야기는 조금씩 갈립니다. 좋은 소식, 관계 변화, 조용한 정리까지 실제 후기를 나란히 봅니다.",
   },
   {
     id: "unlock",
-    title: "잠금이 풀리는 순간",
-    body: "한 건만 보여드립니다. 나머지는 열람 권한이 있는 자만 봅니다. 보고 나면, 혼자 해석하던 밤이 달라집니다.",
+    title: "일부 미리보기",
+    body: "처음에는 대표 후기만 보여드립니다. 더 많은 기록을 열면 내 꿈과 비슷한 장면이 어떤 결말로 이어졌는지 더 촘촘히 비교할 수 있습니다.",
   },
   {
     id: "share",
-    title: "공유가 열쇠입니다",
-    body: "내 한 달 뒤가 남의 꿈에 답이 됩니다. 기록할수록 금단의 문이 넓어지고, 당신만의 결말도 데이터가 됩니다.",
+    title: "내 기록도 데이터",
+    body: "내 한 달 뒤 후기는 다음 사람에게 참고 기록이 됩니다. 과장하지 않고 적은 한 문장이 같은 꿈 패턴의 통계를 더 정확하게 만듭니다.",
   },
 ] as const;
 
 export const PRODUCT_IDEAS = CURIOSITY_HOOKS;
 
 export const FOLLOWUP_EXAMPLES = [
-  "별일 없었는데, 왜 그 꿈만 자꾸 생각났을까",
-  "꿈과 전혀 다른 일이 터졌어요",
-  "무섭게 꿨는데 한 달 뒤엔 좋은 소식이",
-  "솔직히 아무 일도 없었어요",
+  "꿈이랑 직접 연결되진 않았지만 계속 생각났어요",
+  "그 뒤로 관계를 정리할 일이 있었어요",
+  "무섭게 꿨는데 한 달 뒤엔 마음이 좀 놓였어요",
+  "큰 사건은 없었고, 컨디션만 유난히 흔들렸어요",
 ];
 
 export const FOLLOWUP_NOTE_HINT =
   "한 달 전 관측 기록 — 현실에서는? 답이 쌓일수록 다음 관측의 통계가 열립니다.";
 
 export const INTERPRETATION_IDEA_GUIDE = `
-- usualTake: 인터넷 해몽(겁·단정) — 대비용
-- alternativeLens: "보통은 ~지만" 꺾기 + 다층 관점 (심리·데이터·맥락)
-- symbol/psychology/reflection: 관측·30일 데이터, 호기심 갭, 단정 금지
+- usualTake: 일반 해몽에서 흔히 보는 해석을 소개하되 과장·공포 단정 금지
+- alternativeLens: "보통은 ~지만" 꺾기 + 이 꿈의 장면·감정·현실 맥락
+- symbol/psychology/reflection: 관측·30일 데이터, 담백한 호기심, 단정 금지
 - 저비용 모델 + 프롬프트·후처리로 프리미엄 톤 (netlify/functions/lib/interpretPremium.ts)
 - 문장 필드 최대 2줄 \\n
 `.trim();

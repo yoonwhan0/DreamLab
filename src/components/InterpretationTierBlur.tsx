@@ -38,15 +38,15 @@ export function InterpretationTierBlur({
         <p className="text-sm font-semibold text-text">{label}</p>
         <p className="text-xs text-text-secondary copy-lines max-w-[18rem]">
           {isGuest
-            ? "가입하면 연구소 AI 해몽 전체와 30일 타이머가 열립니다."
-            : "프리미엄에서 연구소 입장 해석·비슷한 꿈 패턴을 전부 볼 수 있어요."}
+            ? "Google로 가입하면 꿈연구소장의 관점·30일 타이머가 열립니다."
+            : "프리미엄에서 한 달 뒤 통계·비슷한 꿈 패턴을 전부 볼 수 있어요."}
         </p>
         <button
           type="button"
           className="btn-primary mt-1 text-sm"
           onClick={() =>
             isGuest
-              ? openSignupSheet("가입 후 AI 해몽·30일 여정을 이어갈 수 있어요.")
+              ? openSignupSheet("Google로 가입하면 꿈연구소장의 관점·30일 여정이 열립니다.")
               : openPremiumSheet(
                   access.isMember ? CTA_PREMIUM_SEE_ALL : "프리미엄에서 해몽 전체 보기",
                 )

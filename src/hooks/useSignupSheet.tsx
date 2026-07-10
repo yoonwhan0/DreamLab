@@ -48,7 +48,7 @@ export function SignupSheetProvider({ children }: { children: ReactNode }) {
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="로그인 · 가입"
+            aria-label="Google 가입"
           >
             <div className="mx-auto h-1 w-10 rounded-full bg-border" />
             <AuthSheetBody message={message} onAuthenticated={closeSignupSheet} />

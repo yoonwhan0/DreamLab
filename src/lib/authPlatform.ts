@@ -1,14 +1,32 @@
-/** 모바일·PWA·인앱 브라우저 — popup 대신 redirect 로그인 */
+const AUTH_REDIRECT_PENDING_KEY = "dreamlab-auth-redirect-pending";
+
+/** 인앱 브라우저(카카오·인스타 등)만 redirect — 일반 모바일·PWA는 popup */
 export function prefersAuthRedirect(): boolean {
   if (typeof window === "undefined") return false;
-
   const ua = navigator.userAgent;
-  const mobile = /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
-  const standalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // iOS Safari PWA
-    ("standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-  const inApp = /FBAN|FBAV|Instagram|KAKAOTALK|Line\/|NAVER|Twitter/i.test(ua);
+  return /FBAN|FBAV|Instagram|KAKAOTALK|Line\/|NAVER|Twitter/i.test(ua);
+}
 
-  return mobile || standalone || inApp;
+export function markAuthRedirectPending(): void {
+  try {
+    sessionStorage.setItem(AUTH_REDIRECT_PENDING_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearAuthRedirectPending(): void {
+  try {
+    sessionStorage.removeItem(AUTH_REDIRECT_PENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isAuthRedirectPending(): boolean {
+  try {
+    return sessionStorage.getItem(AUTH_REDIRECT_PENDING_KEY) === "1";
+  } catch {
+    return false;
+  }
 }

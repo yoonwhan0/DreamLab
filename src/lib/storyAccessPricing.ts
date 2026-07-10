@@ -1,6 +1,9 @@
 /** 회원 — 키워드당 무료 후기 열람 */
 export const MEMBER_FREE_STORY_VIEWS = 2;
 
+/** 유료 추가 열람 1건당 (원) */
+export const STORY_PAID_UNLOCK_PRICE_WON = 200;
+
 /** 프리미엄 — 검색 직후 집중 노출 */
 export const PREMIUM_INITIAL_STORY_VIEWS = 2;
 
