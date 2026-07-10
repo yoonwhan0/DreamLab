@@ -162,7 +162,7 @@ function StoryContent({
       {centered ? (
         <div className="space-y-2">
           <p className="text-xs text-text-muted tabular-nums">
-            {story.profile} · 익명
+            {formatStoryProfile(story.profile)}
           </p>
           <p className="font-medium text-text leading-snug">{story.dreamTitle}</p>
           <div className="flex justify-center">
@@ -173,7 +173,7 @@ function StoryContent({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs text-text-muted tabular-nums">
-              {story.profile} · 익명
+              {formatStoryProfile(story.profile)}
             </p>
             <p className="mt-1 font-medium text-text line-clamp-1">{story.dreamTitle}</p>
           </div>
@@ -214,4 +214,11 @@ function StoryContent({
       </div>
     </div>
   );
+}
+
+function formatStoryProfile(profile: string): string {
+  const trimmed = profile.trim();
+  if (!trimmed) return "익명";
+  if (trimmed.includes("익명")) return trimmed;
+  return `${trimmed} · 익명`;
 }

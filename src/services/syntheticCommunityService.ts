@@ -46,11 +46,26 @@ function keywordDreamTitle(anchor: string): string {
 }
 
 /** 키워드 팩 없을 때 — 제목·본문·후기가 한 줄기로 맞음 */
-function genericKeywordSnippet(anchor: string): string {
+function genericDreamTitle(anchor: string, index: number): string {
   const k = anchor.trim() || "꿈";
-  return ensureMultiline(
-    `"${k}"이(가) 꿈의 중심이었어요. 장면은 선명했는데, 깨고 나니 왜 그 단어가 남았는지 계속 생각났습니다.`,
-  );
+  const templates = [
+    `${k} 앞에서 한참 멈춰 있던 꿈`,
+    `깨고 나서도 ${k}만 떠오른 새벽`,
+    `${k} 주변을 계속 맴돌던 꿈`,
+    `말없이 바라본 ${k} 장면`,
+  ];
+  return templates[index % templates.length] ?? keywordDreamTitle(k);
+}
+
+function genericKeywordSnippet(anchor: string, index: number): string {
+  const k = anchor.trim() || "꿈";
+  const templates = [
+    `꿈에서 계속 남은 건 "${k}"였어요. 장소는 낯설었는데 그 주변만 이상하게 또렷했습니다. 깨고 나서도 왜 그 장면을 오래 보고 있었는지 계속 생각났어요.`,
+    `"${k}" 근처에 서 있었고, 누군가를 기다리는 느낌이었습니다. 특별한 사건은 없었는데 몸이 먼저 긴장해 있었어요. 아침에 일어나서 바로 메모해 뒀습니다.`,
+    `처음엔 평범한 꿈인 줄 알았는데 마지막에 "${k}" 장면만 크게 남았습니다. 소리나 대사는 거의 기억나지 않았어요. 대신 그때의 공기와 기분이 오래 갔습니다.`,
+    `"${k}"을(를) 지나치려는데 발이 잘 떨어지지 않았습니다. 무섭다기보다는 신경이 쓰이는 쪽에 가까웠어요. 깨고 나니 그 단어부터 검색하게 됐습니다.`,
+  ];
+  return ensureMultiline(templates[index % templates.length] ?? templates[0]);
 }
 
 export function resolveAnchorKeyword(
@@ -106,10 +121,10 @@ function buildStoryAt(
 
   const dreamTitle = curatedPack
     ? curatedPack.titles[slot % curatedPack.titles.length]!
-    : keywordDreamTitle(anchorKeyword);
+    : genericDreamTitle(anchorKeyword, index);
   const dreamSnippet = curatedPack
     ? curatedPack.dreamSnippets[slot]!
-    : genericKeywordSnippet(anchorKeyword);
+    : genericKeywordSnippet(anchorKeyword, index);
   const afterStory = curatedPack
     ? pickAfterStory(outcome, curatedPack, rand)
     : pickAfterStory(outcome, pack, rand);
