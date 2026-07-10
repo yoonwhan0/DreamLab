@@ -5,9 +5,9 @@ import { LoadingPulse } from "@/components/motion/LoadingPulse";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { useAuth } from "@/hooks/useAuth";
 import { inferEmotionsFromInterpretation, parseDreamInput } from "@/lib/dreamUtils";
 import { savePendingDream } from "@/lib/pendingDreamStorage";
-import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { interpretDream } from "@/services/interpretService";
 import { saveDream } from "@/services/dreamService";
 import type { CommunityEstimate, DreamEmotionId, DreamInterpretation } from "@/types";
@@ -23,15 +23,16 @@ interface PendingDream {
 
 export function WriteDreamPage() {
   const navigate = useNavigate();
-  const { canSaveDream, loading: authLoading } = useAccessPolicy();
+  const { isMember, loading: authLoading } = useAccessPolicy();
+  const { user } = useAuth();
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const finishDream = async (dreamData: PendingDream) => {
-    if (canSaveDream && auth?.currentUser && isFirebaseConfigured) {
+    if (isMember && user?.uid) {
       const dreamId = await saveDream(
-        auth.currentUser.uid,
+        user.uid,
         dreamData.title,
         dreamData.content,
         dreamData.emotions,

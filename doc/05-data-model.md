@@ -10,7 +10,7 @@
 |------|------|------|
 | `displayName`, `email` | string? | |
 | `isPremium` | boolean | 프리미엄 (수동 / IAP 예정) |
-| `isAnonymous` | boolean | 게스트 |
+| `isAnonymous` | boolean | **레거시** — 신규 가입 시 `false` 고정 (익명 Auth 제거) |
 | `role` | string? | `"admin"` — Admin 접근 |
 | `fcmTokens` | string[] | FCM |
 | `gender`, `ageRange`, `country` | string? | |
@@ -24,7 +24,7 @@
 |------|------|
 | `viewedStoryIds` | 열람한 후기 ID |
 | `paidUnlockCount` | 유료 추가 열람 (IAP 예정) |
-| `aiBlocked` | 무료 4건 소진 후 AI 재생성 스킵 |
+| `aiBlocked` | 무료 2건 소진 후 AI 재생성 스킵 |
 
 **규칙:** read 본인, write 서버만 (`story-access` API)
 

@@ -6,6 +6,7 @@ import { AppBackground } from "@/components/AppBackground";
 import { DemoTierSwitcher } from "@/components/DemoTierSwitcher";
 import { AppIcons, Icon, type NavIconKey } from "@/components/ui/Icon";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { useAuth } from "@/hooks/useAuth";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { APP_NAME_EN, APP_SUBTITLE, CTA_SIGNUP } from "@/lib/branding";
 import { APP_ICON } from "@/lib/brandAssets";
@@ -21,6 +22,7 @@ const navItems: { path: string; label: string; icon: NavIconKey }[] = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const access = useAccessPolicy();
+  const { authError, clearAuthError } = useAuth();
   const { openSignupSheet } = useSignupSheet();
 
   return (
@@ -66,6 +68,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </header>
+
+        {authError && (
+          <div
+            role="alert"
+            className="mx-auto max-w-lg px-4 py-2 text-sm text-red-700 bg-red-50 border-b border-red-100"
+          >
+            <p>{authError}</p>
+            <button
+              type="button"
+              onClick={clearAuthError}
+              className="mt-1 text-xs underline text-red-600"
+            >
+              닫기
+            </button>
+          </div>
+        )}
 
         {showDemoUi && <DemoTierSwitcher />}
 

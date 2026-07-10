@@ -40,10 +40,10 @@
 | 경로 | 페이지 | 핵심 기능 |
 |------|--------|-----------|
 | `/` | HomePage | 히어로, 연구 미션 아코디언, 관측 밀도 신호, 키워드 칩 12개(DB 랜덤), 후기 1건 미리보기 |
-| `/write` | WriteDreamPage | 감정·본문 → AI 해몽 → Firestore 저장 |
+| `/write` | WriteDreamPage | 감정·본문 → AI 해몽 → **회원만** Firestore 저장 |
 | `/dream/:id` | DreamDetailPage | 해석 카드, 유사 꿈, 운세 그래프, 후기 |
 | `/follow-up/:id` | FollowUpPage | 30일 후기 (회원, 8자 이상 필수) |
-| `/explore` | ExplorePage | 키워드 검색, 칩 20개(DB), 미리보기 6건, AI+실데이터 병합 |
+| `/explore` | ExplorePage | 키워드 검색, 칩 **12개**(DB), 미리보기 6건, AI+실데이터 병합 |
 | `/my` | MyPage | 아카이브, 월별 잔디 달력, 운세 패널, 연구 미션, 프리미엄 |
 | `/my-dreams` | MyDreamsPage | 전체 아카이브 |
 | `/about` | — | `/#research` 리다이렉트 |
@@ -58,7 +58,7 @@
 
 ### 탐색 (2026-07)
 
-- 검색 칩 **20개** (`EXPLORE_KEYWORD_CHIP_COUNT`)
+- 검색 칩 **12개** (`KEYWORD_RAIL_COUNT` / `EXPLORE_KEYWORD_CHIP_COUNT`)
 - 검색 전 미리보기 **6건** (`EXPLORE_DISCOVER_PREVIEW_COUNT`)
 - `fetchPopularDreamKeywords()` — DB 500건 집계 후 셔플
 - 폴백: `PREVIEW_KEYWORD_POOL` (30개+)
@@ -71,13 +71,13 @@
 
 | 티어 | 꿈 저장 | 탐색 후기 | 운세 그래프 | 통계 전체 |
 |------|---------|-----------|-------------|-----------|
-| 비회원 | ✅ 익명 | 1건+블러 | 1축 블러 | blur |
-| 회원 | ✅ | 키워드당 **4건 무료** | 3축 | 일부 |
+| 비회원 | ❌ (로컬 미리보기) | 1건+블러 | 절반+블러 | blur |
+| 회원 | ✅ Firestore | 키워드당 **2건 무료** | 3축 | 일부 |
 | 프리미엄 | ✅ | 전체 | **7축 8주** | ✅ |
 
 ### 후기 열람 한도 (회원)
 
-- `MEMBER_FREE_STORY_VIEWS = 4` (`storyAccessPricing.ts`)
+- `MEMBER_FREE_STORY_VIEWS = 2` (`storyAccessPricing.ts`)
 - API: `story-access`, `register-story-views` (Netlify Functions)
 - Firestore: `users/{uid}/story_unlocks/{keywordKey}` — 서버만 쓰기
 
@@ -94,6 +94,15 @@
 - **토스페이먼츠 제거** (2026-07) — 웹 결제 Functions 삭제
 - 방향: **App Store / Google Play IAP** + `grantPaidStoryUnlock` (미연동)
 - 프리미엄: `users.isPremium` 수동 또는 추후 스토어 영수증
+
+### 인증 (2026-07-10)
+
+- **Google 로그인 전용** — 이메일/비밀번호 UI 제거
+- 비회원: Firebase Auth 세션 없음, `sessionStorage` pending dream
+- 데스크톱: `signInWithPopup` → 실패 시 redirect 폴백
+- 모바일·PWA·인앱: `signInWithRedirect` (`authPlatform.ts`)
+- 가입 후 pending → `PendingDreamLinker` → Firestore `saveDream`
+- **RTDB 미사용** — Firestore만
 
 ---
 
@@ -238,6 +247,15 @@
 ## 11. 핵심 파일 색인 (2026-07)
 
 ```
+# 인증
+src/hooks/useAuth.tsx
+src/lib/authPlatform.ts
+src/lib/authUser.ts
+src/lib/pendingDreamStorage.ts
+src/services/pendingDreamService.ts
+src/components/PendingDreamLinker.tsx
+src/components/AuthSheetBody.tsx
+
 # 브랜드 · 홈
 src/lib/branding.ts
 src/components/LabResearchMission.tsx

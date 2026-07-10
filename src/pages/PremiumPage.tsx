@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { PolicyBanner, TierBadge } from "@/components/AccessGate";
@@ -19,12 +18,8 @@ export function PremiumPage() {
 }
 
 export function PremiumPageContent() {
-  const { signInGoogle, signUpEmail, signInEmail, logout, user } = useAuth();
+  const { signInGoogle, logout, user } = useAuth();
   const access = useAccessPolicy();
-  const [mode, setMode] = useState<"login" | "signup" | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const { openPremiumSheet } = usePremiumSheet();
   const previewKeyword = EXPLORE_DISCOVER_KEYWORDS[0] ?? "시험";
   const previewStories = previewCommunityForKeyword(previewKeyword).stories;
@@ -33,17 +28,6 @@ export function PremiumPageContent() {
     estimateToStats(previewCommunityForKeyword(previewKeyword)),
   );
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      if (mode === "signup") await signUpEmail(email, password);
-      else await signInEmail(email, password);
-      setMode(null);
-    } catch {
-      setError("로그인에 실패했습니다.");
-    }
-  };
 
   return (
     <div className="space-y-5">
@@ -134,47 +118,9 @@ export function PremiumPageContent() {
           )}
 
           {!user && (
-            <div className="card p-4 space-y-3">
-              {mode ? (
-                <form onSubmit={handleAuth} className="space-y-3">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="이메일"
-                    className="input"
-                  />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="비밀번호 (6자 이상)"
-                    className="input"
-                  />
-                  {error && <p className="text-sm text-red-600">{error}</p>}
-                  <button type="submit" className="btn-primary">
-                    {mode === "signup" ? "회원가입" : "로그인"}
-                  </button>
-                </form>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMode("login")}
-                    className="btn-secondary flex-1"
-                  >
-                    이메일 로그인
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMode("signup")}
-                    className="btn-secondary flex-1"
-                  >
-                    회원가입
-                  </button>
-                </div>
-              )}
-            </div>
+            <button type="button" onClick={() => void signInGoogle()} className="btn-secondary">
+              Google로 로그인
+            </button>
           )}
 
           {access.isMember && (

@@ -8,16 +8,10 @@ import {
   type ReactNode,
 } from "react";
 import {
-  EmailAuthProvider,
   GoogleAuthProvider,
   getRedirectResult,
-  linkWithCredential,
-  linkWithPopup,
   onAuthStateChanged,
-  signInAnonymously,
   signInWithCredential,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type User,
@@ -26,7 +20,6 @@ import type { FirebaseError } from "firebase/app";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import {
   clearAuthRedirectPending,
-  clearPreAuthUid,
   isAuthRedirectPending,
   prefersAuthRedirect,
   startGoogleRedirect,
@@ -41,12 +34,11 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean;
   isConfigured: boolean;
-  signInGuest: () => Promise<void>;
+  authError: string | null;
   signInGoogle: () => Promise<void>;
-  signInEmail: (email: string, password: string) => Promise<void>;
-  signUpEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -73,23 +65,35 @@ async function finalizeGoogleUser(
     email: refreshed.email,
   });
   await syncProfile(refreshed);
-  clearPreAuthUid();
   return refreshed;
+}
+
+async function clearLegacyAnonymousSession(): Promise<void> {
+  if (!auth?.currentUser?.isAnonymous) return;
+  await signOut(auth);
 }
 
 async function handleRedirectSignIn(
   syncProfile: (u: User) => Promise<void>,
-): Promise<User | null> {
-  if (!auth) return null;
+): Promise<{ user: User | null; error: string | null }> {
+  if (!auth) return { user: null, error: null };
 
   try {
     const redirectResult = await getRedirectResult(auth);
     clearAuthRedirectPending();
 
     if (redirectResult?.user) {
-      return finalizeGoogleUser(redirectResult.user, syncProfile);
+      const linked = await finalizeGoogleUser(redirectResult.user, syncProfile);
+      return { user: linked, error: null };
     }
-    return auth.currentUser;
+
+    const current = auth.currentUser;
+    if (current && isLinkedAuthUser(current)) {
+      return { user: await finalizeGoogleUser(current, syncProfile), error: null };
+    }
+
+    await clearLegacyAnonymousSession();
+    return { user: auth.currentUser, error: null };
   } catch (err: unknown) {
     clearAuthRedirectPending();
     const fbErr = err as FirebaseError;
@@ -102,12 +106,17 @@ async function handleRedirectSignIn(
       const credential = GoogleAuthProvider.credentialFromError(fbErr);
       if (credential && auth) {
         const result = await signInWithCredential(auth, credential);
-        return finalizeGoogleUser(result.user, syncProfile);
+        const linked = await finalizeGoogleUser(result.user, syncProfile);
+        return { user: linked, error: null };
       }
     }
 
     console.error("Google redirect sign-in failed:", err);
-    return auth.currentUser;
+    await clearLegacyAnonymousSession();
+    return {
+      user: null,
+      error: "Google 로그인에 실패했습니다. Firebase 승인 도메인을 확인해 주세요.",
+    };
   }
 }
 
@@ -115,9 +124,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const syncProfile = useCallback(async (firebaseUser: User) => {
-    const linked = isLinkedAuthUser(firebaseUser);
+    if (!isLinkedAuthUser(firebaseUser)) return;
+
     const masterPremium = isMasterAccountEmail(firebaseUser.email);
     const masterAdmin = masterPremium;
     const existing = await getUserProfile(firebaseUser.uid);
@@ -125,16 +136,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (existing) {
       const nextPremium = existing.isPremium || masterPremium;
       const needsRoleSync = masterAdmin && existing.role !== "admin";
-      const profileAnonymous = linked ? false : firebaseUser.isAnonymous;
 
       if (
-        existing.isAnonymous !== profileAnonymous ||
+        existing.isAnonymous ||
         (masterPremium && !existing.isPremium) ||
         needsRoleSync ||
-        (linked && existing.email !== firebaseUser.email)
+        existing.email !== firebaseUser.email
       ) {
         await upsertUserProfile(firebaseUser.uid, {
-          isAnonymous: profileAnonymous,
+          isAnonymous: false,
           displayName: firebaseUser.displayName ?? existing.displayName,
           email: firebaseUser.email ?? existing.email,
           ...(masterPremium ? { isPremium: true } : {}),
@@ -146,19 +156,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...existing,
         displayName: firebaseUser.displayName ?? existing.displayName,
         email: firebaseUser.email ?? existing.email,
-        isAnonymous: profileAnonymous,
+        isAnonymous: false,
         isPremium: nextPremium,
         role: masterAdmin ? "admin" : existing.role,
       });
       return;
     }
 
-    const profileAnonymous = linked ? false : firebaseUser.isAnonymous;
     const profileData: Partial<UserProfile> = {
       uid: firebaseUser.uid,
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
-      isAnonymous: profileAnonymous,
+      isAnonymous: false,
       isPremium: masterPremium,
       ...(masterAdmin ? { role: "admin" as const } : {}),
       fcmTokens: [],
@@ -170,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: firebaseUser.uid,
       displayName: firebaseUser.displayName,
       email: firebaseUser.email,
-      isAnonymous: profileAnonymous,
+      isAnonymous: false,
       isPremium: masterPremium,
       role: masterAdmin ? "admin" : profileData.role,
       fcmTokens: [],
@@ -189,9 +198,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     void (async () => {
-      const redirectUser = await handleRedirectSignIn(syncProfile);
+      const { user: redirectUser, error } = await handleRedirectSignIn(syncProfile);
       if (!mounted) return;
 
+      if (error) setAuthError(error);
       if (redirectUser && isLinkedAuthUser(redirectUser)) {
         setUser(redirectUser);
         setLoading(false);
@@ -200,29 +210,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
         if (!mounted) return;
 
-        if (firebaseUser) {
-          const refreshed = await reloadAuthUser(firebaseUser);
-          setUser(refreshed);
-          await syncProfile(refreshed);
-          if (isLinkedAuthUser(refreshed)) {
-            clearPreAuthUid();
-          }
-          setLoading(false);
-          return;
-        }
-
         if (isAuthRedirectPending()) {
           setLoading(true);
           return;
         }
 
-        if (isFirebaseConfigured) {
-          try {
-            await signInAnonymously(authInstance);
-            return;
-          } catch (err) {
-            console.error("Anonymous auth failed:", err);
-          }
+        if (firebaseUser?.isAnonymous) {
+          await clearLegacyAnonymousSession();
+          if (!mounted) return;
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        if (firebaseUser && isLinkedAuthUser(firebaseUser)) {
+          const refreshed = await reloadAuthUser(firebaseUser);
+          setUser(refreshed);
+          await syncProfile(refreshed);
+          setLoading(false);
+          return;
         }
 
         setUser(null);
@@ -237,55 +244,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [syncProfile]);
 
-  const signInGuest = useCallback(async () => {
-    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    await signInAnonymously(auth);
-  }, []);
-
   const signInGoogle = useCallback(async () => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    const current = auth.currentUser;
+    setAuthError(null);
 
     if (prefersAuthRedirect()) {
-      await startGoogleRedirect(Boolean(current?.isAnonymous));
+      await startGoogleRedirect();
       return;
     }
 
-    try {
-      if (current?.isAnonymous) {
-        try {
-          const result = await linkWithPopup(current, provider);
-          const linked = await finalizeGoogleUser(result.user, syncProfile);
-          setUser(linked);
-          return;
-        } catch (err: unknown) {
-          const code =
-            err && typeof err === "object" && "code" in err
-              ? String((err as { code: string }).code)
-              : "";
-          if (
-            code === "auth/credential-already-in-use" ||
-            code === "auth/email-already-in-use"
-          ) {
-            const result = await signInWithPopup(auth, provider);
-            const linked = await finalizeGoogleUser(result.user, syncProfile);
-            setUser(linked);
-            return;
-          }
-          if (
-            code === "auth/popup-blocked" ||
-            code === "auth/popup-closed-by-user" ||
-            code === "auth/cancelled-popup-request"
-          ) {
-            await startGoogleRedirect(true);
-            return;
-          }
-          throw err;
-        }
-      }
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
 
+    if (auth.currentUser?.isAnonymous) {
+      await signOut(auth);
+    }
+
+    try {
       const result = await signInWithPopup(auth, provider);
       const linked = await finalizeGoogleUser(result.user, syncProfile);
       setUser(linked);
@@ -299,39 +274,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
-        await startGoogleRedirect(Boolean(current?.isAnonymous));
+        await startGoogleRedirect();
         return;
       }
+      setAuthError("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
       throw err;
     }
-  }, [syncProfile]);
-
-  const signInEmail = useCallback(async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    await signInWithEmailAndPassword(auth, email, password);
-  }, []);
-
-  const signUpEmail = useCallback(async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    const current = auth.currentUser;
-
-    if (current?.isAnonymous) {
-      const credential = EmailAuthProvider.credential(email, password);
-      await linkWithCredential(current, credential);
-      await upsertUserProfile(current.uid, {
-        isAnonymous: false,
-        email,
-      });
-      await syncProfile(current);
-      return;
-    }
-
-    await createUserWithEmailAndPassword(auth, email, password);
   }, [syncProfile]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
     await signOut(auth);
+    setUser(null);
+    setProfile(null);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -339,29 +294,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(await getUserProfile(user.uid));
   }, [user]);
 
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+
   const value = useMemo(
     () => ({
       user,
       profile,
       loading,
       isConfigured: isFirebaseConfigured,
-      signInGuest,
+      authError,
       signInGoogle,
-      signInEmail,
-      signUpEmail,
       logout,
       refreshProfile,
+      clearAuthError,
     }),
     [
       user,
       profile,
       loading,
-      signInGuest,
+      authError,
       signInGoogle,
-      signInEmail,
-      signUpEmail,
       logout,
       refreshProfile,
+      clearAuthError,
     ],
   );
 

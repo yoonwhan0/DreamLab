@@ -17,11 +17,12 @@
 
 ### 인증 · 티어
 
-- [x] 익명 Auth → 꿈 DB 저장
-- [x] Google/이메일 + `linkWithPopup`
+- [x] **Google 로그인 전용** — popup(데스크톱) / redirect(모바일·PWA)
+- [x] 익명 Auth **제거** — 비회원은 `sessionStorage` pending dream
+- [x] 가입 후 `PendingDreamLinker` → Firestore 아카이브 연동
 - [x] `useAccessPolicy` — guest / member / premium
 - [x] FCM 푸시 (회원)
-- [x] **후기 열람 한도** — 키워드당 4건 (`story-access` API)
+- [x] **후기 열람 한도** — 키워드당 **2건** (`MEMBER_FREE_STORY_VIEWS`)
 
 ### 페이지 (2026-07 최신)
 
@@ -31,7 +32,7 @@
 | `/write` | ✅ | AI 해몽 |
 | `/dream/:id` | ✅ | 운세 그래프·유사 꿈 |
 | `/follow-up/:id` | ✅ | 후기 8자+, nothing 제거 |
-| `/explore` | ✅ | 칩20·미리보기6·DB키워드 |
+| `/explore` | ✅ | 칩12·미리보기6·DB키워드 |
 | `/my` | ✅ | 아카이브·달력·운세·연구미션 |
 | `/my-dreams` | ✅ | 전체 아카이브 |
 | `/#research` | ✅ | 연구 미션 딥링크 |
@@ -109,6 +110,8 @@
 | `admin/src/lib/dreamSpreadsheetSchema.ts` | 32열 스키마 |
 | `src/lib/dreamSeedImport.ts` | 시드 페이로드 |
 | `netlify/functions/admin-*.ts` | Admin API |
-| `firestore.rules` | master + seed create |
+| `src/lib/authPlatform.ts` | Google popup/redirect 분기 |
+| `src/lib/pendingDreamStorage.ts` | 비회원 임시 꿈 |
+| `src/services/pendingDreamService.ts` | 가입 후 아카이브 flush |
 
 마지막 업데이트: **2026-07-10**

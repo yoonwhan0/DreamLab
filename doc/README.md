@@ -30,7 +30,8 @@
 | 항목 | 내용 |
 |------|------|
 | **앱** | React 19 PWA — Vite 빌드 → **Netlify** `dist/` |
-| **백엔드** | Firebase Auth / Firestore / FCM / Cloud Functions |
+| **Auth** | **Google 직접 로그인** — 익명 제거, pending dream |
+| **DB** | Firestore only — **RTDB 미사용** |
 | **API** | Netlify Functions 5종 (AI·후기열람·Admin 시드) |
 | **Admin** | `/superadmin` 임베드 — 대시보드 · 회원 · **꿈 DB 엑셀** |
 | **AI** | OpenAI gpt-4o-mini — `researchAnchor` 1차 키워드 |

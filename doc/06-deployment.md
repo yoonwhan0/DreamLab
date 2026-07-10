@@ -68,11 +68,22 @@ firebase deploy --only firestore:indexes
 firebase deploy --only functions   # Blaze — 30일 푸시
 ```
 
-### Auth 승인 도메인
+### Auth 승인 도메인 · 로그인 방식
 
+- **Google만** 활성화 (익명 로그인 비활성화)
 - Netlify URL (`*.netlify.app`)
 - 커스텀 도메인
 - `localhost`
+
+### Netlify 헤더 (Google popup)
+
+`netlify.toml`:
+
+```toml
+Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+```
+
+redirect 실패 시 앱 상단 `authError` 배너 — 승인 도메인 미등록 안내
 
 ### Admin 권한
 
@@ -121,7 +132,8 @@ npm run dev:netlify    # :8888 — API 포함 (권장)
 - [ ] Firestore rules 배포
 - [ ] Netlify `VITE_*` + `OPENAI_API_KEY` + `FIREBASE_*`
 - [ ] `VITE_DEMO_MODE=false`
-- [ ] Auth 승인 도메인
+- [ ] Auth — **Google** 활성화, **익명 비활성화**
+- [ ] Auth 승인 도메인 (Netlify URL)
 - [ ] Admin `/superadmin/dreams` 업로드·삭제 테스트
 - [ ] (선택) Functions — 푸시
 

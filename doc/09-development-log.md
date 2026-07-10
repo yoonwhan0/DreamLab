@@ -38,7 +38,7 @@
 | GPT 1회 답변 | 30일 후 **실제 사용자 후기 DB** |
 | 예언·불길 | 통계 경향 + **면책** (`LEGAL_DISCLAIMER`) |
 | 고정 키워드 사전 | **AI `researchAnchor`** 가 DB·통계 클러스터 1차 결정 |
-| 회원가입 필수 | **익명 Auth** 로도 꿈 DB 저장 → 가입 시 uid 유지 연결 |
+| 회원가입 필수 | **비회원 미리보기** → Google 가입 후 Firestore 저장 |
 
 ### 1.3 수익 모델 (구현 전)
 
@@ -50,7 +50,7 @@
 | 선택 | 이유 |
 |------|------|
 | React + Vite | 빠른 PWA, 모바일 웹 우선 |
-| Firebase | Auth(익명)·Firestore·FCM·스케줄 Functions 한 패키지 |
+| Firebase | Auth(Google)·Firestore·FCM·스케줄 Functions — **RTDB 미사용** |
 | Serverless AI | API 키 브라우저 노출 방지 |
 | Tailwind v4 | `@theme` + `index.css` 디자인 토큰 |
 | Admin 분리 | 운영 URL·빌드 분리, 사용자 앱에 링크 없음 |
@@ -103,8 +103,8 @@
 
 | 티어 | 구현 |
 |------|------|
-| **비회원** | `signInAnonymously()` 자동 → `dreams` 저장 |
-| **회원** | Google/이메일 + `linkWithPopup` (uid 유지) |
+| **비회원** | Firebase 세션 없음 → `sessionStorage` pending dream |
+| **회원** | Google 직접 로그인 (`signInWithPopup` / `signInWithRedirect`) |
 | **프리미엄** | `users.isPremium` |
 
 **핵심 파일**
@@ -128,7 +128,7 @@
 | `sendFollowUpReminders` | 매일 KST 00:00, due 지난 꿈 FCM 1회 |
 | `onFollowUpSubmitted` | 후기 제출 후 `hasFollowUpDiscount` 등 |
 
-- 익명 사용자 푸시 **스킵**
+- 익명 사용자 푸시 **스킵** (익명 Auth 제거 후 해당 없음 — 비로그인은 푸시 대상 아님)
 - `followUpReminderSent` — 중복 발송 방지
 
 **클라이언트**
@@ -726,6 +726,43 @@ scripts/sync-branch-env.mjs
 | **Phase 10** | **운세 7축 · 토스 제거** |
 | **Phase 11** | **Admin 엑셀 시드 · import/delete API** |
 | **Phase 12** | **커뮤니티 품질 · 연구 미션 페르소나** |
+| **Phase 13** | **익명 Auth 제거 · Google 직접 로그인 · pending dream** |
+
+---
+
+## Phase 13 — 인증 단순화 · 도돌이표 해결 (2026-07-10)
+
+### 13.1 문제
+
+- 앱 로드 시 `signInAnonymously()` → Google `linkWithRedirect` 실패 시 익명으로 복귀
+- `MemberRoute`가 가입 시트를 자동 오픈 → Google 반복 → **비회원 도돌이표**
+- Netlify 프로덕션: COOP로 popup `window.closed` 차단, redirect 도메인 미승인 시 실패
+
+### 13.2 해결
+
+| 변경 | 내용 |
+|------|------|
+| 익명 Auth | 앱·Firebase Console 모두 **제거** |
+| 로그인 | Google **직접** (`signInWithPopup` / `signInWithRedirect`) |
+| 비회원 꿈 | `pendingDreamStorage` → `/dream/preview` |
+| 가입 후 | `PendingDreamLinker` + `flushPendingDream` → Firestore |
+| 회원 판별 | `isLinkedAuthUser()` — email 존재 |
+| MemberRoute | 가입 시트 **버튼 클릭 시만** |
+| COOP | `netlify.toml` — `same-origin-allow-popups` |
+| 에러 UI | `authError` — Layout 배너 + AuthSheetBody |
+
+### 13.3 핵심 파일
+
+- `src/hooks/useAuth.tsx`
+- `src/lib/authPlatform.ts`
+- `src/lib/authUser.ts`
+- `src/lib/pendingDreamStorage.ts`
+- `src/services/pendingDreamService.ts`
+- `src/components/PendingDreamLinker.tsx`
+
+### 13.4 RTDB?
+
+**불필요.** Firestore + sessionStorage pending만으로 충분.
 
 ---
 

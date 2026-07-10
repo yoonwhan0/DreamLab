@@ -1,5 +1,7 @@
+import { GoogleAuthProvider, signInWithRedirect, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+
 const AUTH_REDIRECT_PENDING_KEY = "dreamlab-auth-redirect-pending";
-const PRE_AUTH_UID_KEY = "dreamlab:preAuthUid";
 
 function isMobileUa(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -20,18 +22,15 @@ function isInAppBrowser(): boolean {
   return /FBAN|FBAV|Instagram|KAKAOTALK|Line\/|NAVER|Twitter/i.test(navigator.userAgent);
 }
 
-/** popup COOP 이슈·모바일·PWA·인앱 브라우저 — redirect 로그인 */
+/** 모바일·PWA·인앱 — redirect (popup COOP 이슈 회피) */
 export function prefersAuthRedirect(): boolean {
   if (typeof window === "undefined") return false;
   return isInAppBrowser() || isMobileUa() || isStandalonePwa();
 }
 
-export function markAuthRedirectPending(anonymousUid?: string): void {
+export function markAuthRedirectPending(): void {
   try {
     sessionStorage.setItem(AUTH_REDIRECT_PENDING_KEY, "1");
-    if (anonymousUid) {
-      localStorage.setItem(PRE_AUTH_UID_KEY, anonymousUid);
-    }
   } catch {
     /* ignore */
   }
@@ -53,40 +52,17 @@ export function isAuthRedirectPending(): boolean {
   }
 }
 
-export function peekPreAuthUid(): string | null {
-  try {
-    return localStorage.getItem(PRE_AUTH_UID_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function clearPreAuthUid(): void {
-  try {
-    localStorage.removeItem(PRE_AUTH_UID_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
-export async function startGoogleRedirect(
-  linkAnonymous: boolean,
-): Promise<void> {
-  const { GoogleAuthProvider, linkWithRedirect, signInWithRedirect } = await import(
-    "firebase/auth"
-  );
-  const { auth } = await import("@/lib/firebase");
+/** Google redirect — 익명 연동 없이 직접 로그인만 */
+export async function startGoogleRedirect(): Promise<void> {
   if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
 
+  markAuthRedirectPending();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  const current = auth.currentUser;
 
-  markAuthRedirectPending(current?.uid);
-
-  if (linkAnonymous && current?.isAnonymous) {
-    await linkWithRedirect(current, provider);
-    return;
+  // 남아 있는 익명 세션 제거 — link 지옥 방지
+  if (auth.currentUser?.isAnonymous) {
+    await signOut(auth);
   }
 
   await signInWithRedirect(auth, provider);

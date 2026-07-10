@@ -12,7 +12,7 @@ interface AuthSheetBodyProps {
 
 /** 바텀시트 — Google 로그인/가입 전용 */
 export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) {
-  const { signInGoogle, user } = useAuth();
+  const { signInGoogle, user, authError } = useAuth();
   const access = useAccessPolicy();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,6 +70,10 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
       >
         {busy ? "연결 중…" : CTA_AUTH_GOOGLE}
       </button>
+
+      {authError && (
+        <p className="text-sm text-red-600 text-center copy-lines">{authError}</p>
+      )}
 
       {error && <p className="text-sm text-red-600 text-center">{error}</p>}
     </div>

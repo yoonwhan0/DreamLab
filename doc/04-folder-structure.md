@@ -48,14 +48,20 @@ DreamLab/
 │   │   ├── DreamFortuneTrendPanel.tsx
 │   │   ├── DreamArchiveCalendar.tsx
 │   │   ├── CommunityStoriesPanel.tsx
-│   │   ├── ExploreDiscoverSection.tsx
+│   │   ├── AuthSheetBody.tsx
+│   │   ├── PendingDreamLinker.tsx
+│   │   ├── MemberRoute.tsx
 │   │   └── motion/AiWritingPulse.tsx
 │   ├── hooks/
 │   │   ├── useFeaturedKeywords.ts
 │   │   ├── useHomeFeaturedKeywords.ts
 │   │   ├── useAccessPolicy.ts
-│   │   └── useAuth.tsx
+│   │   ├── useAuth.tsx
+│   │   └── useSignupSheet.tsx
 │   ├── lib/
+│   │   ├── authPlatform.ts           # popup/redirect 분기
+│   │   ├── authUser.ts               # isLinkedAuthUser
+│   │   ├── pendingDreamStorage.ts    # 비회원 임시 꿈
 │   │   ├── branding.ts             # RESEARCH_MISSION_*
 │   │   ├── dreamSeedImport.ts      # 시드 페이로드
 │   │   ├── dreamFortuneTrends.ts
@@ -73,6 +79,7 @@ DreamLab/
 │   │   ├── FollowUpPage.tsx
 │   │   └── WriteDreamPage.tsx
 │   └── services/
+│       ├── pendingDreamService.ts    # 가입 후 pending flush
 │       ├── dreamService.ts         # fetchPopularDreamKeywords
 │       ├── communityDataService.ts
 │       ├── storyUnlockService.ts
@@ -96,6 +103,7 @@ DreamLab/
 | Admin ERP 10메뉴 | → 3메뉴 슬림화 |
 | `/about` 페이지 | → `/#research` |
 | outcome `nothing` | 제거 → `other` |
+| 익명 Auth | 제거 → Google 직접 로그인 + pending dream |
 
 ## Admin 레거시 (라우터 미연결)
 

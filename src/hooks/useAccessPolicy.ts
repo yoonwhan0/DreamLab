@@ -117,7 +117,7 @@ export function useAccessPolicy(): AccessPolicy & { loading: boolean } {
 
     canInterpret: true,
 
-    canSaveDream: Boolean(user) && isFirebaseConfigured,
+    canSaveDream: isMember && isFirebaseConfigured,
 
     canViewSimilarTypes: isMember,
 
