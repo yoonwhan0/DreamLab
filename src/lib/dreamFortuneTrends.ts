@@ -1,6 +1,8 @@
 import { hashSeed, createSeededRandom, seededInt } from "@/lib/seededRandom";
 import { inferCategoryFromKeyword } from "@/lib/keywordNarratives";
-import type { DreamStats, OutcomeCategory } from "@/types";
+import { resolveResearchAnchor } from "@/lib/dreamAnchor";
+import type { Dream, DreamStats, OutcomeCategory } from "@/types";
+import { OUTCOME_CATEGORIES } from "@/types";
 
 export type FortuneAxisId =
   | "overall"
@@ -30,6 +32,9 @@ export interface DreamFortuneSnapshot {
   axes: FortuneAxisTrend[];
   sampleCount: number;
   followUpCount: number;
+  /** 내 아카이브에서 누적 계산 여부 */
+  fromArchive?: boolean;
+  archiveDreamCount?: number;
 }
 
 const AXIS_META: { id: FortuneAxisId; label: string; outcomeKeys: OutcomeCategory[] }[] = [
@@ -78,6 +83,153 @@ function directionFromDelta(delta: number): FortuneDirection {
   if (delta >= 4) return "up";
   if (delta <= -4) return "down";
   return "flat";
+}
+
+function emptyOutcomes(): Record<OutcomeCategory, number> {
+  return Object.keys(OUTCOME_CATEGORIES).reduce(
+    (acc, key) => {
+      acc[key as OutcomeCategory] = 0;
+      return acc;
+    },
+    {} as Record<OutcomeCategory, number>,
+  );
+}
+
+/** 내 꿈 아카이브 → 30일 후기·감정 집계 */
+export function buildArchiveDreamStats(dreams: Dream[]): DreamStats {
+  const outcomes = emptyOutcomes();
+  const emotionMap = new Map<string, number>();
+
+  for (const dream of dreams) {
+    for (const emotion of dream.emotions) {
+      emotionMap.set(emotion, (emotionMap.get(emotion) ?? 0) + 1);
+    }
+    if (dream.followUp) {
+      outcomes[dream.followUp.outcomeCategory] += 1;
+    }
+  }
+
+  const total = dreams.length;
+  const withFollowUp = dreams.filter((d) => d.followUp).length;
+  const pending = total - withFollowUp;
+
+  if (pending > 0) {
+    outcomes.nothing += pending;
+  }
+  if (withFollowUp === 0 && total > 0) {
+    outcomes.nothing = Math.max(outcomes.nothing, total);
+  }
+
+  return {
+    totalDreams: total,
+    totalWithFollowUp: withFollowUp,
+    survivalRate: total > 0 ? Math.round((withFollowUp / total) * 100) : 0,
+    outcomes,
+    topEmotions: [...emotionMap.entries()]
+      .map(([emotion, count]) => ({ emotion, count }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+function dominantArchiveKeyword(dreams: Dream[]): string {
+  const counts = new Map<string, number>();
+  for (const dream of dreams) {
+    const anchor = resolveResearchAnchor(dream.interpretation, dream.title, dream.content);
+    counts.set(anchor, (counts.get(anchor) ?? 0) + 1);
+  }
+  let best = "꿈";
+  let max = 0;
+  for (const [k, n] of counts) {
+    if (n > max) {
+      max = n;
+      best = k;
+    }
+  }
+  return best;
+}
+
+/** 꿈 기록 시점 기준 8주 누적 — 아카이브 그래프용 */
+function buildArchiveCumulativeSeries(dreams: Dream[], weeks = 8): number[] {
+  if (dreams.length === 0) return Array(weeks).fill(12);
+
+  const sorted = [...dreams].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const series: number[] = [];
+
+  for (let w = weeks - 1; w >= 0; w--) {
+    const cutoff = now - w * weekMs;
+    const cumulative = sorted.filter((d) => d.createdAt.getTime() <= cutoff).length;
+    series.push(cumulative);
+  }
+
+  const max = Math.max(...series, 1);
+  return series.map((c) => Math.round(18 + (c / max) * 72));
+}
+
+function applyArchiveSeriesToAxes(
+  axes: FortuneAxisTrend[],
+  dreams: Dream[],
+  stats: DreamStats,
+): FortuneAxisTrend[] {
+  const baseSeries = buildArchiveCumulativeSeries(dreams);
+  const seed = hashSeed(`archive-series-${dreams.length}-${stats.totalWithFollowUp}`);
+
+  return axes.map((axis, idx) => {
+    const r = createSeededRandom(seed + idx * 997);
+    const series = baseSeries.map((v) => {
+      const jitter = Math.round((r() - 0.5) * 8);
+      const outcomeBoost =
+        axis.id === "money"
+          ? stats.outcomes.money * 2
+          : axis.id === "love"
+            ? stats.outcomes.love * 2
+            : axis.id === "career"
+              ? stats.outcomes.job * 2
+              : 0;
+      return Math.min(94, Math.max(14, v + jitter + Math.min(12, outcomeBoost)));
+    });
+
+    const score = series[series.length - 1] ?? axis.score;
+    const prev = series[series.length - 2] ?? score;
+    const deltaWeek = score - prev;
+    const direction = directionFromDelta(deltaWeek);
+
+    return {
+      ...axis,
+      score,
+      deltaWeek,
+      direction,
+      series,
+    };
+  });
+}
+
+/** 내 꿈 아카이브 누적 → 운세 그래프 (탐색은 커뮤니티, 마이는 아카이브) */
+export function buildDreamFortuneFromArchive(dreams: Dream[]): DreamFortuneSnapshot | null {
+  if (dreams.length === 0) return null;
+
+  const stats = buildArchiveDreamStats(dreams);
+  const dominant = dominantArchiveKeyword(dreams);
+  const label =
+    dreams.length >= 2
+      ? `내 아카이브 · ${dominant}`
+      : dominant;
+
+  const snapshot = buildDreamFortuneSnapshot(label, stats);
+  const axes = applyArchiveSeriesToAxes(snapshot.axes, dreams, stats);
+
+  return {
+    ...snapshot,
+    keyword: label,
+    axes,
+    sampleCount: dreams.length,
+    followUpCount: stats.totalWithFollowUp,
+    fromArchive: true,
+    archiveDreamCount: dreams.length,
+  };
 }
 
 /** 같은 꿈 유형 30일 후 데이터 → 다차원 운세 트렌드 */

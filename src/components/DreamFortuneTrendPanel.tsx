@@ -16,6 +16,8 @@ interface DreamFortuneTrendPanelProps {
   snapshot: DreamFortuneSnapshot;
   /** guest | member | premium — 미지정 시 access policy */
   tier?: FortuneAccessTier;
+  /** community = 탐색 키워드 · archive = 내 꿈 누적 */
+  variant?: "community" | "archive";
   compact?: boolean;
   className?: string;
 }
@@ -35,6 +37,7 @@ function resolveTier(
 export function DreamFortuneTrendPanel({
   snapshot,
   tier,
+  variant = "community",
   compact = false,
   className = "",
 }: DreamFortuneTrendPanelProps) {
@@ -49,17 +52,41 @@ export function DreamFortuneTrendPanel({
   const visible = snapshot.axes.slice(0, visibleCount);
   const locked = snapshot.axes.slice(visibleCount);
 
+  const isArchive = variant === "archive" || snapshot.fromArchive;
+
+  const headerLabel = isArchive ? "내 아카이브 · 누적 운세" : "30일 뒤 · 운세 추이";
+
+  const titleLine = isArchive
+    ? snapshot.keyword
+    : `"${snapshot.keyword}" 꿈을 꾼 사람들`;
+
+  const subtitleLine = isArchive
+    ? `${snapshot.archiveDreamCount ?? snapshot.sampleCount}개 꿈 누적 · 30일 후기 ${snapshot.followUpCount}건 — 기록이 쌓일수록 그래프가 자라요`
+    : `${snapshot.sampleCount.toLocaleString()}명 기록 · ${snapshot.followUpCount.toLocaleString()}명 30일 후 답변 — 통계적 경향 (예언 아님)`;
+
   const ctaTitle =
     resolved === "guest"
-      ? "가입하면 재물·연애·직장운 그래프가 열립니다"
-      : "프리미엄이면 8주 추이·전 축 통계를 볼 수 있어요";
+      ? isArchive
+        ? "가입하면 내 꿈 아카이브 운세가 열립니다"
+        : "가입하면 재물·연애·직장운 그래프가 열립니다"
+      : isArchive
+        ? "프리미엄이면 누적 아카이브 8주·전 축 운세"
+        : "프리미엄이면 8주 추이·전 축 통계를 볼 수 있어요";
 
   const onCta = () => {
     if (resolved === "guest") {
-      openSignupSheet(`“${snapshot.keyword}” 꿈 — 30일 뒤 운세 추이`);
+      openSignupSheet(
+        isArchive
+          ? "내 꿈 아카이브 — 누적 운세 그래프"
+          : `"${snapshot.keyword}" 꿈 — 30일 뒤 운세 추이`,
+      );
       return;
     }
-    openPremiumSheet(`“${snapshot.keyword}” 운세·통계 전체`);
+    openPremiumSheet(
+      isArchive
+        ? "누적 아카이브 운세·8주 그래프 전체"
+        : `"${snapshot.keyword}" 운세·통계 전체`,
+    );
   };
 
   return (
@@ -67,14 +94,18 @@ export function DreamFortuneTrendPanel({
       className={`card-highlight card-bezel overflow-hidden ${compact ? "p-4 space-y-3" : "p-5 space-y-4"} ${className}`.trim()}
     >
       <header className={compact ? "space-y-1" : "text-center space-y-1.5"}>
-        <p className="section-label">30일 뒤 · 운세 추이</p>
+        <p className="section-label">{headerLabel}</p>
         <h3 className={`font-bold text-text ${compact ? "text-sm" : "text-base"}`}>
-          &ldquo;{snapshot.keyword}&rdquo; 꿈을 꾼 사람들
+          {isArchive ? titleLine : <>&ldquo;{snapshot.keyword}&rdquo; 꿈을 꾼 사람들</>}
         </h3>
         <p className="text-xs text-text-muted copy-lines">
-          {snapshot.sampleCount.toLocaleString()}명 기록 ·{" "}
-          {snapshot.followUpCount.toLocaleString()}명 30일 후 답변 —{" "}
-          <span className="text-text-secondary">통계적 경향 (예언 아님)</span>
+          {subtitleLine}
+          {!isArchive && (
+            <>
+              {" "}
+              <span className="text-text-secondary">통계적 경향 (예언 아님)</span>
+            </>
+          )}
         </p>
       </header>
 

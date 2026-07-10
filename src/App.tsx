@@ -77,7 +77,7 @@ export default function App() {
                       <Route path="/payment/story-success" element={<PaymentStorySuccessPage />} />
                       <Route path="/payment/story-fail" element={<PaymentStoryFailPage />} />
                       <Route path="/my" element={<MyPage />} />
-                      <Route path="/premium" element={<Navigate to="/my" replace />} />
+                      <Route path="/premium" element={<Navigate to="/my#pricing" replace />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                   </Layout>

@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import { DreamArchiveCalendar } from "@/components/DreamArchiveCalendar";
 import { DreamArchiveCard } from "@/components/DreamArchiveCard";
 import { CuriosityTease } from "@/components/CuriosityTease";
+import { LabResearchMission } from "@/components/LabResearchMission";
 import { MyDreamFortuneSection } from "@/components/MyDreamFortuneSection";
+import { MyPricingSection } from "@/components/MyPricingSection";
+import { ConversionGate } from "@/components/ConversionGate";
+import { TierBadge } from "@/components/AccessGate";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
@@ -50,6 +54,9 @@ export function MyPage() {
   return (
     <div className="space-y-5">
       <PageHero title={PAGE_COPY.my.title} desc={PAGE_COPY.my.desc} centered={false} />
+      <div className="flex justify-end -mt-2">
+        <TierBadge tier={access.tier} />
+      </div>
 
       {dreams.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
@@ -103,10 +110,18 @@ export function MyPage() {
         <MyDreamFortuneSection dreams={dreams} />
       )}
 
-      {access.isMember && !access.isPremium && (
+      <LabResearchMission />
+
+      <MyPricingSection />
+
+      {access.isMember && !access.isPremium && dreams.length > 0 && (
+        <ConversionGate step={3} compact />
+      )}
+
+      {access.isMember && !access.isPremium && dreams.length === 0 && (
         <CuriosityTease
           title="다른 사람들은 한 달 뒤, 어떻게 됐을까요?"
-          body="내 꿈과 비슷한 키워드 — 재물·연애·직장운 3축 맛보기. 8주 그래프 전체는 프리미엄."
+          body="꿈을 기록하면 내 아카이브 운세 그래프가 쌓입니다. 탐색에서 비슷한 꿈 후기도 볼 수 있어요."
           cta="탐색에서 후기 엿보기"
           to="/explore"
         />

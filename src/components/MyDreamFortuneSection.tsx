@@ -1,33 +1,22 @@
 import { useMemo } from "react";
 import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
-import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
-import { resolveResearchAnchor } from "@/lib/dreamAnchor";
-import { previewCommunityForKeyword, estimateToStats } from "@/services/syntheticCommunityService";
+import { buildDreamFortuneFromArchive } from "@/lib/dreamFortuneTrends";
 import type { Dream } from "@/types";
 
 interface MyDreamFortuneSectionProps {
   dreams: Dream[];
 }
 
-/** 마이 — 최근 꿈 기준 운세 추이 (AI 재해석 대체) */
+/** 마이 — 누적 꿈 아카이브에서 운세 추이 (기록 쌓일수록 그래프 성장) */
 export function MyDreamFortuneSection({ dreams }: MyDreamFortuneSectionProps) {
-  const latest = dreams[0];
-  const snapshot = useMemo(() => {
-    if (!latest) return null;
-    const keyword =
-      resolveResearchAnchor(latest.interpretation, latest.title, latest.content) ||
-      latest.title ||
-      "꿈";
-    const estimate = previewCommunityForKeyword(keyword);
-    const stats = estimateToStats(estimate);
-    return buildDreamFortuneSnapshot(keyword, stats);
-  }, [latest]);
+  const snapshot = useMemo(() => buildDreamFortuneFromArchive(dreams), [dreams]);
 
-  if (!snapshot || !latest) return null;
+  if (!snapshot) return null;
 
   return (
     <DreamFortuneTrendPanel
       snapshot={snapshot}
+      variant="archive"
       compact
     />
   );
