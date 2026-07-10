@@ -1,5 +1,5 @@
 import type { Handler } from "@netlify/functions";
-import { getAdminDb, verifyBearerAdmin } from "./lib/firebaseAdmin";
+import { getAdminDb, getAdminInitError, isAdminServerConfigured, verifyBearerAdmin } from "./lib/firebaseAdmin";
 
 const ADMIN_SEED_USER_ID = "dreamlab-seed-data";
 const BATCH_SIZE = 400;
@@ -56,7 +56,17 @@ const handler: Handler = async (event) => {
 
   const admin = await verifyBearerAdmin(event.headers.authorization);
   if (!admin) {
-    return { statusCode: 403, body: JSON.stringify({ error: "Admin required" }) };
+    const configured = isAdminServerConfigured();
+    const initError = getAdminInitError();
+    return {
+      statusCode: configured ? 403 : 503,
+      body: JSON.stringify({
+        error: configured
+          ? "Admin required"
+          : initError ??
+            "Server not configured — FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
+      }),
+    };
   }
 
   const db = getAdminDb();

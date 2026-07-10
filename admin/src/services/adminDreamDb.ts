@@ -167,7 +167,7 @@ async function importViaServerApi(rows: DreamSpreadsheetRow[]): Promise<ImportRe
   const ready = rows.filter((r) => r.content.trim().length >= 8 && !rowWithErrors(r));
   if (ready.length === 0) return null;
 
-  const token = await auth.currentUser.getIdToken();
+  const token = await auth.currentUser.getIdToken(true);
   const payloads = ready.map((row) => rowToAdminImportPayload(row));
 
   let res: Response;
@@ -184,7 +184,8 @@ async function importViaServerApi(rows: DreamSpreadsheetRow[]): Promise<ImportRe
     return null;
   }
 
-  if (res.status === 503) return null;
+  // API 미설정·인증 실패 시 Firestore 직접 저장으로 폴백
+  if (res.status === 503 || res.status === 403) return null;
 
   const text = await res.text();
   if (!res.ok) {
