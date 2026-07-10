@@ -54,15 +54,21 @@
 
 - 제거·축소: 홈 대형 KPI 숫자, FOMO 블러 과다, `ResearchLabPanel` 풀 노출
 - 유지: `HomeObservatorySignal` (관측 밀도만), `HomeFeaturedStoryPanel` (키워드 1건)
-- 키워드: `useHomeFeaturedKeywords` — Firestore 공개 꿈 빈도 중 **수동 후기 카피가 있는 키워드만** 12개 랜덤
+- 키워드: `useFeaturedKeywords` — Firestore 공개 꿈 빈도 중 **수동 후기 카피가 있는 키워드만** 12개 랜덤
 - 홈·탐색 뱃지 후기: `coherentCommunityStory.ts`의 `MANUAL_STORIES`에 제목·꿈내용·30일후기를 **키워드별로 직접 작성**한다. 키워드만 끼워 넣는 조합 템플릿, 큰따옴표 강조, 공통 골격 문장 사용 금지.
+- **홈 후기 블러 (2026-07-10):** 비회원만 꿈 본문 하단 블러 + `회원가입하면 꿈 내용이 보여요` CTA. **회원은 꿈 전체 선명**, 30일 후는 비회원도 선명. (`dreamTeaseBlur` / `CommunityStoriesPanel`)
 
 ### 탐색 (2026-07)
 
 - 검색 칩 **12개** (`KEYWORD_RAIL_COUNT` / `EXPLORE_KEYWORD_CHIP_COUNT`)
-- 검색 전 미리보기 **6건** (`EXPLORE_DISCOVER_PREVIEW_COUNT`)
+- 검색 전 미리보기 **6건** (`EXPLORE_DISCOVER_PREVIEW_COUNT`) — 합성 후기, AI 미호출
 - `fetchPopularDreamKeywords()` — DB 500건 집계 후 `isManualStoryKeyword()`로 필터링
 - 폴백: `PREVIEW_KEYWORD_POOL` 중 수동 후기 카피가 있는 키워드
+- **탐색 검색 AI (2026-07-10):**
+  - 첫 검색: `interpretDream(..., { exploreMode: true })` — **통계·그래프 한 번** + 후기 **1건**
+  - 「후기 1건 더 보기」: `POST /api/generate-community-story` — **클릭마다 AI 1건** 생성
+  - 등급 한도: 비회원 **1** / 회원 **2** / 프리미엄 **4** (`tierStoryCap`, `PREMIUM_MAX_STORY_VIEWS`)
+  - 안내: `StoryLoadLimitNotice` — 말투·맞춤법 정제, 확실한 정보만 단계적으로 노출
 
 ---
 
@@ -234,7 +240,37 @@
 
 ---
 
-## 10. 미구현 · 다음 단계
+## 10. 비슷한 꿈 매칭 · 데이터 정제 (2026-07-11)
+
+### 사용자-facing 원칙
+
+- **「비슷한」** 통일 — `유사한` 대신 신뢰감 있는 표현 (`src/lib/dataCopy.ts`)
+- 로딩·후기 로드: **「찾는 중」「정리하는 중」「불러오는 중」** — `AI`, `작성 중` **UI 노출 금지**
+- 앱은 **기록을 검색·정제**하는 느낌 — 생성·가짜 데이터 인식이 들면 안 됨
+
+### 엄격 매칭 (`src/lib/similarDreamMatch.ts`)
+
+| 구간 | 규칙 |
+|------|------|
+| Firestore `findSimilarDreams` | 키워드 **2개 이상 겹침**, 또는 **1개 겹침 + 동일 category** — category만으로는 통과 안 함 |
+| 후기 `storyRelatesToAnchorStrict` | 앵커 2자 이상, `꿈·일반·기타` 등 **약한 앵커 제외** — 본문·후기에 키워드 맥락 필수 |
+| `sanitizeAiCommunityStory` | 사용자 원문 겹침 제거 → `alignStoryToKeyword` → `isQualityCommunityStory(anchor)` |
+| 실DB 부족 | `isStrongAnchor`일 때만 수동·키워드 풀 폴백 — 약한 앵커면 빈 후기 |
+
+### 카피 상수 (`dataCopy.ts`)
+
+- `SIMILAR_MONTH_LABEL` — `비슷한 내용의 한 달 뒤는?`
+- `LOADING_FIND_SIMILAR` / `LOADING_MORE_REVIEW` — 로딩 문구
+- `ESTIMATED_DATA_NOTE` — 「기록이 쌓이는 중」 (AI 추정 문구 제거)
+
+### 인증 (2026-07-11)
+
+- Google **popup 우선**, redirect는 차단 시만
+- 로그인 시 **인앱 브라우저 경고 UI 제거** (로그인 안정화 후)
+
+---
+
+## 11. 미구현 · 다음 단계
 
 - [ ] App Store / Play IAP → `isPremium` 자동화
 - [ ] `kpi_daily` 야간 집계
@@ -245,7 +281,7 @@
 
 ---
 
-## 11. 핵심 파일 색인 (2026-07)
+## 12. 핵심 파일 색인 (2026-07)
 
 ```
 # 인증
@@ -264,7 +300,9 @@ src/components/HomeObservatorySignal.tsx
 src/hooks/useFeaturedKeywords.ts
 src/hooks/useHomeFeaturedKeywords.ts
 
-# 커뮤니티 · AI
+# 커뮤니티 · 데이터 정제
+src/lib/dataCopy.ts
+src/lib/similarDreamMatch.ts
 src/services/communityDataService.ts
 src/services/syntheticCommunityService.ts
 src/services/dreamService.ts          # fetchPopularDreamKeywords
@@ -290,4 +328,4 @@ firestore.rules
 src/lib/masterAccounts.ts
 ```
 
-마지막 업데이트: **2026-07-10**
+마지막 업데이트: **2026-07-11**

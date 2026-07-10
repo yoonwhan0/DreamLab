@@ -79,6 +79,6 @@ export const CTA_PREMIUM = "프리미엄 구독 · ₩4,900/월";
 export const CTA_PREMIUM_SEE_ALL = "프리미엄으로 전체 보기";
 export const CTA_WRITE_DREAM = "꿈 기록하기";
 export const CTA_EXPLORE = "다른 꿈 패턴 탐색";
-export const HINT_GUEST = "지금은 미리보기만 — 가입하면 저장·알림·유사 꿈이 열립니다";
+export const HINT_GUEST = "지금은 미리보기만 — 가입하면 저장·알림·비슷한 꿈이 열립니다";
 export const HINT_MEMBER = "지금은 일부만 — 프리미엄이면 운세 그래프·후기·통계 전체";
 export const HINT_PREMIUM = "1분 · 기록 무료 · 한 달 뒤 결말 기록";

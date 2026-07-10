@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-
-const DEFAULT_LINES = [
-  "유사한 꿈을 찾는 중",
-  "비슷한 내용의 한 달 뒤 기록을 모으는 중",
-  "같은 유형 꿈 통계를 정리하는 중",
-  "공개된 후기 목록을 살펴보는 중",
-  "결말 비율을 계산하는 중",
-];
+import {
+  DATA_SEARCH_HEADLINE,
+  DATA_SEARCH_LINES,
+  LOADING_FIND_SIMILAR,
+} from "@/lib/dataCopy";
 
 interface AiWritingPulseProps {
   keyword?: string;
@@ -14,15 +11,15 @@ interface AiWritingPulseProps {
   variant?: "card" | "inline";
 }
 
-/** 탐색·해몽 — 유사 꿈 검색 연출 */
+/** 해몽·탐색 — 비슷한 꿈 데이터 정제 연출 */
 export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProps) {
   const lines = useMemo(() => {
-    if (!keyword?.trim()) return DEFAULT_LINES;
+    if (!keyword?.trim()) return [...DATA_SEARCH_LINES];
     const q = keyword.trim();
     return [
       `"${q}"와 비슷한 꿈을 찾는 중`,
-      `"${q}" 유사 내용의 한 달 뒤 기록 정리 중`,
-      ...DEFAULT_LINES.slice(2),
+      `"${q}" 한 달 뒤 기록을 정리하는 중`,
+      ...DATA_SEARCH_LINES.slice(2),
     ];
   }, [keyword]);
 
@@ -62,7 +59,7 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
         <span />
         <span />
       </div>
-      <p className="text-sm font-semibold text-text motion-shimmer">유사한 꿈 · 한 달 뒤 기록 검색 중</p>
+      <p className="text-sm font-semibold text-text motion-shimmer">{DATA_SEARCH_HEADLINE}</p>
       <p className="ai-writing-type text-xs text-text-secondary min-h-[1.25rem]" aria-live="polite">
         {typed}
         <span className="ai-writing-cursor" aria-hidden>
@@ -80,6 +77,7 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
   if (variant === "inline") {
     return (
       <div className="ai-writing-pulse ai-writing-pulse--inline py-3 text-center space-y-2" role="status">
+        <p className="sr-only">{LOADING_FIND_SIMILAR}</p>
         {body}
       </div>
     );
@@ -90,6 +88,7 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
       className="ai-writing-pulse card card-bezel border border-primary/20 bg-primary-soft/10 p-4 space-y-3"
       role="status"
       aria-live="polite"
+      aria-label={LOADING_FIND_SIMILAR}
     >
       {body}
     </div>

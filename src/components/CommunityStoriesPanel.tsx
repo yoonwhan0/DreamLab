@@ -7,6 +7,7 @@ import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { ANONYMOUS_STORY_PROFILE } from "@/lib/coherentCommunityStory";
+import { SIMILAR_STORIES_DEFAULT_TITLE } from "@/lib/dataCopy";
 
 interface CommunityStoriesPanelProps {
   stories: CommunityStory[];
@@ -27,7 +28,7 @@ interface CommunityStoriesPanelProps {
 
 export function CommunityStoriesPanel({
   stories,
-  title = "유사한 내용의 한 달 뒤, 실제로 어땠는지",
+  title = SIMILAR_STORIES_DEFAULT_TITLE,
   variant,
   compact = false,
   blurLocked = false,

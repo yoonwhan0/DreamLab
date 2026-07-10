@@ -13,6 +13,7 @@ import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { KeywordChipRail } from "@/components/KeywordChipRail";
 import { useHomeFeaturedKeywords } from "@/hooks/useHomeFeaturedKeywords";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
+import { SIMILAR_MONTH_LABEL } from "@/lib/dataCopy";
 import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
 
 export function HomePage() {
@@ -58,7 +59,7 @@ export function HomePage() {
 
       <Reveal delay={110}>
         <KeywordChipRail
-          label="유사한 내용의 한 달 뒤는?"
+          label={SIMILAR_MONTH_LABEL}
           keywords={keywords}
           activeKeyword={activeKeyword}
           variant="home"

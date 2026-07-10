@@ -45,13 +45,13 @@ export function normalizeOutcomeCategory(raw: string | undefined): OutcomeCatego
 }
 
 export const LEGAL_DISCLAIMER =
-  "유사한 꿈을 기록한 사용자들의 후기에서\n이런 경향이 보고되었습니다.\n개인의 미래를 예측하거나 보장하지 않습니다.";
+  "비슷한 꿈을 기록한 사용자들의 후기에서\n이런 경향이 보고되었습니다.\n개인의 미래를 예측하거나 보장하지 않습니다.";
 
 export const DISTINCT_INTERPRETATION_NOTE =
   "해몽은 여기서 끝입니다.\n그 너머는 금단의 영역.\n한 달 뒤, 같은 꿈을 꾼 이들의 결말 — 지금 열람 가능합니다.";
 
 export const ESTIMATED_DATA_NOTE =
-  "아직 충분한 답변이 쌓이지 않아 AI가 추정한 수치입니다. 데이터가 모이면 실제 통계로 바뀝니다.";
+  "아직 이 키워드의 공개 기록이 쌓이는 중입니다. 숫자는 참고용 미리보기이며, 기록이 늘면 실제 통계로 갱신됩니다.";
 
 export const MIN_REAL_COMMUNITY_COUNT = 5;
 

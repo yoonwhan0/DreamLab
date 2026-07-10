@@ -279,10 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         code === "auth/cancelled-popup-request"
       ) {
         if (isInAppBrowser()) {
-          const msg =
-            "카카오톡·인스타 등 앱 안 브라우저에서는 Google 로그인이 막히는 경우가 많아요. Safari·Chrome에서 이 사이트를 열어 주세요.";
-          setAuthError(msg);
-          throw new Error(msg);
+          setAuthError("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
+          throw new Error("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
         }
         await startGoogleRedirect();
         return;

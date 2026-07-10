@@ -343,7 +343,7 @@ export function DreamDetailPage() {
                 description="꿈연구소장의 관점 전체 · 30일 푸시 · 한 달 뒤 후기 작성"
                 ctaLabel={CTA_SIGNUP}
                 onCta={() =>
-                  openSignupSheet("Google로 가입하면 유사 꿈·30일 알림·후기 작성이 열립니다.")
+                  openSignupSheet("Google로 가입하면 비슷한 꿈·30일 알림·후기 작성이 열립니다.")
                 }
               />
             )}

@@ -16,6 +16,7 @@ import {
 import { db, isFirebaseConfigured } from "@/lib/firebase";
 import { ANONYMOUS_STORY_PROFILE } from "@/lib/coherentCommunityStory";
 import { normalizePercents } from "@/lib/formatText";
+import { isStrictlySimilarDream } from "@/lib/similarDreamMatch";
 import type { CommunityStory, SimilarDreamSummary } from "@/types";
 import type {
   Dream,
@@ -298,17 +299,15 @@ export async function findSimilarDreams(
 
   if (dreams.length === 0 && keywords.length === 0) return [];
 
-  const keywordSet = new Set(keywords.map((k) => k.toLowerCase()));
   return dreams
-    .filter((dream) => {
-      if (!primaryKeyword && dream.interpretation.category === category) {
-        return true;
-      }
-      if (dream.interpretation.category === category) return true;
-      return dream.interpretation.keywords.some((k) =>
-        keywordSet.has(k.toLowerCase()),
-      );
-    })
+    .filter((dream) =>
+      isStrictlySimilarDream(
+        dream.interpretation.keywords,
+        dream.interpretation.category,
+        keywords,
+        category,
+      ),
+    )
     .slice(0, SIMILAR_DREAM_QUERY_LIMIT);
 }
 

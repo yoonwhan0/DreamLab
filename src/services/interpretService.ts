@@ -74,7 +74,7 @@ export async function interpretDream(
     console.warn("interpret-dream failed:", response.status, await response.text());
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("AI 해석이 시간 초과됐어요. 잠시 후 다시 시도해주세요.");
+      throw new Error("해몽이 시간 초과됐어요. 잠시 후 다시 시도해 주세요.");
     }
     console.warn("interpret-dream unavailable, using mock:", err);
   }

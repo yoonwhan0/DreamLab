@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CTA_AUTH_GOOGLE } from "@/lib/branding";
-import { isAuthRedirectPending, isInAppBrowser } from "@/lib/authPlatform";
+import { isAuthRedirectPending } from "@/lib/authPlatform";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { isLinkedAuthUser } from "@/lib/authUser";
@@ -38,11 +38,7 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
         setRedirecting(true);
       }
     } catch {
-      setError(
-        isInAppBrowser()
-          ? "앱 안 브라우저에서는 Google 로그인이 막힐 수 있어요. Safari·Chrome에서 열어 주세요."
-          : "Google 로그인에 실패했습니다. 다시 시도해 주세요.",
-      );
+      setError("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
       setRedirecting(false);
     } finally {
       setBusy(false);
@@ -54,7 +50,7 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
       <div className="space-y-3 py-6 text-center">
         <p className="text-base font-semibold text-text">Google 로그인 처리 중…</p>
         <p className="text-sm text-text-secondary leading-relaxed">
-          잠시만 기다려 주세요. 창이 바뀌지 않으면 다시 시도해 주세요.
+          잠시만 기다려 주세요.
         </p>
       </div>
     );
@@ -71,12 +67,6 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
         <p className="mt-1.5 text-[0.6875rem] text-text-muted leading-relaxed">
           처음이면 자동으로 가입됩니다. 기존 계정이면 로그인됩니다.
         </p>
-        {isInAppBrowser() && (
-          <p className="mt-2 text-[0.6875rem] text-amber-700 dark:text-amber-300 leading-relaxed copy-lines">
-            카카오톡·인스타 등 앱 안 브라우저에서는 Google 로그인이 안 될 수 있어요.{" "}
-            <strong className="text-text">Safari·Chrome</strong>에서 dreamlab 주소를 직접 열어 주세요.
-          </p>
-        )}
       </div>
 
       <button

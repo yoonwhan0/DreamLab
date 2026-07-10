@@ -23,7 +23,7 @@ export function SimilarDreamsPanel({ summary }: SimilarDreamsPanelProps) {
         <h3 className="mt-1 text-xl font-bold text-text">
           {summary.totalCount.toLocaleString()}명
           <span className="ml-2 text-base font-normal text-text-secondary">
-            — 유사한 내용, 각자 다른 한 달 뒤
+            — 비슷한 내용, 각자 다른 한 달 뒤
           </span>
         </h3>
       </div>

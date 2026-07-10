@@ -47,7 +47,7 @@ function pickVariantGroup(anchor: string) {
   return null;
 }
 
-/** 합성 관측자 꿈 한 줄 — 주제는 anchor, 장면은 변주 */
+/** 합성 관측자 꿈 한 줄 — 키워드를 끼워 넣지 않는 독립 장면 */
 export function buildVariantDreamSnippet(anchor: string, index: number): string {
   const seed = hashSeed(`variant-snippet-${anchor}-${index}`);
   const rand = createSeededRandom(seed);
@@ -57,9 +57,9 @@ export function buildVariantDreamSnippet(anchor: string, index: number): string 
   const setting = settings[seededInt(rand, 0, settings.length - 1)]!;
   const mood = moods[seededInt(rand, 0, moods.length - 1)]!;
   const templates = [
-    `${setting}에서 ${mood} 꿈이었어요. "${anchor}" 검색하다가 여기 후기를 봤는데, 장면은 달라도 남는 기분은 꽤 비슷했어요. 깨자마자 메모했습니다.`,
-    `${mood} 순간, ${setting}. 친구한테 말했다가 "나도 그런 적 있어" 해서 더 신기했어요. "${anchor}"이랑 직접 같진 않지만 불안한 결은 똑같았습니다.`,
-    `꿈 속 ${setting} — 새벽에 깼는데 심장이 아직 빨랐어요. "${anchor}" 해몽부터 검색했는데, 한 달 뒤 후기를 같이 보니 더 차분히 읽히더라고요.`,
+    `${setting}에 혼자 서 있었는데 ${mood} 느낌이 먼저 왔습니다. 누가 부른 것도 아닌데 계속 주변을 확인하게 됐어요. 깨자마자 손에 힘이 들어가 있었습니다.`,
+    `${mood} 순간이 지나가고 ${setting}만 조용히 남았습니다. 친구에게 말하려다 설명이 잘 안 돼서 메모부터 했어요. 하루 종일 그 장면의 온도만 기억났습니다.`,
+    `새벽에 깼을 때 ${setting}의 소리만 또렷했습니다. 꿈속에서는 별일 아닌 것처럼 지나갔는데 몸은 계속 긴장해 있었어요. 한 달 뒤 다시 읽으니 그때의 압박이 보였습니다.`,
   ];
   return templates[seededInt(rand, 0, templates.length - 1)]!;
 }
@@ -71,5 +71,5 @@ export function buildVariantDreamTitle(anchor: string, index: number): string {
   const setting = group
     ? group.settings[seededInt(rand, 0, group.settings.length - 1)]!
     : GENERIC_VARIANTS.settings[seededInt(rand, 0, GENERIC_VARIANTS.settings.length - 1)]!;
-  return `${setting}에서의 ${anchor} 결`;
+  return `${setting}에 혼자 남아 있던 꿈`;
 }

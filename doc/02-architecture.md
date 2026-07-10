@@ -75,10 +75,10 @@
 Admin 엑셀 → admin-import-dreams → dreams (userId=dreamlab-seed-data)
 
 탐색/상세 → resolveCommunityData
-    → findSimilarDreams (isPublic, keywords)
-    → ≥5건: 실데이터 / 미만: 합성+AI
+    → findSimilarDreams (isPublic, keywords) — **키워드 겹침 엄격** (`similarDreamMatch.ts`)
+    → ≥5건: 실데이터 / 미만: 키워드 맞춤 미리보기 (약한 앵커면 후기 생략)
 
-※ AI 스토리 → DB 재저장 없음 (학습 루프 없음)
+※ 후기·통계는 세션·화면만 — DB 재저장 없음
 ```
 
 ## AI 파이프라인 (`researchAnchor`)
@@ -95,13 +95,14 @@ Admin 엑셀 → admin-import-dreams → dreams (userId=dreamlab-seed-data)
 
 로컬 API: `scripts/vite-dev-api-plugin.ts` — `/api/*` → Netlify handler
 
-## 인증 (2026-07-10)
+## 인증 (2026-07-11)
 
-- **Google 직접 로그인** — `signInWithPopup` (데스크톱) / `signInWithRedirect` (모바일·PWA·인앱)
+- **Google popup 우선** — `signInWithPopup` (COOP 헤더 적용) / redirect는 popup 차단 시만
 - 익명 Auth **미사용** — 비회원은 Firebase 세션 없음
 - 비회원 꿈 → `sessionStorage` (`pendingDreamStorage.ts`) → 가입 후 `pendingDreamService.ts` flush
-- Netlify COOP 헤더: `same-origin-allow-popups` (`netlify.toml`) — popup `window.closed` 차단 방지
+- Netlify COOP 헤더: `same-origin-allow-popups` (`netlify.toml`)
 - 회원 판별: `isLinkedAuthUser()` (`authUser.ts`) — `user.email` 존재
+- redirect pending: `authRedirectBootstrap.ts` — 페이지 로드 직후 1회만 `getRedirectResult`
 
 ## Admin
 
@@ -112,4 +113,4 @@ Admin 엑셀 → admin-import-dreams → dreams (userId=dreamlab-seed-data)
 
 인증: `useAdminAuth` + `isMasterAdmin` / `role=admin`
 
-마지막 업데이트: **2026-07-10**
+마지막 업데이트: **2026-07-11**

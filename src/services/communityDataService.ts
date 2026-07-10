@@ -23,6 +23,7 @@ import {
   overlapsUserDreamFields,
   sanitizeAiCommunityStory,
 } from "@/lib/communityStoryQuality";
+import { isStrongAnchor } from "@/lib/similarDreamMatch";
 
 const EXPOSURE_CACHE_MS = 5 * 60 * 1000;
 let exposureCache: DataExposureConfig | null = null;
@@ -72,7 +73,9 @@ function mergeEstimate(
   const stories =
     aiStories.length > 0
       ? aiStories
-      : [buildCoherentStoryForKeyword(anchor || "꿈", 0)];
+      : isStrongAnchor(anchor)
+        ? [buildCoherentStoryForKeyword(anchor, 0)]
+        : [];
 
   const rawSamples =
     estimate.samples?.length >= 1

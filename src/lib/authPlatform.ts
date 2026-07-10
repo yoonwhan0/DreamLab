@@ -72,9 +72,7 @@ export async function startGoogleRedirect(): Promise<void> {
   if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
 
   if (isInAppBrowser()) {
-    throw new Error(
-      "카카오톡·인스타 등 앱 안 브라우저에서는 Google 로그인이 막히는 경우가 많아요. Safari·Chrome에서 이 사이트를 열어 주세요.",
-    );
+    throw new Error("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
   }
 
   markAuthRedirectPending();

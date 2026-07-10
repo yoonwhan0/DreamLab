@@ -35,7 +35,12 @@ import {
   registerStoryViews,
 } from "@/services/storyUnlockService";
 import type { DreamStats, SimilarDreamSummary, StoryKeywordAccess } from "@/types";
-import { KEYWORD_RAIL_COUNT, provocativeSearchPlaceholder, previewKeywordLabel } from "@/lib/previewKeywords";
+import { LOADING_MORE_REVIEW, SIMILAR_MONTH_LABEL, SIMILAR_MONTH_TITLE } from "@/lib/dataCopy";
+import {
+  KEYWORD_RAIL_COUNT,
+  provocativeSearchPlaceholder,
+  previewKeywordLabel,
+} from "@/lib/previewKeywords";
 
 function buildExploreDreamContent(query: string): string {
   const q = query.trim();
@@ -292,7 +297,7 @@ export function ExplorePage() {
       </div>
 
       <KeywordChipRail
-        label="유사한 내용의 한 달 뒤는?"
+        label={SIMILAR_MONTH_LABEL}
         keywords={exploreKeywords}
         activeKeyword={activeQuery || pendingKeyword}
         variant="explore"
@@ -341,7 +346,7 @@ export function ExplorePage() {
           <div className="space-y-4">
             {storyAccess?.aiBlocked && !access.isPremium && access.isMember && (
               <p className="text-xs text-center text-text-muted card p-3">
-                이 키워드는 무료 {MEMBER_FREE_STORY_VIEWS}건 열람 기록이 있어 재생성 없이 캐시·합성
+                이 키워드는 무료 {MEMBER_FREE_STORY_VIEWS}건 열람 기록이 있어 저장된 기록·미리보기
                 데이터를 사용합니다.
               </p>
             )}
@@ -368,7 +373,7 @@ export function ExplorePage() {
               <>
                 <CommunityStoriesPanel
                   stories={visibleStories}
-                  title={`"${displayKeyword}" — 유사한 내용의 한 달 뒤는?`}
+                  title={SIMILAR_MONTH_TITLE(displayKeyword)}
                   variant="compact"
                   dreamTeaseBlur={access.isGuest}
                   blurLocked={!access.isPremium && (access.isGuest || needsPaywall)}
@@ -407,7 +412,7 @@ export function ExplorePage() {
                     className="btn-secondary !min-h-[2.75rem] text-sm !normal-case !tracking-normal disabled:opacity-60"
                   >
                     {isLoadingStory
-                      ? "유사한 후기를 찾는 중…"
+                      ? LOADING_MORE_REVIEW
                       : access.isGuest
                         ? "Google 가입하고 후기 더 보기"
                         : access.isPremium

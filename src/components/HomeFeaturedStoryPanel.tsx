@@ -1,6 +1,7 @@
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { SIMILAR_MONTH_KEYWORD_TITLE } from "@/lib/dataCopy";
 import type { CommunityEstimate } from "@/types";
 
 interface HomeFeaturedStoryPanelProps {
@@ -32,7 +33,7 @@ export function HomeFeaturedStoryPanel({
 
       <CommunityStoriesPanel
         stories={visibleStories}
-        title={`"${keyword}" 꿈 — 유사한 내용의 한 달 뒤는?`}
+        title={SIMILAR_MONTH_KEYWORD_TITLE(keyword)}
         variant="compact"
         dreamTeaseBlur={access.isGuest}
         blurLocked={!access.isPremium}

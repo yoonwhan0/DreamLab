@@ -1,4 +1,5 @@
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { LOADING_MORE_REVIEW } from "@/lib/dataCopy";
 import {
   MEMBER_FREE_STORY_VIEWS,
   PREMIUM_MAX_STORY_VIEWS,
@@ -35,7 +36,7 @@ export function StoryLoadLimitNotice({
         방식이에요.
       </p>
       {isLoadingMore && (
-        <p className="text-text-muted">유사한 후기를 찾는 중…</p>
+        <p className="text-text-muted">{LOADING_MORE_REVIEW}</p>
       )}
       {atCap && !access.isPremium && access.isMember && (
         <p>

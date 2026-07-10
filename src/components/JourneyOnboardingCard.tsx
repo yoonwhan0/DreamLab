@@ -23,7 +23,7 @@ export function JourneyOnboardingCard({
         </FormattedBlocks>
       ) : isGuest ? (
         <FormattedBlocks className="text-[0.9375rem] text-text-secondary" maxLines={4}>
-          꿈 내용은 저장됐습니다. 회원가입하면 유사 꿈·30일 푸시 알림·후기 작성이 열립니다.
+          꿈 내용은 저장됐습니다. 회원가입하면 비슷한 꿈·30일 푸시 알림·후기 작성이 열립니다.
         </FormattedBlocks>
       ) : (
         <div className="space-y-2 text-[0.9375rem] leading-relaxed text-text-secondary copy-lines">

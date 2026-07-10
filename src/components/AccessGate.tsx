@@ -61,7 +61,7 @@ export function PolicyBanner() {
       <p className="section-label">어디까지 볼 수 있나</p>
       <ul className="space-y-2.5 text-[0.9375rem] text-text-secondary">
         <PolicyRow tier="guest" text="비회원 — 꿈 내용 DB 저장 (익명)" />
-        <PolicyRow tier="member" text="회원 — 유사 꿈 · 30일 푸시 · 후기 적재" />
+        <PolicyRow tier="member" text="회원 — 비슷한 꿈 · 30일 푸시 · 후기 적재" />
         <PolicyRow tier="premium" text="프리미엄 — 8주 운세 그래프 · 통계·후기 전체" />
       </ul>
     </div>

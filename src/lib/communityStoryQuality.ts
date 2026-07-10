@@ -4,8 +4,10 @@ import {
   alignStoryToKeyword,
   buildCoherentStoryForKeyword,
   isGenericVividPoolSnippet,
-  storyRelatesToAnchor,
 } from "@/lib/coherentCommunityStory";
+import {
+  storyRelatesToAnchorStrict,
+} from "@/lib/similarDreamMatch";
 
 /** 옛 템플릿·AI 티 — 이 패턴이면 키워드 맞춤 풀에서 교체 */
 export const TEMPLATE_STORY_SNIPPET_RE =
@@ -64,7 +66,7 @@ export function repairStorySnippet(
     snippet.length >= 24 &&
     !isTemplateStorySnippet(snippet) &&
     !isGenericVividPoolSnippet(snippet) &&
-    (!anchor || storyRelatesToAnchor(snippet, anchor));
+    (!anchor || storyRelatesToAnchorStrict(snippet, anchor));
 
   if (usable) return snippet;
   return buildCoherentStoryForKeyword(anchor || "시험", index).dreamSnippet;
@@ -110,35 +112,48 @@ export function sanitizeAiCommunityStory(
   ) {
     return null;
   }
-  return isQualityCommunityStory(repaired) ? repaired : null;
+  return isQualityCommunityStory(repaired, anchor) ? repaired : null;
+}
+
+export function isQualityCommunityStory(
+  story: CommunityStory,
+  anchorKeyword = "",
+): boolean {
+  const base =
+    story.dreamSnippet.length >= 20 &&
+    !isTemplateStorySnippet(story.dreamSnippet) &&
+    !isTemplateStorySnippet(story.dreamTitle) &&
+    !isGenericVividPoolSnippet(story.dreamSnippet) &&
+    !story.dreamTitle.includes("제목") &&
+    !story.dreamSnippet.includes("제목");
+
+  if (!base) return false;
+
+  const anchor = anchorKeyword.trim();
+  if (!anchor) return true;
+
+  return (
+    storyRelatesToAnchorStrict(story.dreamSnippet, anchor) &&
+    (storyRelatesToAnchorStrict(story.afterStory, anchor) || story.afterStory.length >= 40)
+  );
 }
 
 export function isTemplateStorySnippet(text: string): boolean {
   return TEMPLATE_STORY_SNIPPET_RE.test(text);
 }
 
-export function isQualityCommunityStory(story: CommunityStory): boolean {
-  return (
-    story.dreamSnippet.length >= 20 &&
-    !isTemplateStorySnippet(story.dreamSnippet) &&
-    !isTemplateStorySnippet(story.dreamTitle) &&
-    !isGenericVividPoolSnippet(story.dreamSnippet) &&
-    !story.dreamTitle.includes("제목") &&
-    !story.dreamSnippet.includes("제목")
-  );
-}
-
 export function mergeCommunityStories(
   aiStories: CommunityStory[],
   syntheticStories: CommunityStory[],
   minCount = 10,
+  anchorKeyword = "",
 ): CommunityStory[] {
   const merged: CommunityStory[] = [];
   const seen = new Set<string>();
 
   const add = (story: CommunityStory) => {
     const key = `${story.dreamTitle}|${story.dreamSnippet}`;
-    if (seen.has(key) || !isQualityCommunityStory(story)) return;
+    if (seen.has(key) || !isQualityCommunityStory(story, anchorKeyword)) return;
     seen.add(key);
     merged.push(story);
   };
