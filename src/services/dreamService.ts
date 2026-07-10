@@ -154,6 +154,19 @@ export async function submitFollowUp(
   });
 }
 
+export async function updateDreamInterpretation(
+  dreamId: string,
+  interpretation: DreamInterpretation,
+): Promise<void> {
+  if (!db) throw new Error("Firebase가 설정되지 않았습니다.");
+  await updateDoc(doc(db, DREAMS, dreamId), {
+    interpretation,
+    keywords: interpretation.keywords,
+    category: interpretation.category,
+    reinterpretedAt: Timestamp.now(),
+  });
+}
+
 export async function findSimilarDreams(
   _embedding: number[] | undefined,
   keywords: string[],
