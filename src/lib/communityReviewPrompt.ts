@@ -35,3 +35,53 @@ export function buildCommunityReviewUserHint(): string {
     "후기는 서로 다른 사람 — profile·문체·결말 다양하게.",
   ].join("\n");
 }
+
+/** 탐색 첫 검색 — 통계·그래프는 풍부하게, 후기는 1건만 */
+export const EXPLORE_COMMUNITY_REVIEW_SYSTEM = `## communityEstimate — 탐색 모드
+- totalCount, withFollowUpCount, keywords, emotionCounts, outcomes — **풍부하게** (실제 DB처럼)
+- stories는 **정확히 1건**만. dreamSnippet 3~4문장, afterStory 2~4문장
+- profile은 항상 "익명 기록"
+- 나머지 후기는 이후 요청마다 한 건씩 생성됩니다`;
+
+export function buildExploreCommunityReviewUserHint(): string {
+  return [
+    "communityEstimate.stories — **1건**만 출력.",
+    "통계 숫자·키워드·감정 분포는 풍부하게.",
+    "researchAnchor 주제·감정만 빌려오고 장면은 새로.",
+    "사용자 꿈 원문은 stories에 넣지 마세요.",
+  ].join("\n");
+}
+
+/** 추가 후기 1건 생성 전용 */
+export const SINGLE_COMMUNITY_STORY_SYSTEM = `당신은 꿈연구소 후기 1건 생성 AI입니다.
+JSON만 출력. communityEstimate.stories 배열에 **1건**만.
+
+각 story:
+- dreamSnippet: 3~4문장, 카톡 후기처럼 생생하게
+- afterStory: 30일 후 2~4문장, 담백하게
+- dreamTitle: 한 줄
+- profile: "익명 기록"
+- outcomeCategory: good|bad|love|job|health|family|money|other
+- emotions: scared|weird|calm|sad|happy 중 1~2개
+
+금지: 예언 단정, "대박·손재", 사용자 원문 복붙, 템플릿 문장
+이전에 생성된 후기와 **장면·결말이 겹치지 않게**`;
+
+export function buildSingleStoryUserMessage(
+  title: string,
+  content: string,
+  storyIndex: number,
+  avoidTitles: string[] = [],
+): string {
+  const avoid =
+    avoidTitles.length > 0
+      ? `\n이미 본 후기 제목(겹치지 말 것): ${avoidTitles.join(", ")}`
+      : "";
+  return [
+    `꿈 제목: ${title}`,
+    `꿈 내용: ${content}`,
+    `후기 번호: ${storyIndex + 1}번째 (0부터)`,
+    avoid,
+    "JSON: { \"story\": { dreamTitle, dreamSnippet, afterStory, outcomeCategory, emotions, recordedDaysAgo } }",
+  ].join("\n");
+}

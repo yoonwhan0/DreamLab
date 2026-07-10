@@ -1,11 +1,14 @@
 /** 회원 — 키워드당 무료 후기 열람 */
 export const MEMBER_FREE_STORY_VIEWS = 2;
 
+/** 프리미엄 — 키워드당 최대 후기 */
+export const PREMIUM_MAX_STORY_VIEWS = 4;
+
 /** 유료 추가 열람 1건당 (원) */
 export const STORY_PAID_UNLOCK_PRICE_WON = 200;
 
-/** 프리미엄 — 검색 직후 집중 노출 */
-export const PREMIUM_INITIAL_STORY_VIEWS = 2;
+/** 프리미엄 — 검색 직후 집중 노출 (항상 1건) */
+export const PREMIUM_INITIAL_STORY_VIEWS = 1;
 
 /** 무료·유료 구간 모두 1건씩 (주제 집중) */
 export const STORY_LOAD_CHUNK_FREE = 1;
@@ -25,11 +28,22 @@ export function storyLoadChunk(_visibleCount: number): number {
   return STORY_LOAD_CHUNK_FREE;
 }
 
-/** 검색 직후 첫 노출 건수 */
+/** 검색 직후 첫 노출 건수 — 모두 1건 */
 export function initialStoryVisibleCount(
-  isPremium: boolean,
+  _isPremium: boolean,
   restoredCount: number,
 ): number {
   if (restoredCount > 0) return restoredCount;
-  return isPremium ? PREMIUM_INITIAL_STORY_VIEWS : 1;
+  return 1;
+}
+
+/** 등급별 후기 상한 */
+export function tierStoryCap(
+  isPremium: boolean,
+  isMember: boolean,
+  memberMaxSlots: number,
+): number {
+  if (isPremium) return PREMIUM_MAX_STORY_VIEWS;
+  if (isMember) return Math.min(memberMaxSlots, MEMBER_FREE_STORY_VIEWS);
+  return 1;
 }

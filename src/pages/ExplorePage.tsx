@@ -10,6 +10,7 @@ import { PAGE_COPY } from "@/lib/productIdeas";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
+import { StoryLoadLimitNotice } from "@/components/StoryLoadLimitNotice";
 import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
 import { StatsBar } from "@/components/StatsBar";
 import { SurvivalRate } from "@/components/SurvivalRate";
@@ -19,13 +20,14 @@ import { useFeaturedKeywords } from "@/hooks/useFeaturedKeywords";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { resolveCommunityData } from "@/services/communityDataService";
-import { interpretDream } from "@/services/interpretService";
+import { interpretDream, generateExploreStorySlot } from "@/services/interpretService";
 import { getOutcomePercentages } from "@/services/dreamService";
 import {
   MEMBER_FREE_STORY_VIEWS,
+  PREMIUM_MAX_STORY_VIEWS,
   STORY_PAID_UNLOCK_PRICE_WON,
   initialStoryVisibleCount,
-  storyLoadChunk,
+  tierStoryCap,
 } from "@/lib/storyAccessPricing";
 import {
   computeMaxVisible,
@@ -63,15 +65,13 @@ export function ExplorePage() {
   const [visibleStoryCount, setVisibleStoryCount] = useState(1);
   const [storyAccess, setStoryAccess] = useState<StoryKeywordAccess | null>(null);
   const [limitMessage, setLimitMessage] = useState("");
+  const [isLoadingStory, setIsLoadingStory] = useState(false);
   const searchGenRef = useRef(0);
 
   const displayKeyword = previewKeywordLabel(pendingKeyword || activeQuery);
-  const isSearchBusy = isFetching || isSyncing;
-  const maxSlots = access.isPremium
-    ? Number.MAX_SAFE_INTEGER
-    : access.isMember
-      ? computeMaxVisible(storyAccess)
-      : 0;
+  const isSearchBusy = isFetching || isSyncing || isLoadingStory;
+  const memberMaxSlots = access.isMember && !access.isPremium ? computeMaxVisible(storyAccess) : 0;
+  const tierCap = tierStoryCap(access.isPremium, access.isMember, memberMaxSlots);
 
   const runSearch = async (searchQuery: string, accessOverride?: StoryKeywordAccess | null) => {
     const q = searchQuery.trim();
@@ -114,7 +114,7 @@ export function ExplorePage() {
         const { interpretation, embedding, communityEstimate } = await interpretDream(
           q,
           dreamContent,
-          { skipAi },
+          { skipAi, exploreMode: true },
         );
 
         if (gen !== searchGenRef.current) return null;
@@ -190,12 +190,6 @@ export function ExplorePage() {
     return true;
   };
 
-  const ensureStoryAt = (index: number): SimilarDreamSummary | null => {
-    if (!summary) return null;
-    if (index < summary.stories.length) return summary;
-    return null;
-  };
-
   const handleLoadMoreStories = async () => {
     if (!summary || !activeQuery) return;
     if (access.isGuest) {
@@ -204,34 +198,52 @@ export function ExplorePage() {
     }
     if (!access.isMember) return;
 
-    const chunk = storyLoadChunk(visibleStoryCount);
-    const target = visibleStoryCount + chunk;
+    const target = visibleStoryCount + 1;
 
-    if (!access.isPremium && target > maxSlots) {
+    if (target > tierCap) {
       setLimitMessage(
-        `무료 ${MEMBER_FREE_STORY_VIEWS}건을 모두 봤습니다. 추가 1건은 ${STORY_PAID_UNLOCK_PRICE_WON}원 · 프리미엄은 전체 열람.`,
+        access.isPremium
+          ? `프리미엄은 키워드당 최대 ${PREMIUM_MAX_STORY_VIEWS}건까지 볼 수 있어요.`
+          : `무료 ${MEMBER_FREE_STORY_VIEWS}건을 모두 봤습니다. 추가 1건은 ${STORY_PAID_UNLOCK_PRICE_WON}원 · 프리미엄은 전체 열람.`,
       );
       return;
     }
 
-    const withStory = ensureStoryAt(target - 1);
-    if (!withStory || target > withStory.stories.length) {
-      setLimitMessage("AI가 생성한 후기를 모두 봤습니다. 실제 기록이 쌓이면 더 열립니다.");
-      return;
-    }
+    setIsLoadingStory(true);
+    setLimitMessage("");
 
-    if (access.isPremium) {
-      setVisibleStoryCount(target);
-      return;
-    }
+    try {
+      let nextSummary = summary;
+      if (target > summary.stories.length) {
+        const dreamContent = buildExploreDreamContent(activeQuery);
+        const avoidTitles = summary.stories.map((s) => s.dreamTitle);
+        const storyIndex = summary.stories.length;
+        const newStory = await generateExploreStorySlot(
+          activeQuery,
+          dreamContent,
+          storyIndex,
+          avoidTitles,
+        );
+        nextSummary = {
+          ...summary,
+          stories: [...summary.stories, newStory],
+        };
+        setSummary(nextSummary);
+      }
 
-    const ok = await syncVisibleStories(
-      Math.min(target, withStory.stories.length),
-      withStory,
-      activeQuery,
-    );
-    if (!ok) {
-      setLimitMessage("열람 한도를 초과했습니다. 프리미엄 또는 앱 구독이 필요합니다.");
+      if (access.isPremium) {
+        setVisibleStoryCount(target);
+        return;
+      }
+
+      const ok = await syncVisibleStories(target, nextSummary, activeQuery);
+      if (!ok) {
+        setLimitMessage("열람 한도를 초과했습니다. 프리미엄 또는 앱 구독이 필요합니다.");
+      }
+    } catch {
+      setLimitMessage("후기를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsLoadingStory(false);
     }
   };
 
@@ -242,14 +254,14 @@ export function ExplorePage() {
 
   const canLoadMore =
     summary != null &&
-    visibleStoryCount < summary.stories.length &&
-    (access.isPremium || (access.isMember && visibleStoryCount < maxSlots) || access.isGuest);
+    visibleStoryCount < tierCap &&
+    (access.isPremium || access.isMember || access.isGuest);
 
   const needsPaywall =
     access.isMember &&
     !access.isPremium &&
     summary != null &&
-    visibleStoryCount >= maxSlots;
+    visibleStoryCount >= tierCap;
 
   return (
     <div className="space-y-5">
@@ -296,15 +308,15 @@ export function ExplorePage() {
 
       {access.isMember && !access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
-          회원 — 키워드당 후기 <strong className="text-text">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>
-          , 이후 1건씩 불러오기 · 추가 1건{" "}
-          <strong className="text-text">{STORY_PAID_UNLOCK_PRICE_WON}원</strong>
+          회원 — 키워드당 후기 <strong className="text-text">{MEMBER_FREE_STORY_VIEWS}건</strong>
+          (1건씩 AI 작성 · 추가는 {STORY_PAID_UNLOCK_PRICE_WON}원)
         </p>
       )}
 
       {access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
-          프리미엄 — 처음 {initialStoryVisibleCount(true, 0)}건 집중 노출, 이후 한 건씩 세밀하게 불러옵니다.
+          프리미엄 — 키워드당 최대 <strong className="text-text">{PREMIUM_MAX_STORY_VIEWS}건</strong>
+          , 통계는 한 번에 · 후기는 1건씩 AI 작성
         </p>
       )}
 
@@ -358,13 +370,13 @@ export function ExplorePage() {
                   stories={visibleStories}
                   title={`"${displayKeyword}" — 한 달 뒤는?`}
                   variant="compact"
+                  dreamTeaseBlur={access.isGuest}
                   blurLocked={!access.isPremium && (access.isGuest || needsPaywall)}
                   lockedCount={
                     access.isPremium
                       ? 0
                       : Math.max(
-                          summary.stories.length - visibleStories.length,
-                          summary.withFollowUpCount - visibleStories.length,
+                          tierCap - visibleStories.length,
                           access.isGuest ? 8 : 4,
                         )
                   }
@@ -373,9 +385,15 @@ export function ExplorePage() {
                   isEstimated={isEstimated}
                 />
 
+                <StoryLoadLimitNotice
+                  visibleCount={visibleStories.length}
+                  tierCap={tierCap}
+                  isLoadingMore={isLoadingStory}
+                />
+
                 {!access.isPremium && storyAccess && access.isMember && (
                   <p className="text-xs text-center text-text-muted tabular-nums">
-                    열람 {visibleStories.length} / {maxSlots}건
+                    열람 {visibleStories.length} / {tierCap}건
                     {storyAccess.paidUnlockCount > 0 &&
                       ` (유료 ${storyAccess.paidUnlockCount}건)`}
                   </p>
@@ -384,16 +402,19 @@ export function ExplorePage() {
                 {canLoadMore && (
                   <button
                     type="button"
+                    disabled={isLoadingStory}
                     onClick={() => void handleLoadMoreStories()}
-                    className="btn-secondary !min-h-[2.75rem] text-sm !normal-case !tracking-normal"
+                    className="btn-secondary !min-h-[2.75rem] text-sm !normal-case !tracking-normal disabled:opacity-60"
                   >
-                    {access.isGuest
-                      ? "Google 가입하고 후기 더 보기"
-                      : access.isPremium
-                        ? "후기 1건 더 보기"
-                        : visibleStoryCount >= MEMBER_FREE_STORY_VIEWS
-                          ? `후기 1건 더 보기 (${STORY_PAID_UNLOCK_PRICE_WON}원)`
-                          : "후기 1건 더 보기"}
+                    {isLoadingStory
+                      ? "후기 작성 중…"
+                      : access.isGuest
+                        ? "Google 가입하고 후기 더 보기"
+                        : access.isPremium
+                          ? `후기 1건 더 보기 (${visibleStories.length}/${PREMIUM_MAX_STORY_VIEWS})`
+                          : visibleStoryCount >= MEMBER_FREE_STORY_VIEWS
+                            ? `후기 1건 더 보기 (${STORY_PAID_UNLOCK_PRICE_WON}원)`
+                            : `후기 1건 더 보기 (${visibleStories.length}/${tierCap})`}
                   </button>
                 )}
 

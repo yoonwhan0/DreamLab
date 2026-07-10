@@ -7,7 +7,7 @@ import {
   buildMockUsualTake,
 } from "@/lib/interpretationTone";
 import { extractMeaningfulKeywords } from "@/lib/dreamAnchor";
-import type { CommunityEstimate, DreamInterpretation } from "@/types";
+import type { CommunityEstimate, DreamInterpretation, CommunityStory } from "@/types";
 
 export interface InterpretResult {
   interpretation: DreamInterpretation;
@@ -16,36 +16,22 @@ export interface InterpretResult {
 }
 
 const INTERPRET_TIMEOUT_MS = 90_000;
+const STORY_SLOT_TIMEOUT_MS = 45_000;
 const CACHE_PREFIX = "dreamlab-interpret:";
+const STORY_SLOT_CACHE_PREFIX = "dreamlab-explore-story:";
 
 function cacheKey(title: string, content: string): string {
   return `${CACHE_PREFIX}${title}\n${content}`;
 }
 
-function readCache(title: string, content: string): InterpretResult | null {
-  try {
-    const raw = sessionStorage.getItem(cacheKey(title, content));
-    if (!raw) return null;
-    return JSON.parse(raw) as InterpretResult;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(title: string, content: string, result: InterpretResult): void {
-  try {
-    sessionStorage.setItem(cacheKey(title, content), JSON.stringify(result));
-  } catch {
-    // quota exceeded — 무시
-  }
-}
-
 export async function interpretDream(
   title: string,
   content: string,
-  opts?: { skipAi?: boolean },
+  opts?: { skipAi?: boolean; exploreMode?: boolean },
 ): Promise<InterpretResult> {
-  const cached = readCache(title, content);
+  const exploreMode = opts?.exploreMode === true;
+  const storageKey = exploreMode ? `${cacheKey(title, content)}:explore` : cacheKey(title, content);
+  const cached = readCacheByKey(storageKey);
   if (cached) return cached;
 
   if (opts?.skipAi) {
@@ -55,7 +41,7 @@ export async function interpretDream(
       embedding: [],
       communityEstimate: generateSyntheticCommunity(interpretation, title, content, 1),
     };
-    writeCache(title, content, result);
+    writeCacheByKey(storageKey, result);
     return result;
   }
 
@@ -66,7 +52,7 @@ export async function interpretDream(
     const response = await fetch("/api/interpret-dream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content }),
+      body: JSON.stringify({ title, content, exploreMode }),
       signal: controller.signal,
     });
 
@@ -81,7 +67,7 @@ export async function interpretDream(
           data.communityEstimate ??
           generateSyntheticCommunity(data.interpretation, title, content, 1),
       };
-      writeCache(title, content, result);
+      writeCacheByKey(storageKey, result);
       return result;
     }
 
@@ -99,8 +85,66 @@ export async function interpretDream(
     embedding: [],
     communityEstimate: generateSyntheticCommunity(interpretation, title, content, 1),
   };
-  writeCache(title, content, result);
+  writeCacheByKey(storageKey, result);
   return result;
+}
+
+function readCacheByKey(key: string): InterpretResult | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as InterpretResult;
+  } catch {
+    return null;
+  }
+}
+
+function writeCacheByKey(key: string, result: InterpretResult): void {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(result));
+  } catch {
+    // quota exceeded — 무시
+  }
+}
+
+/** 탐색 — 추가 후기 1건 AI 생성 */
+export async function generateExploreStorySlot(
+  title: string,
+  content: string,
+  storyIndex: number,
+  avoidTitles: string[] = [],
+): Promise<CommunityStory> {
+  const slotKey = `${STORY_SLOT_CACHE_PREFIX}${title}\n${content}:${storyIndex}`;
+  try {
+    const raw = sessionStorage.getItem(slotKey);
+    if (raw) return JSON.parse(raw) as CommunityStory;
+  } catch {
+    /* ignore */
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), STORY_SLOT_TIMEOUT_MS);
+
+  const response = await fetch("/api/generate-community-story", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, content, storyIndex, avoidTitles }),
+    signal: controller.signal,
+  });
+
+  clearTimeout(timer);
+
+  if (!response.ok) {
+    throw new Error("후기를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  const data = (await response.json()) as { story: CommunityStory };
+  try {
+    sessionStorage.setItem(slotKey, JSON.stringify(data.story));
+  } catch {
+    /* ignore */
+  }
+  return data.story;
 }
 
 function mockInterpretation(

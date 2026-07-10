@@ -3,7 +3,7 @@
  */
 
 import { mergeAiKeywords, normalizeKoreanToken, resolveResearchAnchor, sanitizeDreamContent } from "./dreamAnchor";
-import { COMMUNITY_REVIEW_SLOT_SYSTEM, buildCommunityReviewUserHint } from "./communityReviewPrompt";
+import { COMMUNITY_REVIEW_SLOT_SYSTEM, buildCommunityReviewUserHint, EXPLORE_COMMUNITY_REVIEW_SYSTEM, buildExploreCommunityReviewUserHint } from "./communityReviewPrompt";
 
 export const INTERPRET_MODEL = "gpt-4.1-nano";
 export const EMBED_MODEL = "text-embedding-3-small";
@@ -23,7 +23,8 @@ export const SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 미리보기·�
 - 시간·장소·감각·대사·몸 반응(손 떨림, 심장, 잠에서 깬 뒤 느낌) 구체적으로
 - usualTake: 일반 해몽에서 흔히 보는 해석을 소개하되 **대박·손재·불행을 단정하지 말 것** — **이 꿈 장면만** 5~7줄
 - alternativeLens: 연구소 **심리·상징** 관점 — **이 꿈만** 풀어 쓰기. 다른 사람 후기·통계·"비슷한 꿈 꾼 사람" **언급 금지**
-- psychology, symbol, reflection — **당신 꿈** 감정·상징만. communityEstimate·labObservations에만 타인 데이터
+- psychology, symbol — **당신 꿈** 감정·상징만. communityEstimate·labObservations에만 타인 데이터
+- reflection — **연구소 해몽과 완전히 다른 톤**. 친한 사람이 카톡으로 편하게 묻듯이. **질문 2~4개**(각 줄이 ?로 끝나게). 예: "평소엔 이런 꿈 잘 안 꾸시죠?", "불안했던 장면이 현실에선 반대로 풀리는 경우도 있어요 — 그때 마음은 어땠을까요?", "주변 사람과의 관계를 더 깊게 보고 싶은 마음은 없으세요?" 꿈은 종종 **반대로** 읽힌다는 점을 부드럽게 언급 가능. 단정·예언·연구소 말투 금지
 - communityEstimate.stories **10~12건**, dreamSnippet **3~4문장**, afterStory **2~4문장**
 
 ## 금지 (AI 티)
@@ -60,6 +61,32 @@ JSON만 (stories 10개 이상):
   "mood": { "anxiety": 0-100, "hope": 0-100, "longing": 0-100 },
   "labObservations": { "sceneNote": "...", "commonBehaviors": [], "relatedSearches": [] },
   "communityEstimate": { "stories": [ ... ], "totalCount": 0, "withFollowUpCount": 0 }
+}`;
+
+export const EXPLORE_SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 탐색 미리보기 AI입니다.
+해몽을 예언처럼 단정하지 말고, 꿈 장면과 30일 뒤 실제 기록을 비교할 수 있게 돕는 것이 목적입니다.
+
+## 톤
+- usualTake: 일반 해몽 5~7줄 — **이 꿈 장면만**
+- alternativeLens: 심리·상징 5~8줄 — **이 꿈만**, 타인 후기 언급 금지
+- reflection: **친구가 카톡으로 편하게 묻듯** 질문 2~4개 (각 줄 ?로 끝). 연구소 말투 금지. 꿈이 반대로 읽힐 수 있음을 부드럽게
+- psychology, symbol — 이 꿈만
+
+${EXPLORE_COMMUNITY_REVIEW_SYSTEM}
+
+JSON만:
+{
+  "usualTake": "...",
+  "alternativeLens": "...",
+  "symbol": "...",
+  "psychology": "...",
+  "reflection": "...",
+  "keywords": ["..."],
+  "researchAnchor": { "primary": "...", "secondary": [], "scenePhrases": [], "clusterLabel": "..." },
+  "category": "family|love|career|anxiety|fortune|general",
+  "mood": { "anxiety": 0-100, "hope": 0-100, "longing": 0-100 },
+  "labObservations": { "sceneNote": "...", "commonBehaviors": [], "relatedSearches": [] },
+  "communityEstimate": { "stories": [ 1건만 ], "totalCount": 0, "withFollowUpCount": 0, "keywords": [], "emotionCounts": [], "outcomes": {} }
 }`;
 
 export interface ParsedInterpretation {
@@ -164,11 +191,12 @@ const PIVOT_OPENERS = [
   "단정하기엔 이른 이유가 있어요.",
 ];
 
-const CURIOSITY_CLOSERS = [
-  "30일 뒤, 당신에게는 어떤 일이 있었나요?",
-  "지금 느낀 감정을 적어 두면 한 달 뒤 비교하기 좋습니다.",
-  "해몽은 여기까지 — **당신**의 30일 뒤 기록이 결말을 완성합니다.",
-  "꿈의 여운이 남아 있다면, 후기를 미리 적어도 됩니다.",
+const CONVERSATIONAL_REFLECTION_CLOSERS = [
+  "평소엔 이런 꿈 잘 안 꾸시죠? 깬 뒤에도 그 장면이 남아 있나요?",
+  "불안했던 장면이 현실에선 반대로 풀리는 경우도 있어요. 그때 마음은 어땠을까요?",
+  "주변 사람과의 관계를 더 깊게 보고 싶은 마음은 없으세요?",
+  "이 꿈이 당신에게 어떤 메시지를 전한다고 느껴지나요?",
+  "한 달 뒤, 실제로는 어떤 일이 있었는지 기억나시나요?",
 ];
 
 function hashSeed(text: string): number {
@@ -219,17 +247,22 @@ function weavePivot(line: string, seed: number): string {
   return `${opener}\n${trimmed}`;
 }
 
-function ensureCuriosityGap(reflection: string, seed: number): string {
-  const lines = reflection.split("\n").filter(Boolean);
-  const last = lines[lines.length - 1] ?? "";
-  if (/[?？]$/.test(last) || last.includes("갈릴") || last.includes("궁금")) {
-    return ensureMultiline(reflection);
+function ensureConversationalReflection(reflection: string, seed: number): string {
+  const lines = reflection
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const questionLines = lines.filter((l) => /[?？]$/.test(l) || l.includes("?"));
+  if (questionLines.length >= 2) {
+    return ensureMultiline(questionLines.slice(0, 4).join("\n"), 4);
   }
-  const closer = pick(CURIOSITY_CLOSERS, seed, 2);
-  if (lines.length >= 2) {
-    return ensureMultiline(`${lines[0]}\n${closer}`);
-  }
-  return ensureMultiline(`${reflection}\n${closer}`);
+  const opener =
+    lines.find((l) => /[?？]$/.test(l)) ??
+    pick(CONVERSATIONAL_REFLECTION_CLOSERS, seed);
+  const second = pick(CONVERSATIONAL_REFLECTION_CLOSERS, seed, 1);
+  const third = pick(CONVERSATIONAL_REFLECTION_CLOSERS, seed, 2);
+  const merged = [opener, second, third].filter((v, i, a) => a.indexOf(v) === i);
+  return ensureMultiline(merged.join("\n"), 4);
 }
 
 function buildFallbackUsualTake(keyword: string, anchor: string): string {
@@ -301,7 +334,7 @@ export function enrichInterpretation(
   let psychology = ensureMultiline(raw.psychology, 6);
 
   const symbol = ensureMultiline(raw.symbol, 6);
-  let reflection = ensureCuriosityGap(raw.reflection, seed);
+  let reflection = ensureConversationalReflection(raw.reflection, seed);
   reflection = reflection.replace(/비슷한 꿈[^.\n]{0,40}(보면|읽다 보면|기록)/g, "이 꿈의 여운");
 
   let labObservations = raw.labObservations;
@@ -340,7 +373,7 @@ export function enrichInterpretation(
   };
 }
 
-export function buildUserMessage(title: string, content: string): string {
+export function buildUserMessage(title: string, content: string, exploreMode = false): string {
   const cleaned = sanitizeDreamContent(content);
   return [
     `꿈 제목: ${title}`,
@@ -349,7 +382,12 @@ export function buildUserMessage(title: string, content: string): string {
     "researchAnchor.primary — 이 꿈을 DB·유사 꿈 통계에 묶을 **대표 키**를 당신이 결정하세요.",
     "우리 사전/목록에 없는 표현도 OK. 꿈에 가장 핵심인 장면·상징을 고르세요.",
     "scenePhrases에는 원문 문장을 그대로 넣으세요.",
-    buildCommunityReviewUserHint(),
+    exploreMode ? buildExploreCommunityReviewUserHint() : buildCommunityReviewUserHint(),
+    exploreMode
+      ? "reflection — 연구소 말투 말고, 친구가 카톡으로 편하게 묻듯 질문 2~4개."
+      : "",
     "JSON만 출력.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

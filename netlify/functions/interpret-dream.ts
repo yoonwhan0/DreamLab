@@ -6,6 +6,8 @@ import {
 
   INTERPRET_MODEL,
 
+  EXPLORE_SYSTEM_PROMPT,
+
   SYSTEM_PROMPT,
 
   buildUserMessage,
@@ -40,6 +42,8 @@ interface InterpretRequest {
 
   content: string;
 
+  exploreMode?: boolean;
+
 }
 
 
@@ -54,7 +58,7 @@ const handler: Handler = async (event) => {
 
 
 
-  const { title, content } = JSON.parse(event.body ?? "{}") as InterpretRequest;
+  const { title, content, exploreMode = false } = JSON.parse(event.body ?? "{}") as InterpretRequest;
 
   const fullText = `${title}\n${content}`;
 
@@ -86,6 +90,9 @@ const handler: Handler = async (event) => {
 
 
 
+  const systemPrompt = exploreMode ? EXPLORE_SYSTEM_PROMPT : SYSTEM_PROMPT;
+  const userMessage = buildUserMessage(title, content, exploreMode);
+
   if (openaiKey) {
 
     try {
@@ -108,9 +115,9 @@ const handler: Handler = async (event) => {
 
             messages: [
 
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: systemPrompt },
 
-              { role: "user", content: buildUserMessage(title, content) },
+              { role: "user", content: userMessage },
 
             ],
 
@@ -118,7 +125,7 @@ const handler: Handler = async (event) => {
 
             temperature: INTERPRET_GENERATION.temperature,
 
-            max_tokens: INTERPRET_GENERATION.max_tokens,
+            max_tokens: exploreMode ? 2400 : INTERPRET_GENERATION.max_tokens,
 
             presence_penalty: INTERPRET_GENERATION.presence_penalty,
 
@@ -136,7 +143,7 @@ const handler: Handler = async (event) => {
 
         parsed = enrichInterpretation(
 
-          normalizeParsed(JSON.parse(text), title, content),
+          normalizeParsed(JSON.parse(text), title, content, exploreMode),
 
           title,
 
@@ -178,7 +185,7 @@ const handler: Handler = async (event) => {
 
                   {
 
-                    text: `${SYSTEM_PROMPT}\n\n${buildUserMessage(title, content)}`,
+                    text: `${systemPrompt}\n\n${userMessage}`,
 
                   },
 
@@ -194,7 +201,7 @@ const handler: Handler = async (event) => {
 
               temperature: INTERPRET_GENERATION.temperature,
 
-              maxOutputTokens: INTERPRET_GENERATION.max_tokens,
+              maxOutputTokens: exploreMode ? 2400 : INTERPRET_GENERATION.max_tokens,
 
             },
 
@@ -212,7 +219,7 @@ const handler: Handler = async (event) => {
 
         parsed = enrichInterpretation(
 
-          normalizeParsed(JSON.parse(text), title, content),
+          normalizeParsed(JSON.parse(text), title, content, exploreMode),
 
           title,
 
@@ -298,6 +305,7 @@ function normalizeParsed(
   raw: Record<string, unknown>,
   title: string,
   content: string,
+  exploreMode = false,
 ): ParsedInterpretation {
 
   const fullText = `${title}\n${content}`;
@@ -330,6 +338,7 @@ function normalizeParsed(
     content,
     fallback.communityEstimate.stories,
     researchAnchor,
+    exploreMode,
   );
 
   const samples = Array.isArray(ce.samples) && (ce.samples as unknown[]).length >= 2
@@ -430,8 +439,12 @@ function normalizeStories(
   content: string,
   fallback: ParsedInterpretation["communityEstimate"]["stories"],
   researchAnchor?: ParsedInterpretation["researchAnchor"],
+  exploreMode = false,
 ): ParsedInterpretation["communityEstimate"]["stories"] {
-  if (!Array.isArray(raw) || raw.length === 0) return fallback;
+  const maxStories = exploreMode ? 1 : 12;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return exploreMode ? fallback.slice(0, 1) : fallback;
+  }
 
   const anchor =
     researchAnchor?.primary?.trim() ||
@@ -450,7 +463,7 @@ function normalizeStories(
 
 
 
-  const stories = raw.slice(0, 12).map((item, i) => {
+  const stories = raw.slice(0, maxStories).map((item, i) => {
 
     const s = item as Record<string, unknown>;
 
@@ -499,7 +512,11 @@ function normalizeStories(
     .map((s, i) => sanitizeAiCommunityStory(s, i, content, title, anchor))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
-  return valid.length >= 1 ? valid : fallback;
+  return valid.length >= 1
+    ? valid.slice(0, maxStories)
+    : exploreMode
+      ? fallback.slice(0, 1)
+      : fallback;
 }
 
 

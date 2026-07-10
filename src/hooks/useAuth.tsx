@@ -249,7 +249,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
 
     if (prefersAuthRedirect()) {
-      await startGoogleRedirect();
+      try {
+        await startGoogleRedirect();
+      } catch (err) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Google 로그인에 실패했습니다. Safari·Chrome에서 다시 시도해 주세요.";
+        setAuthError(msg);
+        throw err;
+      }
       return;
     }
 

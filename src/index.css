@@ -1060,6 +1060,31 @@ textarea.input {
   background: color-mix(in srgb, var(--color-primary) 32%, var(--color-surface-2));
 }
 
+/** 해몽 — 한 달 뒤 갈릴 지점 (대화체) */
+.reflection-dialogue__bubble {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface-2));
+  padding: 0.875rem 1rem;
+}
+
+.reflection-dialogue__question {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  font-weight: 500;
+  word-break: keep-all;
+}
+
+.reflection-dialogue__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  word-break: keep-all;
+}
+
 .story-blur-overlay {
   background: linear-gradient(
     to bottom,

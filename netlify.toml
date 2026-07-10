@@ -30,6 +30,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/generate-community-story"
+  to = "/.netlify/functions/generate-community-story"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/admin-import-dreams"
   to = "/.netlify/functions/admin-import-dreams"
   status = 200

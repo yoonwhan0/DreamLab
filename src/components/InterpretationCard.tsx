@@ -126,10 +126,10 @@ export function InterpretationCard({
               lock={premiumLock}
               label="한 달 뒤 · 갈릴 지점"
               preview={
-                <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={5} />
+                <ReflectionDialogue content={interpretation.reflection} preview />
               }
             >
-              <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={6} />
+              <ReflectionDialogue content={interpretation.reflection} />
             </InterpretationTierBlur>
           </div>
 
@@ -253,6 +253,46 @@ function LensBlock({
       >
         {content}
       </FormattedBlocks>
+    </div>
+  );
+}
+
+function ReflectionDialogue({
+  content,
+  preview = false,
+}: {
+  content: string;
+  preview?: boolean;
+}) {
+  const lines = content
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="reflection-dialogue space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-text-muted">한 달 뒤 · 갈릴 지점</p>
+        <span className="text-[0.625rem] text-text-muted">당신에게, 편하게</span>
+      </div>
+      <div className="reflection-dialogue__bubble space-y-2.5">
+        {lines.slice(0, preview ? 2 : 4).map((line) => (
+          <p
+            key={line}
+            className={
+              /[?？]$/.test(line) || line.includes("?")
+                ? "reflection-dialogue__question"
+                : "reflection-dialogue__note"
+            }
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+      <p className="text-[0.625rem] text-text-muted leading-relaxed">
+        연구소 해몽과는 다른 영역이에요. 꿈은 종종 반대로 읽히기도 해요 — 한 달 뒤 기록과 겹쳐 보면
+        갈릴 지점이 보입니다.
+      </p>
     </div>
   );
 }
