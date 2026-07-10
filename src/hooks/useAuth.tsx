@@ -13,22 +13,19 @@ import {
   getRedirectResult,
   linkWithCredential,
   linkWithPopup,
-  linkWithRedirect,
   onAuthStateChanged,
   signInAnonymously,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   type User,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import {
   clearAuthRedirectPending,
-  isAuthRedirectPending,
-  markAuthRedirectPending,
   prefersAuthRedirect,
+  startGoogleRedirect,
 } from "@/lib/authPlatform";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
@@ -127,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const authInstance = auth;
     let mounted = true;
+    let unsubscribe: (() => void) | undefined;
 
     void (async () => {
       try {
@@ -135,46 +133,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (redirectResult?.user && mounted) {
           setUser(redirectResult.user);
           await finalizeGoogleUser(redirectResult.user, syncProfile);
-          setLoading(false);
         }
       } catch (err) {
         clearAuthRedirectPending();
         console.error("Google redirect sign-in failed:", err);
       }
-    })();
 
-    const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
       if (!mounted) return;
 
-      if (isAuthRedirectPending()) {
-        setLoading(true);
-        return;
-      }
+      unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
+        if (!mounted) return;
 
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        await syncProfile(firebaseUser);
-        setLoading(false);
-        return;
-      }
-
-      if (isFirebaseConfigured) {
-        try {
-          await signInAnonymously(authInstance);
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          await syncProfile(firebaseUser);
+          setLoading(false);
           return;
-        } catch (err) {
-          console.error("Anonymous auth failed:", err);
         }
-      }
 
-      setUser(null);
-      setProfile(null);
-      setLoading(false);
-    });
+        if (isFirebaseConfigured) {
+          try {
+            await signInAnonymously(authInstance);
+            return;
+          } catch (err) {
+            console.error("Anonymous auth failed:", err);
+          }
+        }
+
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+      });
+    })();
 
     return () => {
       mounted = false;
-      unsubscribe();
+      unsubscribe?.();
     };
   }, [syncProfile]);
 
@@ -187,42 +181,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
     const provider = new GoogleAuthProvider();
     const current = auth.currentUser;
-    const useRedirect = prefersAuthRedirect();
 
-    if (useRedirect) {
-      markAuthRedirectPending();
-      if (current?.isAnonymous) {
-        await linkWithRedirect(current, provider);
-      } else {
-        await signInWithRedirect(auth, provider);
-      }
+    if (prefersAuthRedirect()) {
+      await startGoogleRedirect(Boolean(current?.isAnonymous));
       return;
     }
 
-    if (current?.isAnonymous) {
-      try {
-        const result = await linkWithPopup(current, provider);
-        await finalizeGoogleUser(result.user, syncProfile);
-        return;
-      } catch (err: unknown) {
-        const code =
-          err && typeof err === "object" && "code" in err
-            ? String((err as { code: string }).code)
-            : "";
-        if (
-          code === "auth/credential-already-in-use" ||
-          code === "auth/email-already-in-use"
-        ) {
-          const result = await signInWithPopup(auth, provider);
+    try {
+      if (current?.isAnonymous) {
+        try {
+          const result = await linkWithPopup(current, provider);
           await finalizeGoogleUser(result.user, syncProfile);
           return;
+        } catch (err: unknown) {
+          const code =
+            err && typeof err === "object" && "code" in err
+              ? String((err as { code: string }).code)
+              : "";
+          if (
+            code === "auth/credential-already-in-use" ||
+            code === "auth/email-already-in-use"
+          ) {
+            const result = await signInWithPopup(auth, provider);
+            await finalizeGoogleUser(result.user, syncProfile);
+            return;
+          }
+          if (
+            code === "auth/popup-blocked" ||
+            code === "auth/popup-closed-by-user" ||
+            code === "auth/cancelled-popup-request"
+          ) {
+            await startGoogleRedirect(true);
+            return;
+          }
+          throw err;
         }
-        throw err;
       }
-    }
 
-    const result = await signInWithPopup(auth, provider);
-    await finalizeGoogleUser(result.user, syncProfile);
+      const result = await signInWithPopup(auth, provider);
+      await finalizeGoogleUser(result.user, syncProfile);
+    } catch (err: unknown) {
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code: string }).code)
+          : "";
+      if (
+        code === "auth/popup-blocked" ||
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        await startGoogleRedirect(Boolean(current?.isAnonymous));
+        return;
+      }
+      throw err;
+    }
   }, [syncProfile]);
 
   const signInEmail = useCallback(async (email: string, password: string) => {

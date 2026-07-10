@@ -46,6 +46,12 @@
   to = "/index.html"
   status = 200
 
+# Firebase Google popup — COOP 차단 방지
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
 [build.environment]
   NODE_VERSION = "20"
   # Firebase 웹 SDK는 클라이언트 공개 설정 — dist·SW 번들에 포함됨
