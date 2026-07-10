@@ -19,8 +19,15 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
   const [redirecting, setRedirecting] = useState(() => isAuthRedirectPending());
 
   useEffect(() => {
-    if (access.isMember || isLinkedAuthUser(user)) onAuthenticated?.();
+    if (access.isMember || isLinkedAuthUser(user)) {
+      setRedirecting(false);
+      onAuthenticated?.();
+    }
   }, [access.isMember, user, onAuthenticated]);
+
+  useEffect(() => {
+    if (authError) setRedirecting(false);
+  }, [authError]);
 
   const handleGoogle = async () => {
     setError("");

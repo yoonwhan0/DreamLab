@@ -9,7 +9,6 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
-  getRedirectResult,
   onAuthStateChanged,
   signInWithCredential,
   signInWithPopup,
@@ -24,6 +23,7 @@ import {
   prefersAuthRedirect,
   startGoogleRedirect,
 } from "@/lib/authPlatform";
+import { getAuthRedirectResult } from "@/lib/authRedirectBootstrap";
 import { isLinkedAuthUser } from "@/lib/authUser";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
@@ -78,20 +78,29 @@ async function handleRedirectSignIn(
 ): Promise<{ user: User | null; error: string | null }> {
   if (!auth) return { user: null, error: null };
 
+  const hadPendingRedirect = isAuthRedirectPending();
+
   try {
-    const redirectResult = await getRedirectResult(auth);
-    clearAuthRedirectPending();
+    const redirectResult = await getAuthRedirectResult();
 
     if (redirectResult?.user) {
+      clearAuthRedirectPending();
       const linked = await finalizeGoogleUser(redirectResult.user, syncProfile);
       return { user: linked, error: null };
     }
 
     const current = auth.currentUser;
     if (current && isLinkedAuthUser(current)) {
+      clearAuthRedirectPending();
       return { user: await finalizeGoogleUser(current, syncProfile), error: null };
     }
 
+    // redirect 복귀 직후엔 익명 세션 정리하지 않음 — 세션 확정 전 signOut 방지
+    if (hadPendingRedirect) {
+      return { user: null, error: null };
+    }
+
+    clearAuthRedirectPending();
     await clearLegacyAnonymousSession();
     return { user: auth.currentUser, error: null };
   } catch (err: unknown) {
@@ -210,9 +219,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
         if (!mounted) return;
 
+        // redirect 복귀 직후 — pending이어도 이미 Google 세션이면 막지 않음
         if (isAuthRedirectPending()) {
-          setLoading(true);
-          return;
+          if (firebaseUser && isLinkedAuthUser(firebaseUser)) {
+            clearAuthRedirectPending();
+          } else {
+            setLoading(true);
+            return;
+          }
         }
 
         if (firebaseUser?.isAnonymous) {

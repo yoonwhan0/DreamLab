@@ -12,6 +12,7 @@ import { MemberRoute } from "@/components/MemberRoute";
 import { DemoProvider } from "@/demo/DemoProvider";
 
 import { AuthProvider } from "@/hooks/useAuth";
+import { isAuthRedirectPending } from "@/lib/authPlatform";
 
 import { SignupSheetProvider } from "@/hooks/useSignupSheet";
 import { PremiumSheetProvider } from "@/hooks/usePremiumSheet";
@@ -33,17 +34,18 @@ import { MyPage } from "@/pages/MyPage";
 
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(() =>
-    isAdminEntryPath(window.location.pathname),
+  const [splashDone, setSplashDone] = useState(
+    () =>
+      isAdminEntryPath(window.location.pathname) || isAuthRedirectPending(),
   );
-
-  if (!splashDone) {
-    return <SplashScreen onComplete={() => setSplashDone(true)} />;
-  }
 
   return (
     <DemoProvider>
       <AuthProvider>
+        {!splashDone ? (
+          <SplashScreen onComplete={() => setSplashDone(true)} />
+        ) : (
+          <>
         <PendingDreamLinker />
         <SignupSheetProvider>
           <PremiumSheetProvider>
@@ -85,6 +87,8 @@ export default function App() {
             </Routes>
           </PremiumSheetProvider>
         </SignupSheetProvider>
+          </>
+        )}
       </AuthProvider>
     </DemoProvider>
   );

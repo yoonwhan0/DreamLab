@@ -26,10 +26,14 @@ function isInAppBrowser(): boolean {
 
 export { isInAppBrowser };
 
-/** 모바일·PWA·인앱 — redirect (popup COOP 이슈 회피) */
+/** 모바일 브라우저 — redirect. iOS PWA·인앱은 세션 유실로 popup 우선 */
 export function prefersAuthRedirect(): boolean {
   if (typeof window === "undefined") return false;
-  return isInAppBrowser() || isMobileUa() || isStandalonePwa();
+  if (isInAppBrowser()) return false;
+  if (isStandalonePwa() && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    return false;
+  }
+  return isMobileUa();
 }
 
 export function markAuthRedirectPending(): void {
