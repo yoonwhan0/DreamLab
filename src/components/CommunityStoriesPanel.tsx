@@ -81,6 +81,7 @@ export function CommunityStoriesPanel({
             story={first}
             centered={centered}
             variant={resolvedVariant}
+            dreamTeaseBlur={blurLocked}
           />
         </article>
       )}
@@ -129,19 +130,25 @@ function StoryContent({
   story,
   centered = false,
   variant = "full",
+  dreamTeaseBlur = false,
 }: {
   story: CommunityStory;
   centered?: boolean;
   variant?: "full" | "compact" | "minimal";
+  /** 잠금 미리보기 — 꿈 본문만 하단 블러, 30일 후는 선명 */
+  dreamTeaseBlur?: boolean;
 }) {
   if (variant === "minimal") {
     return (
       <div className="space-y-2 text-sm">
         <div className="space-y-1">
           <p className="text-[0.625rem] font-semibold text-text-muted uppercase">꿈</p>
-          <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={5}>
-            {story.dreamSnippet}
-          </FormattedBlocks>
+          <DreamSnippetBlock
+            snippet={story.dreamSnippet}
+            teaseBlur={dreamTeaseBlur}
+            className="text-text-secondary leading-relaxed"
+            maxLines={5}
+          />
         </div>
         <div className="space-y-1">
           <p className="text-[0.625rem] font-semibold text-text-muted uppercase">30일 후</p>
@@ -185,12 +192,12 @@ function StoryContent({
       <div className="space-y-3 text-sm">
         <div className="rounded-lg bg-surface/50 p-3 space-y-1.5">
           <p className="text-xs font-semibold text-text-muted">꿈</p>
-          <FormattedBlocks
+          <DreamSnippetBlock
+            snippet={story.dreamSnippet}
+            teaseBlur={dreamTeaseBlur}
             className="text-text-secondary"
-            maxLines={variant === "compact" ? 5 : 5}
-          >
-            {story.dreamSnippet}
-          </FormattedBlocks>
+            maxLines={5}
+          />
         </div>
         <div className="rounded-lg bg-surface/50 p-3 space-y-1.5">
           <p className="text-xs font-semibold text-text-muted">30일 후</p>
@@ -214,6 +221,34 @@ function StoryContent({
         )}
       </div>
     </div>
+  );
+}
+
+function DreamSnippetBlock({
+  snippet,
+  teaseBlur,
+  className,
+  maxLines,
+}: {
+  snippet: string;
+  teaseBlur: boolean;
+  className?: string;
+  maxLines: number;
+}) {
+  if (teaseBlur) {
+    return (
+      <div className="dream-snippet-tease">
+        <FormattedBlocks className={`dream-snippet-tease__body ${className ?? ""}`} maxLines={maxLines}>
+          {snippet}
+        </FormattedBlocks>
+      </div>
+    );
+  }
+
+  return (
+    <FormattedBlocks className={className} maxLines={maxLines}>
+      {snippet}
+    </FormattedBlocks>
   );
 }
 

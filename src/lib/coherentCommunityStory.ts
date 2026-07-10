@@ -427,29 +427,53 @@ const MANUAL_STORIES: Record<string, ManualStoryCopy> = {
     outcomeCategory: "other",
     emotions: ["calm", "weird"],
   },
+  밤: {
+    title: "새벽인데 시계가 오후를 가리킨 꿈",
+    dreamSnippet:
+      "창밖은 완전히 어두웠는데 방 안 시계는 오후 세 시를 가리키고 있었습니다. 커튼 틈으로 들어오는 빛이 없어서 휴대폰을 켰는데 날짜만 보이고 시간은 비어 있었어요. 다시 눕자 천장이 조금씩 낮아지는 느낌이 들었습니다.",
+    afterStory:
+      "한 달 동안 수면 리듬이 많이 흔들렸습니다. 큰 사건은 없었지만 밤마다 생각이 길어져서 아침이 무거웠어요. 결국 자기 전 알림을 줄이고 잠드는 시간을 먼저 고정해 보기로 했습니다.",
+    outcomeCategory: "health",
+    emotions: ["weird", "sad"],
+  },
+  광장: {
+    title: "사람 없는 광장에 안내 방송만 울리던 꿈",
+    dreamSnippet:
+      "넓은 광장 한가운데 서 있었는데 벤치와 깃발은 그대로인데 사람이 한 명도 없었습니다. 안내 방송에서는 모르는 행사 이름만 반복됐고, 어느 방향으로 가도 같은 분수대로 돌아왔어요. 바닥에 떨어진 종이컵만 바람에 굴러다녔습니다.",
+    afterStory:
+      "한 달 사이 사람 많은 자리에서 이상하게 혼자 떨어진 느낌을 받은 적이 있었습니다. 실제로 문제가 생긴 건 아니지만 대화에 끼어드는 게 어렵더라고요. 이후에는 약속을 줄이고 편한 사람부터 만나면서 리듬을 되찾았습니다.",
+    outcomeCategory: "other",
+    emotions: ["sad", "weird"],
+  },
 };
 
+export const MANUAL_STORY_KEYWORDS = Object.freeze(Object.keys(MANUAL_STORIES));
+
+export function isManualStoryKeyword(keyword: string): boolean {
+  return Object.prototype.hasOwnProperty.call(MANUAL_STORIES, keyword.trim());
+}
+
 const GENERIC_DREAM_TITLE_TEMPLATES = [
-  (k: string) => `${k} 기록이 남은 새벽`,
-  (k: string) => `${k} 때문에 잠을 깬 날`,
-  (k: string) => `${k} 이후 마음이 이상했던 꿈`,
-  (k: string) => `${k}가 낯설게 보인 밤`,
+  () => "복도 끝 불빛이 꺼지지 않던 꿈",
+  () => "낡은 가방을 들고 길을 헤맨 꿈",
+  () => "문이 열려 있는데 들어가지 못한 꿈",
+  () => "흐린 창문 너머를 오래 본 꿈",
 ] as const;
 
 const GENERIC_DREAM_SNIPPETS = [
-  (k: string) =>
-    `낯선 장소에서 ${k}와 관련된 장면이 유난히 또렷했습니다. 주변은 흐릿했지만 그 순간의 공기와 몸의 긴장은 오래 남았어요. 아침에 일어나자마자 잊기 전에 메모했습니다.`,
-  (k: string) =>
-    `${k}를 떠올리게 하는 상황이 반복됐고 저는 계속 뭔가를 확인하려 했습니다. 특별한 사건보다 마음이 먼저 조급해졌어요. 깨고 나서는 그 감정이 더 선명했습니다.`,
-  (k: string) =>
-    `꿈속에서는 별일 아닌 것처럼 지나갔는데 마지막에 ${k}만 강하게 남았습니다. 소리나 대사는 거의 기억나지 않았어요. 대신 그때의 거리감과 기분이 오래 갔습니다.`,
-  (k: string) =>
-    `${k}와 이어지는 장면이 짧게 지나갔는데 몸이 먼저 반응했습니다. 무섭다기보다는 신경이 쓰이는 쪽에 가까웠어요. 하루 종일 그 느낌이 쉽게 가라앉지 않았습니다.`,
+  () =>
+    "낯선 건물 복도를 걷는데 끝방 불빛만 계속 켜져 있었습니다. 손잡이를 잡으면 안쪽에서 누가 먼저 잡을 것 같아 망설였어요. 깨고 나서도 손바닥에 차가운 금속 느낌이 남았습니다.",
+  () =>
+    "무거운 가방을 들고 버스 정류장을 찾고 있었습니다. 지나가는 버스마다 번호판이 흐려서 탈 수가 없었어요. 결국 길가에 앉아 가방 안을 다시 확인하다가 잠에서 깼습니다.",
+  () =>
+    "문이 반쯤 열린 방 앞에 서 있었는데 안쪽에서는 낮은 라디오 소리만 들렸습니다. 들어가면 아는 사람이 있을 것 같았지만 발이 움직이지 않았어요. 아침까지 그 망설임이 이상하게 남았습니다.",
+  () =>
+    "흐린 창문 너머로 사람들이 지나가는 게 보였습니다. 얼굴은 보이지 않았고 신발 소리만 또렷했어요. 창문을 닦으려는 순간 바깥 풍경이 물감처럼 번졌습니다.",
 ] as const;
 
 const DREAM_DETAIL_LINES = [
-  (k: string) => `깬 뒤에는 ${k}라는 단어보다 그때의 몸 상태가 더 오래 남았습니다.`,
-  (k: string) => `나중에 다시 읽어보려고 ${k}와 이어진 색, 소리, 거리감까지 적어 두었습니다.`,
+  () => `깬 뒤에는 단어보다 그때의 몸 상태가 더 오래 남았습니다.`,
+  () => `나중에 다시 읽어보려고 색, 소리, 거리감까지 적어 두었습니다.`,
   () => `좋은 꿈인지 나쁜 꿈인지 바로 판단하기보다는 당시 감정을 먼저 남겼습니다.`,
   () => `평소라면 지나쳤을 감각인데 꿈에서는 이상하게 오래 남았습니다.`,
 ] as const;
@@ -520,13 +544,13 @@ export function isGenericVividPoolSnippet(snippet: string): boolean {
 export function genericDreamTitle(anchor: string, index: number): string {
   const k = anchor.trim() || "꿈";
   const variant = Math.abs(hashSeed(`generic-title-${k}-${index}`));
-  return GENERIC_DREAM_TITLE_TEMPLATES[variant % GENERIC_DREAM_TITLE_TEMPLATES.length]!(k);
+  return GENERIC_DREAM_TITLE_TEMPLATES[variant % GENERIC_DREAM_TITLE_TEMPLATES.length]!();
 }
 
 export function genericKeywordSnippet(anchor: string, index: number): string {
   const k = anchor.trim() || "꿈";
   const variant = Math.abs(hashSeed(`generic-snippet-${k}-${index}`));
-  const base = GENERIC_DREAM_SNIPPETS[variant % GENERIC_DREAM_SNIPPETS.length]!(k);
+  const base = GENERIC_DREAM_SNIPPETS[variant % GENERIC_DREAM_SNIPPETS.length]!();
   return ensureDreamStoryLines(base, k, index);
 }
 
@@ -535,13 +559,12 @@ function manualStoryForKeyword(keyword: string): ManualStoryCopy | undefined {
   return MANUAL_STORIES[key];
 }
 
-export function ensureDreamStoryLines(text: string, anchor: string, index: number): string {
-  const k = anchor.trim() || "꿈";
+export function ensureDreamStoryLines(text: string, _anchor: string, index: number): string {
   const lines = storyLines(text);
   let offset = 0;
   while (lines.length < 3 && offset < DREAM_DETAIL_LINES.length) {
     const lineFn = DREAM_DETAIL_LINES[(index + offset) % DREAM_DETAIL_LINES.length]!;
-    lines.push(typeof lineFn === "function" && lineFn.length === 0 ? (lineFn as () => string)() : lineFn(k));
+    lines.push(lineFn());
     offset += 1;
   }
   return clampStoryLines(lines);
@@ -551,7 +574,7 @@ export function ensureAfterStoryLines(
   text: string,
   outcome: OutcomeCategory,
   index: number,
-  anchor = "",
+  _anchor = "",
 ): string {
   const lines = storyLines(text);
   const extras = AFTER_DETAIL_LINES[outcome] ?? AFTER_DETAIL_LINES.other;
@@ -559,10 +582,6 @@ export function ensureAfterStoryLines(
   while (lines.length < 3 && offset < extras.length) {
     lines.push(extras[(index + offset) % extras.length]!);
     offset += 1;
-  }
-  const k = anchor.trim();
-  if (k && k !== "꿈" && !lines.some((line) => storyRelatesToAnchor(line, k))) {
-    lines.push(`한 달 뒤 돌아보니 ${k} 장면이 왜 오래 남았는지 조금 더 보였습니다.`);
   }
   return clampStoryLines(lines);
 }

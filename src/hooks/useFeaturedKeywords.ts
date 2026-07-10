@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isManualStoryKeyword } from "@/lib/coherentCommunityStory";
 import { PREVIEW_KEYWORD_POOL, shuffleKeywordPool } from "@/lib/previewKeywords";
 import { fetchPopularDreamKeywords } from "@/services/dreamService";
 
@@ -18,10 +19,13 @@ export function useFeaturedKeywords(count: number): string[] {
       const fromDb = await fetchPopularDreamKeywords(topPool);
       if (cancelled) return;
 
+      const manualFromDb = fromDb.filter(isManualStoryKeyword);
       const pool =
-        fromDb.length >= count
-          ? fromDb
-          : [...new Set([...fromDb, ...PREVIEW_KEYWORD_POOL])];
+        manualFromDb.length >= count
+          ? manualFromDb
+          : [...new Set([...manualFromDb, ...PREVIEW_KEYWORD_POOL])].filter(
+              isManualStoryKeyword,
+            );
 
       const shuffled = shuffleKeywordPool(pool, count);
       if (shuffled.length === 0) return;

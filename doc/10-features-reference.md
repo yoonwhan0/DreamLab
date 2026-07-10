@@ -54,14 +54,15 @@
 
 - 제거·축소: 홈 대형 KPI 숫자, FOMO 블러 과다, `ResearchLabPanel` 풀 노출
 - 유지: `HomeObservatorySignal` (관측 밀도만), `HomeFeaturedStoryPanel` (키워드 1건)
-- 키워드: `useHomeFeaturedKeywords` — Firestore 공개 꿈 빈도 → 12개 랜덤
+- 키워드: `useHomeFeaturedKeywords` — Firestore 공개 꿈 빈도 중 **수동 후기 카피가 있는 키워드만** 12개 랜덤
+- 홈·탐색 뱃지 후기: `coherentCommunityStory.ts`의 `MANUAL_STORIES`에 제목·꿈내용·30일후기를 **키워드별로 직접 작성**한다. 키워드만 끼워 넣는 조합 템플릿, 큰따옴표 강조, 공통 골격 문장 사용 금지.
 
 ### 탐색 (2026-07)
 
 - 검색 칩 **12개** (`KEYWORD_RAIL_COUNT` / `EXPLORE_KEYWORD_CHIP_COUNT`)
 - 검색 전 미리보기 **6건** (`EXPLORE_DISCOVER_PREVIEW_COUNT`)
-- `fetchPopularDreamKeywords()` — DB 500건 집계 후 셔플
-- 폴백: `PREVIEW_KEYWORD_POOL` (30개+)
+- `fetchPopularDreamKeywords()` — DB 500건 집계 후 `isManualStoryKeyword()`로 필터링
+- 폴백: `PREVIEW_KEYWORD_POOL` 중 수동 후기 카피가 있는 키워드
 
 ---
 

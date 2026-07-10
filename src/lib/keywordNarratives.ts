@@ -1184,10 +1184,10 @@ export function defaultPackForKeyword(keyword: string): KeywordNarrativePack {
     category: inferCategoryFromKeyword(k),
     countRange: [base, base + seededInt(rand, 800, 2400)],
     followUpRate: 0.41 + rand() * 0.14,
-    relatedKeywords: [k, "밤", "불안"].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4),
-    titles: [`${k} 기록이 남은 꿈`],
+    relatedKeywords: [k, "기록", "감정"].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4),
+    titles: ["흐린 창문 너머를 오래 본 꿈"],
     dreamSnippets: [
-      `꿈에서 ${k}와 이어지는 장면이 유난히 또렷했습니다. 장소는 낯설었지만 그때의 공기와 몸의 긴장은 오래 남았어요. 깨고 나서 바로 메모했습니다.`,
+      "흐린 창문 너머로 사람들이 지나가는 게 보였습니다. 얼굴은 보이지 않았고 신발 소리만 또렷했어요. 창문을 닦으려는 순간 바깥 풍경이 물감처럼 번졌습니다.",
     ],
     afterByOutcome: {},
   };

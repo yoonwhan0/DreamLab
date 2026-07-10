@@ -995,6 +995,33 @@ textarea.input {
   opacity: 0.45;
 }
 
+/** 미리보기 — 꿈 본문 하단만 희미하게 (30일 후는 선명) */
+.dream-snippet-tease {
+  position: relative;
+  max-height: 5.5rem;
+  overflow: hidden;
+}
+
+.dream-snippet-tease__body {
+  filter: blur(2.5px);
+  opacity: 0.58;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dream-snippet-tease::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(12, 12, 14, 0.35) 55%,
+    rgba(12, 12, 14, 0.92) 100%
+  );
+  pointer-events: none;
+}
+
 .story-blur-overlay {
   background: linear-gradient(
     to bottom,
