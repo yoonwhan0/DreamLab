@@ -1,8 +1,11 @@
 /** 회원 — 키워드당 무료 후기 열람 */
-export const MEMBER_FREE_STORY_VIEWS = 4;
+export const MEMBER_FREE_STORY_VIEWS = 2;
 
-/** 무료 구간 — 2건씩 / 유료 구간 — 1건씩 */
-export const STORY_LOAD_CHUNK_FREE = 2;
+/** 프리미엄 — 검색 직후 집중 노출 */
+export const PREMIUM_INITIAL_STORY_VIEWS = 2;
+
+/** 무료·유료 구간 모두 1건씩 (주제 집중) */
+export const STORY_LOAD_CHUNK_FREE = 1;
 export const STORY_LOAD_CHUNK_PAID = 1;
 
 export function keywordAccessKey(keyword: string): string {
@@ -15,8 +18,15 @@ export function maxStorySlots(freeCap: number, paidUnlockCount: number): number 
   return freeCap + Math.max(0, paidUnlockCount);
 }
 
-export function storyLoadChunk(visibleCount: number): number {
-  return visibleCount >= MEMBER_FREE_STORY_VIEWS
-    ? STORY_LOAD_CHUNK_PAID
-    : STORY_LOAD_CHUNK_FREE;
+export function storyLoadChunk(_visibleCount: number): number {
+  return STORY_LOAD_CHUNK_FREE;
+}
+
+/** 검색 직후 첫 노출 건수 */
+export function initialStoryVisibleCount(
+  isPremium: boolean,
+  restoredCount: number,
+): number {
+  if (restoredCount > 0) return restoredCount;
+  return isPremium ? PREMIUM_INITIAL_STORY_VIEWS : 1;
 }

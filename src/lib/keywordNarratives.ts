@@ -1,6 +1,4 @@
 import { hashSeed, createSeededRandom, seededInt } from "@/lib/seededRandom";
-import type { OutcomeCategory } from "@/types";
-import { VIVID_DREAM_SCENES, VIVID_DREAM_TITLES } from "@/lib/vividPreviewCopy";
 
 export interface KeywordNarrativePack {
   category: string;
@@ -30,7 +28,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "하늘에서 빛과 함께 보살이 나타나 아기를 두고 사라지는 꿈이었어요.",
       "연꽃 위에 앉은 형상이 갓난아기를 내려주고 멀어지는 장면이 반복됐어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       good: [
         "기대하지 않았던 좋은 소식이 있었어요. 꿈과 직접 연결되진 않지만, 마음이 한결 가벼워졌습니다.",
         "가족 쪽에서 반가운 연락이 왔어요. 내태몽 이후로 집안 분위기가 조금 부드러워졌어요.",
@@ -63,7 +61,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "연꽃 위에 앉은 보살이 잠시 머물다 사라지는 꿈이었어요.",
       "보살이 갓난아기를 두고 떠나는 장면 — 말은 없었지만 마음이 편해졌어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       good: [
         "좋은 소식이나 마음의 안정이 찾아왔어요. 꿈 이후로 기도·명상을 시작했다는 후기도 있었어요.",
       ],
@@ -85,7 +83,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "연꽃이 점점 가까워지며 갓난아기와 함께 있는 장면이었습니다.",
       "전쟁 소리 속에서도 연꽃만은 고요하게 빛나는 꿈이었어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
     },
   },
   뱀: {
@@ -105,7 +103,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "뱀이 갑자기 나타났다 사라졌어요. 깬 뒤에도 등이 서늘했습니다.",
       "손바닥만 한 뱀이 책상 위를 기어 다녔어요. 잡을지 말지 못 정한 채 깨었습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       good: [
         "기대하지 않았던 좋은 소식이 있었어요. 꿈과 직접 연결되진 않지만, 한동안 무거웠던 마음이 가벼워졌습니다.",
       ],
@@ -131,7 +129,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "시험지가 하얗게 비어 있었는데, 채점자가 제 이름만 부르고 있었어요.",
       "시험장이 갑자기 어두워지고, 출입문만 멀어지는 느낌이었습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       bad: [
         "한 달 안에 중요한 평가에서 크게 흔들렸어요. 꿈이 경고였는지는 모르겠지만, 그 시기는 정말 버거웠습니다. 지나고 나니 '그때도 결국 넘어갔다'는 게 위로가 됐어요.",
         "예상치 못한 탈락·감점이 있었습니다. 꿈의 시험장과 겹쳐 더 무거웠어요. 그래도 다음 루틴을 다시 세웠습니다.",
@@ -162,7 +160,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "로또를 샀는데 주머니가 비어 있었어요. 다시 찾으려 해도 영수증만 사라졌습니다.",
       "당첨 방송이 나오는데 제 번호만 소리가 안 들렸어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       good: [
         "작은 행운이 있었어요. 로또 당첨은 아니지만, 예상 못 한 수입이 들어왔습니다.",
         "오래 막혀 있던 돈 문제가 조금 풀렸어요. 꿈의 번호와는 무관했지만, 숨이 트였습니다.",
@@ -190,7 +188,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "빌려준 돈을 돌려달라 했는데, 상대가 얼굴을 돌렸습니다.",
       "ATM 화면에서 잔고가 실시간으로 줄어드는 꿈이었어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       money: [
         "예상치 못한 지출이 터졌어요. 꿈의 '손재'와 겹쳐 패닉이 났지만, 결국 정리됐습니다.",
         "돈 문제로 며칠 밤을 지샜어요. 한 달 뒤엔 '그때도 넘어갔다'는 위로가 됐어요.",
@@ -217,7 +215,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "전 남친이 다른 사람과 있는 장면을 봤어요. 깨고 나니 가슴이 먹먹했습니다.",
       "전 남친이 돌아왔는데, 얼굴이 안 보였어요. 이름만 불렀습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       love: [
         "연락이 왔어요. 꿈과 비슷한 감정이었지만, 서두르지 않아도 괜찮다는 걸 알게 됐어요.",
         "새 만남이 있었어요. 꿈 이후로 '혼자가 아니다'는 감각이 조금 돌아왔습니다.",
@@ -244,7 +242,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "장례식장인데, 갑자기 그 사람이 일어나는 꿈이었어요. 공포보다 그리움이 컸습니다.",
       "편지를 받았는데 글씨가 흐려 읽을 수 없었어요. 내용은 알 것 같았습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       family: [
         "가족 관련 일이 있었어요. 꿈 이후로 오래 미뤄둔 대화를 나눴습니다.",
       ],
@@ -270,7 +268,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "불을 끈 줄 알았는데, 눈을 뜨면 다시 타오르는 꿈이 반복됐어요.",
       "불꽃은 안 보이고 연기만 가득했어요. 숨이 막혔습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       bad: [
         "갑작스러운 압박·갈등이 있었어요. 꿈의 불길함이 현실 스트레스와 겹쳤습니다.",
       ],
@@ -299,7 +297,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       ],
       bad: [
         "실제로 이별·갈등이 있었어요. 힘들었지만, 기록해둔 덕분에 감정은 정리됐어요.",
-      ],
+      ],
     },
   },
   임신: {
@@ -319,7 +317,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "임신했다는데 배가 평소와 같았어요. 거울 속 얼굴만 낯설었습니다.",
       "가족에게 말하려다 입이 막혔어요. 표정만 보였습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       family: [
         "가족 관련 일이 있었어요. 꿈 이후로 몸과 마음을 더 챙기게 됐어요.",
       ],
@@ -345,7 +343,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "거울을 봤는데 이가 비어 있었어요. 웃을 수 없었습니다.",
       "이가 빠졌는데 피가 없었어요. 오히려 더 불안했습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       health: [
         "치과·검진 일정이 있었어요. 꿈의 불길함이 겹쳐 긴장했지만 결과는 괜찮았어요.",
       ],
@@ -368,7 +366,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "쫓기는데 숨이 막혔어요. 입을 벌려도 공기가 안 들어왔습니다.",
       "달리는데 발이 땅에 닿지 않았어요. 점점 멀어졌습니다.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       bad: [
         "한 달 안에 스트레스 peak가 있었어요. 꿈의 쫓김과 비슷한 압박이었습니다.",
       ],
@@ -391,7 +389,7 @@ const PACKS: Record<string, KeywordNarrativePack> = {
       "실직한 줄 알았는데 다음 날도 출근하는 꿈이었어요. 현실과 꿈이 섞였습니다.",
       "면접 결과를 듣는데, 말 없이 고개만 저었어요.",
     ],
-    afterByOutcome: {
+    afterByOutcome: {
       bad: [
         "한 달 안에 조직 개편·압박이 있었어요. 꿈의 불안이 현실 스트레스와 겹쳤습니다.",
       ],
@@ -432,13 +430,16 @@ export function defaultPackForKeyword(keyword: string): KeywordNarrativePack {
   const seed = hashSeed(`default-pack-${k}`);
   const rand = createSeededRandom(seed);
   const base = seededInt(rand, 1840, 4680);
+  const title = k.includes("꿈") ? k : `${k} 꿈`;
   return {
     category: inferCategoryFromKeyword(k),
     countRange: [base, base + seededInt(rand, 800, 2400)],
     followUpRate: 0.41 + rand() * 0.14,
-    relatedKeywords: ["집", "밤", "불안", "연락", "돈"],
-    titles: [...VIVID_DREAM_TITLES],
-    dreamSnippets: [...VIVID_DREAM_SCENES].slice(0, 12),
+    relatedKeywords: [k, "밤", "불안"].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4),
+    titles: [title],
+    dreamSnippets: [
+      `"${k}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 같은 키워드로 기록됐습니다.`,
+    ],
     afterByOutcome: {},
   };
 }

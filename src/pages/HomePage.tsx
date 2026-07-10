@@ -6,9 +6,10 @@ import { HomeFeaturedStoryPanel } from "@/components/HomeFeaturedStoryPanel";
 import { HomeObservatorySignal } from "@/components/HomeObservatorySignal";
 import { Reveal } from "@/components/motion/Reveal";
 import { PageHero } from "@/components/ui/PageHero";
-import { CTA_WRITE_DREAM } from "@/lib/branding";
+import { CTA_SIGNUP, CTA_WRITE_DREAM } from "@/lib/branding";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { useHomeFeaturedKeywords } from "@/hooks/useHomeFeaturedKeywords";
 import { getKeywordIcon } from "@/lib/keywordIcons";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
@@ -16,6 +17,7 @@ import { previewCommunityForKeyword } from "@/services/syntheticCommunityService
 
 export function HomePage() {
   const access = useAccessPolicy();
+  const { openSignupSheet } = useSignupSheet();
   const { keywords, activeIdx, setActiveIdx } = useHomeFeaturedKeywords();
   const activeKeyword = keywords[activeIdx] ?? keywords[0];
   const activePreview = useMemo(() => {
@@ -88,10 +90,12 @@ export function HomePage() {
       {access.isGuest && (
         <Reveal delay={170}>
           <CuriosityTease
-            title="무료 가입 · 꿈 저장"
-            body="가입하면 탐색에서 같은 꿈 후기를 더 볼 수 있어요."
-            cta="무료로 가입하기"
-            to="/explore"
+            title="로그인 · 가입 · 꿈 저장"
+            body="가입하면 탐색에서 같은 꿈 후기를 더 볼 수 있어요. 이미 계정이 있으면 로그인하세요."
+            cta={CTA_SIGNUP}
+            onAction={() =>
+              openSignupSheet("탐색·후기·30일 알림을 열려면 로그인하거나 가입하세요.")
+            }
           />
         </Reveal>
       )}

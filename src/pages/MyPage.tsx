@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { DreamArchiveCalendar } from "@/components/DreamArchiveCalendar";
 import { DreamArchiveCard } from "@/components/DreamArchiveCard";
 import { CuriosityTease } from "@/components/CuriosityTease";
-import { LabResearchMission } from "@/components/LabResearchMission";
 import { MyDreamFortuneSection } from "@/components/MyDreamFortuneSection";
 import { MyPricingSection } from "@/components/MyPricingSection";
 import { ConversionGate } from "@/components/ConversionGate";
@@ -12,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
+import { CTA_SIGNUP } from "@/lib/branding";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
@@ -110,8 +110,6 @@ export function MyPage() {
         <MyDreamFortuneSection dreams={dreams} />
       )}
 
-      <LabResearchMission variant="card" />
-
       <MyPricingSection />
 
       {access.isMember && !access.isPremium && dreams.length > 0 && (
@@ -129,10 +127,12 @@ export function MyPage() {
 
       {access.isGuest && (
         <CuriosityTease
-          title="무료 가입 · 꿈 저장"
-          body="가입하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
-          cta="무료로 가입하기"
-          to="/my"
+          title="로그인 · 가입 · 꿈 저장"
+          body="로그인하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
+          cta={CTA_SIGNUP}
+          onAction={() =>
+            openSignupSheet("로그인하거나 가입하면 꿈 저장·30일 알림·탐색이 열립니다.")
+          }
         />
       )}
 
@@ -156,7 +156,7 @@ export function MyPage() {
           onClick={() => openSignupSheet("가입하면 꿈 저장·30일 알림·후기 작성이 열립니다.")}
           className="btn-secondary w-full text-sm"
         >
-          가입하고 아카이브 열기
+          {CTA_SIGNUP}
         </button>
       )}
     </div>

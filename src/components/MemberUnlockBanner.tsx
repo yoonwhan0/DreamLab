@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AppLink } from "@/components/ui/AppLink";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { MEMBER_FREE_STORY_VIEWS } from "@/lib/storyAccessPricing";
 
 const STORAGE_KEY = "dreamlab-member-unlock-banner";
 
@@ -40,7 +41,7 @@ export function MemberUnlockBanner() {
           <AppLink to="/explore" className="text-primary font-medium hover:underline">
             탐색
           </AppLink>
-          에서 같은 꿈 후기를 <strong className="text-primary">4건 무료</strong>로 볼 수 있어요.
+          에서 같은 꿈 후기를 <strong className="text-primary">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>로 볼 수 있어요.
           통계·전체 결말은 <strong className="text-primary">프리미엄 구독</strong> (앱스토어·Play)입니다.
         </p>
       </div>

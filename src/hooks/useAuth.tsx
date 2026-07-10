@@ -10,17 +10,21 @@ import {
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
+  getRedirectResult,
   linkWithCredential,
   linkWithPopup,
+  linkWithRedirect,
   onAuthStateChanged,
   signInAnonymously,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { prefersAuthRedirect } from "@/lib/authPlatform";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
 import type { UserProfile } from "@/types";
@@ -39,6 +43,16 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+async function finalizeGoogleUser(firebaseUser: User, syncProfile: (u: User) => Promise<void>) {
+  if (firebaseUser.isAnonymous) return;
+  await upsertUserProfile(firebaseUser.uid, {
+    isAnonymous: false,
+    displayName: firebaseUser.displayName,
+    email: firebaseUser.email,
+  });
+  await syncProfile(firebaseUser);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -109,6 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authInstance = auth;
     let mounted = true;
 
+    void (async () => {
+      try {
+        const redirectResult = await getRedirectResult(authInstance);
+        if (redirectResult?.user && mounted) {
+          await finalizeGoogleUser(redirectResult.user, syncProfile);
+        }
+      } catch (err) {
+        console.error("Google redirect sign-in failed:", err);
+      }
+    })();
+
     const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
       if (!mounted) return;
 
@@ -148,19 +173,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
     const provider = new GoogleAuthProvider();
     const current = auth.currentUser;
+    const useRedirect = prefersAuthRedirect();
 
-    if (current?.isAnonymous) {
-      const result = await linkWithPopup(current, provider);
-      await upsertUserProfile(result.user.uid, {
-        isAnonymous: false,
-        displayName: result.user.displayName,
-        email: result.user.email,
-      });
-      await syncProfile(result.user);
+    if (useRedirect) {
+      if (current?.isAnonymous) {
+        await linkWithRedirect(current, provider);
+      } else {
+        await signInWithRedirect(auth, provider);
+      }
       return;
     }
 
-    await signInWithPopup(auth, provider);
+    if (current?.isAnonymous) {
+      const result = await linkWithPopup(current, provider);
+      await finalizeGoogleUser(result.user, syncProfile);
+      return;
+    }
+
+    const result = await signInWithPopup(auth, provider);
+    await finalizeGoogleUser(result.user, syncProfile);
   }, [syncProfile]);
 
   const signInEmail = useCallback(async (email: string, password: string) => {

@@ -53,7 +53,7 @@ export async function interpretDream(
     const result: InterpretResult = {
       interpretation,
       embedding: [],
-      communityEstimate: generateSyntheticCommunity(interpretation, title, content),
+      communityEstimate: generateSyntheticCommunity(interpretation, title, content, 1),
     };
     writeCache(title, content, result);
     return result;
@@ -79,7 +79,7 @@ export async function interpretDream(
         embedding: data.embedding ?? [],
         communityEstimate:
           data.communityEstimate ??
-          generateSyntheticCommunity(data.interpretation, title, content),
+          generateSyntheticCommunity(data.interpretation, title, content, 1),
       };
       writeCache(title, content, result);
       return result;
@@ -97,7 +97,7 @@ export async function interpretDream(
   const result: InterpretResult = {
     interpretation,
     embedding: [],
-    communityEstimate: generateSyntheticCommunity(interpretation, title, content),
+    communityEstimate: generateSyntheticCommunity(interpretation, title, content, 1),
   };
   writeCache(title, content, result);
   return result;

@@ -7,9 +7,9 @@ import {
   type ReactNode,
 } from "react";
 import { Link } from "react-router-dom";
-import { BRAND_FORBIDDEN_TEASE, CTA_PREMIUM } from "@/lib/branding";
+import { BRAND_FORBIDDEN_TEASE, CTA_PREMIUM, CTA_SIGNUP } from "@/lib/branding";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
-import { useAuth } from "@/hooks/useAuth";
+import { useSignupSheet } from "@/hooks/useSignupSheet";
 
 interface PremiumSheetContextValue {
   openPremiumSheet: (message?: string) => void;
@@ -21,7 +21,7 @@ const PremiumSheetContext = createContext<PremiumSheetContextValue | null>(null)
 export function PremiumSheetProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
-  const { signInGoogle } = useAuth();
+  const { openSignupSheet } = useSignupSheet();
   const access = useAccessPolicy();
   const [checkoutMsg, setCheckoutMsg] = useState("");
 
@@ -75,10 +75,17 @@ export function PremiumSheetProvider({ children }: { children: ReactNode }) {
             {!access.isMember ? (
               <>
                 <p className="text-xs text-text-muted text-center">
-                  먼저 회원가입이 필요합니다.
+                  프리미엄은 회원 로그인 후 구독할 수 있어요.
                 </p>
-                <button type="button" onClick={signInGoogle} className="btn-primary">
-                  Google로 가입 후 구독
+                <button
+                  type="button"
+                  onClick={() => {
+                    closePremiumSheet();
+                    openSignupSheet("로그인하거나 가입한 뒤 프리미엄 구독을 이어갈 수 있어요.");
+                  }}
+                  className="btn-primary"
+                >
+                  {CTA_SIGNUP}
                 </button>
               </>
             ) : access.isPremium ? (

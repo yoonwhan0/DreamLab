@@ -14,9 +14,7 @@ import { createSeededRandom, hashSeed, seededInt } from "@/lib/seededRandom";
 import { ensureMultiline } from "@/lib/interpretationTone";
 import {
   VIVID_AFTER_BY_OUTCOME,
-  VIVID_DREAM_TITLES,
   VIVID_STORY_PROFILES,
-  pickVividScene,
 } from "@/lib/vividPreviewCopy";
 import type {
   CommunityEstimate,
@@ -40,6 +38,20 @@ const EMOTION_POOL: DreamEmotionId[] = [
 const PROFILES = [...VIVID_STORY_PROFILES];
 
 const GENERIC_AFTER: Record<OutcomeCategory, string[]> = VIVID_AFTER_BY_OUTCOME;
+
+function keywordDreamTitle(anchor: string): string {
+  const t = anchor.trim();
+  if (!t) return "꿈";
+  return t.includes("꿈") ? t : `${t} 꿈`;
+}
+
+/** 키워드 팩 없을 때 — 제목·본문·후기가 한 줄기로 맞음 */
+function genericKeywordSnippet(anchor: string): string {
+  const k = anchor.trim() || "꿈";
+  return ensureMultiline(
+    `"${k}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 같은 키워드로 기록됐습니다.`,
+  );
+}
 
 export function resolveAnchorKeyword(
   title: string,
@@ -80,41 +92,79 @@ function pickAfterStory(
   return ensureMultiline(pool[seededInt(rand, 0, pool.length - 1)] ?? pool[0]);
 }
 
+function buildStoryAt(
+  rand: () => number,
+  anchorKeyword: string,
+  pack: KeywordNarrativePack,
+  index: number,
+): CommunityStory {
+  const curatedPack = getKeywordNarrativePack(anchorKeyword);
+  const outcome = pickOutcome(rand, pack);
+  const slot = curatedPack
+    ? index % curatedPack.dreamSnippets.length
+    : 0;
+
+  const dreamTitle = curatedPack
+    ? curatedPack.titles[slot % curatedPack.titles.length]!
+    : keywordDreamTitle(anchorKeyword);
+  const dreamSnippet = curatedPack
+    ? curatedPack.dreamSnippets[slot]!
+    : genericKeywordSnippet(anchorKeyword);
+  const afterStory = curatedPack
+    ? pickAfterStory(outcome, curatedPack, rand)
+    : pickAfterStory(outcome, pack, rand);
+
+  const emotions: DreamEmotionId[] = [
+    EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
+    ...(rand() > 0.4 ? [EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)]] : []),
+  ];
+  const daysAgo = seededInt(rand, 3, 41);
+
+  return {
+    id: formatObservatoryId(anchorKeyword, index),
+    dreamTitle,
+    dreamSnippet,
+    emotions,
+    outcomeCategory: outcome,
+    afterStory,
+    recordedDaysAgo: daysAgo,
+    profile: PROFILES[index % PROFILES.length],
+  };
+}
+
 function generateStories(
   rand: () => number,
   anchorKeyword: string,
   pack: KeywordNarrativePack,
   count = 12,
 ): CommunityStory[] {
-  const curatedPack = getKeywordNarrativePack(anchorKeyword);
+  return Array.from({ length: count }, (_, i) =>
+    buildStoryAt(rand, anchorKeyword, pack, i),
+  );
+}
 
-  return Array.from({ length: count }, (_, i) => {
-    const outcome = pickOutcome(rand, pack);
-    const snippet = curatedPack
-      ? curatedPack.dreamSnippets[i % curatedPack.dreamSnippets.length]!
-      : pickVividScene(i + hashSeed(`${anchorKeyword}-${i}`));
-    const dreamTitle = curatedPack
-      ? curatedPack.titles[i % curatedPack.titles.length]!
-      : VIVID_DREAM_TITLES[i % VIVID_DREAM_TITLES.length]!;
-    const emotions: DreamEmotionId[] = [
-      EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
-      ...(rand() > 0.4
-        ? [EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)]]
-        : []),
-    ];
-    const daysAgo = seededInt(rand, 3, 41);
+/** 탐색 더보기 — 키워드 팩에 정의된 N번째 후기만 (랜덤 조합 없음) */
+export function generateSyntheticStoryAt(keyword: string, index: number): CommunityStory | null {
+  const curated = getKeywordNarrativePack(keyword);
+  if (!curated || index >= curated.dreamSnippets.length) return null;
 
-    return {
-      id: formatObservatoryId(anchorKeyword, i),
-      dreamTitle,
-      dreamSnippet: snippet,
-      emotions,
-      outcomeCategory: outcome,
-      afterStory: pickAfterStory(outcome, pack, rand),
-      recordedDaysAgo: daysAgo,
-      profile: PROFILES[i % PROFILES.length],
-    };
-  });
+  const anchor = keyword.trim() || "꿈";
+  const pack = resolveNarrativePack(anchor);
+  const interpretation: DreamInterpretation = {
+    usualTake: "",
+    symbol: "",
+    psychology: "",
+    reflection: "",
+    keywords: [anchor, ...pack.relatedKeywords.slice(0, 2)],
+    category: inferCategoryFromKeyword(anchor),
+    researchAnchor: {
+      primary: anchor,
+      clusterLabel: `${anchor} 관련 꿈`,
+    },
+  };
+  const seed = buildSeed(interpretation, anchor, anchor) + index * 997;
+  const rand = createSeededRandom(seed);
+  return buildStoryAt(rand, anchor, pack, index);
 }
 
 function buildCounts(
@@ -154,6 +204,7 @@ export function generateSyntheticCommunity(
   interpretation: DreamInterpretation,
   title = "",
   content = "",
+  storyCount = 1,
 ): CommunityEstimate {
   const anchor = resolveAnchorKeyword(title, interpretation, content);
   const pack = resolveNarrativePack(anchor);
@@ -175,9 +226,9 @@ export function generateSyntheticCommunity(
     totalCount,
   );
 
-  const stories = generateStories(rand, anchor, pack, 12);
+  const stories = generateStories(rand, anchor, pack, storyCount);
 
-  const samples = stories.slice(0, 8).map((s) => ({
+  const samples = stories.slice(0, Math.min(8, storyCount)).map((s) => ({
     title: s.dreamTitle,
     snippet: s.dreamSnippet,
     emotions: s.emotions,
@@ -275,5 +326,5 @@ export function previewCommunityForKeyword(keyword: string) {
       clusterLabel: `${anchor} 관련 꿈`,
     },
   };
-  return generateSyntheticCommunity(interpretation, anchor, content);
+  return generateSyntheticCommunity(interpretation, anchor, content, 1);
 }

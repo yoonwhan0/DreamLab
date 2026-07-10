@@ -1,7 +1,7 @@
 /**
  * 로컬 Vite dev 전용 — /api/* (Netlify 핸들러)
  */
-import { localApiPlugin } from "./vite-local-api-plugin";
+import { localApiPlugin } from "./vite-local-api-plugin.ts";
 
 export function attachDevApi() {
   return localApiPlugin({

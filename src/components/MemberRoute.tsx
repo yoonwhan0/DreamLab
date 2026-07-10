@@ -10,7 +10,7 @@ export function MemberRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !isMember) {
-      openSignupSheet("30일 후 데이터를 기록하고 알림을 받으려면 3초 회원가입이 필요해요.");
+      openSignupSheet("30일 후 데이터를 기록하고 알림을 받으려면 로그인하거나 가입하세요.");
     }
   }, [loading, isMember, openSignupSheet]);
 
@@ -50,7 +50,7 @@ export function PremiumRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="py-16 text-center">
         <Link to="/my" className="text-primary font-medium">
-          마이페이지에서 가입하기
+          마이페이지에서 로그인 · 가입
         </Link>
       </div>
     );

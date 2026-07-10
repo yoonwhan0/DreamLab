@@ -5,7 +5,8 @@ interface CuriosityTeaseProps {
   title: string;
   body: string;
   cta: string;
-  to: string;
+  to?: string;
+  onAction?: () => void;
   className?: string;
 }
 
@@ -16,17 +17,36 @@ export function CuriosityTease({
   body,
   cta,
   to,
+  onAction,
   className = "",
 }: CuriosityTeaseProps) {
-  return (
-    <Link
-      to={to}
-      className={`card card-bezel block p-4 ring-1 ring-accent/20 hover:ring-accent/40 transition-colors ${className}`.trim()}
-    >
+  const content = (
+    <>
       <p className="section-label !mb-1">{label}</p>
       <p className="font-semibold text-text text-sm leading-snug">{title}</p>
       <p className="mt-1 text-xs text-text-secondary copy-lines leading-relaxed">{body}</p>
       <p className="mt-2 text-xs font-medium text-primary">{cta} →</p>
+    </>
+  );
+
+  const classNames =
+    `card card-bezel block w-full text-left p-4 ring-1 ring-accent/20 hover:ring-accent/40 transition-colors ${className}`.trim();
+
+  if (onAction) {
+    return (
+      <button type="button" onClick={onAction} className={classNames}>
+        {content}
+      </button>
+    );
+  }
+
+  if (!to) {
+    return <div className={classNames}>{content}</div>;
+  }
+
+  return (
+    <Link to={to} className={classNames}>
+      {content}
     </Link>
   );
 }

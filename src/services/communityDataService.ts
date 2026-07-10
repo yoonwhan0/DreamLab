@@ -19,7 +19,6 @@ import { fetchDataExposureConfig } from "@/services/opsConfigService";
 import type { DataExposureConfig } from "@/lib/opsConfig";
 import { DEFAULT_DATA_EXPOSURE } from "@/lib/opsConfig";
 import {
-  mergeCommunityStories,
   overlapsUserDreamFields,
   sanitizeAiCommunityStory,
 } from "@/lib/communityStoryQuality";
@@ -54,7 +53,7 @@ function mergeEstimate(
   title: string,
   content = "",
 ): CommunityEstimate {
-  const synthetic = generateSyntheticCommunity(interpretation, title, content);
+  const synthetic = generateSyntheticCommunity(interpretation, title, content, 1);
   if (!estimate) return synthetic;
 
   const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
@@ -62,15 +61,19 @@ function mergeEstimate(
   const aiStories = (estimate.stories ?? [])
     .map((story, i) => sanitizeAiCommunityStory(story, i, content, title))
     .filter((s): s is NonNullable<typeof s> => s !== null);
-  const stories = mergeCommunityStories(aiStories, synthetic.stories, 10);
+
+  const stories =
+    aiStories.length > 0 ? aiStories : synthetic.stories.slice(0, 1);
+
   const rawSamples =
-    estimate.samples?.length >= 3
-      ? estimate.samples
-      : stories.slice(0, 5).map((s) => ({
+    estimate.samples?.length >= 1
+      ? estimate.samples.slice(0, stories.length)
+      : stories.map((s) => ({
           title: s.dreamTitle,
           snippet: s.dreamSnippet,
           emotions: s.emotions,
         }));
+
   const samples = rawSamples
     .filter(
       (sample) =>
@@ -83,16 +86,7 @@ function mergeEstimate(
           snippet: sample.snippet,
         }),
     )
-    .concat(
-      synthetic.samples.filter(
-        (sample) =>
-          !overlapsUserDreamFields(content, title, {
-            title: sample.title,
-            snippet: sample.snippet,
-          }),
-      ),
-    )
-    .slice(0, 5);
+    .slice(0, Math.max(stories.length, 1));
 
   return {
     ...synthetic,
@@ -108,7 +102,7 @@ function mergeEstimate(
     outcomes: estimate.outcomes ?? synthetic.outcomes,
     stories,
     samples,
-    isEstimated: true,
+    isEstimated: aiStories.length === 0,
   };
 }
 
@@ -116,11 +110,11 @@ function ensureStories(
   summary: SimilarDreamSummary,
   fallback: CommunityEstimate,
 ): SimilarDreamSummary {
-  if (summary.stories.length >= 3) return summary;
+  if (summary.stories.length > 0) return summary;
   return {
     ...summary,
-    stories: fallback.stories,
-    samples: summary.samples.length > 0 ? summary.samples : fallback.samples,
+    stories: fallback.stories.slice(0, 1),
+    samples: summary.samples.length > 0 ? summary.samples : fallback.samples.slice(0, 1),
   };
 }
 

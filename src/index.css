@@ -571,12 +571,22 @@ body {
 .research-mission-hook {
   font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.55;
+  line-height: 1.65;
   color: var(--color-text);
+  white-space: pre-line;
+}
+
+.research-mission-beats {
+  padding-block: 0.125rem;
+}
+
+.research-mission-beats > * + * {
+  margin-top: 0.625rem;
 }
 
 .research-mission-beat-accent {
   font-weight: 600;
+  line-height: 1.65;
   color: var(--brand-gold-light);
   text-shadow: 0 0 16px rgba(212, 160, 74, 0.12);
 }
@@ -598,16 +608,18 @@ body {
 .research-mission-topic-body {
   margin-top: 0.25rem;
   font-size: 0.6875rem;
-  line-height: 1.55;
+  line-height: 1.65;
   color: var(--color-text-secondary);
+  white-space: pre-line;
 }
 
 .research-mission-closing {
   text-align: center;
   font-size: 0.6875rem;
-  line-height: 1.5;
+  line-height: 1.65;
   color: var(--color-text-muted);
   font-style: italic;
+  white-space: pre-line;
 }
 
 .page-desc-block .space-y-1 > * + * {

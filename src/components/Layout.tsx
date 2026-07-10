@@ -6,7 +6,8 @@ import { AppBackground } from "@/components/AppBackground";
 import { DemoTierSwitcher } from "@/components/DemoTierSwitcher";
 import { AppIcons, Icon, type NavIconKey } from "@/components/ui/Icon";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
-import { APP_NAME_EN, APP_SUBTITLE } from "@/lib/branding";
+import { useSignupSheet } from "@/hooks/useSignupSheet";
+import { APP_NAME_EN, APP_SUBTITLE, CTA_SIGNUP } from "@/lib/branding";
 import { APP_ICON } from "@/lib/brandAssets";
 import { showDemoUi } from "@/demo/demoData";
 
@@ -20,6 +21,7 @@ const navItems: { path: string; label: string; icon: NavIconKey }[] = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const access = useAccessPolicy();
+  const { openSignupSheet } = useSignupSheet();
 
   return (
     <>
@@ -50,7 +52,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
             </AppLink>
-            <TierBadge tier={access.tier} />
+            {access.isGuest ? (
+              <button
+                type="button"
+                onClick={() => openSignupSheet()}
+                className="shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label={CTA_SIGNUP}
+              >
+                <TierBadge tier={access.tier} />
+              </button>
+            ) : (
+              <TierBadge tier={access.tier} />
+            )}
           </div>
         </header>
 

@@ -27,7 +27,7 @@ export function ConversionGate({ step, keyword, compact = false }: ConversionGat
       : "8주 운세 그래프 · 후기 전체";
 
   const description = isSignup
-    ? "같은 꿈을 꾼 이들은 이미 한 달 뒤를 남겼습니다. 가입하고 당신의 결말도 기록하세요."
+    ? "같은 꿈을 꾼 이들은 이미 한 달 뒤를 남겼습니다. 로그인하거나 가입하고 당신의 결말도 기록하세요."
     : BRAND_FORBIDDEN_TEASE;
 
   const cta = isSignup ? CTA_SIGNUP : CTA_PREMIUM;

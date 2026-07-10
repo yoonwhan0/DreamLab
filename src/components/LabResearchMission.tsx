@@ -9,6 +9,7 @@ import {
   RESEARCH_MISSION_TOPICS,
 } from "@/lib/branding";
 import { ContributionGrid } from "@/components/ContributionGrid";
+import { FormattedText } from "@/components/ui/FormattedText";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
 
 export const RESEARCH_MISSION_HASH = "research";
@@ -32,33 +33,49 @@ export function LabResearchMissionBody({
       {!hideTagline && (
         <div className="space-y-2 text-center">
           <p className="text-sm font-medium text-text">{BRAND_TAGLINE}</p>
-          <p className="text-xs text-text-secondary copy-lines leading-relaxed">
+          <FormattedText
+            as="p"
+            autoFormat={false}
+            className="text-xs text-text-secondary leading-relaxed"
+          >
             {BRAND_MANIFESTO}
-          </p>
+          </FormattedText>
         </div>
       )}
 
       {hideTagline && (
         <div className="space-y-2 text-center">
-          <p className="research-mission-hook">{RESEARCH_MISSION_HOOK}</p>
-          <p className="text-xs text-text-secondary copy-lines leading-relaxed">
+          <FormattedText
+            as="p"
+            autoFormat={false}
+            className="research-mission-hook"
+          >
+            {RESEARCH_MISSION_HOOK}
+          </FormattedText>
+          <FormattedText
+            as="p"
+            autoFormat={false}
+            className="text-xs text-text-secondary leading-relaxed"
+          >
             {BRAND_MANIFESTO}
-          </p>
+          </FormattedText>
         </div>
       )}
 
       <div className="research-mission-beats space-y-2.5">
         {RESEARCH_MISSION_BEATS.map((beat, index) => (
-          <p
+          <FormattedText
             key={beat}
-            className={`text-xs leading-relaxed copy-lines text-center ${
+            as="p"
+            autoFormat={false}
+            className={`text-xs leading-relaxed text-center ${
               index === lastBeatIndex
                 ? "research-mission-beat-accent"
                 : "text-text-secondary"
             }`}
           >
             {beat}
-          </p>
+          </FormattedText>
         ))}
       </div>
 
@@ -66,7 +83,13 @@ export function LabResearchMissionBody({
         {RESEARCH_MISSION_TOPICS.map((item) => (
           <li key={item.title} className="research-mission-topic">
             <p className="research-mission-topic-title">{item.title}</p>
-            <p className="research-mission-topic-body">{item.body}</p>
+            <FormattedText
+              as="p"
+              autoFormat={false}
+              className="research-mission-topic-body"
+            >
+              {item.body}
+            </FormattedText>
           </li>
         ))}
       </ul>
@@ -84,7 +107,9 @@ export function LabResearchMissionBody({
       )}
 
       {hideDensity && (
-        <p className="research-mission-closing">{BRAND_CLOSING}</p>
+        <FormattedText as="p" autoFormat={false} className="research-mission-closing">
+          {BRAND_CLOSING}
+        </FormattedText>
       )}
     </div>
   );

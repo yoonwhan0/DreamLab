@@ -6,6 +6,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { inferEmotionsFromInterpretation, parseDreamInput } from "@/lib/dreamUtils";
+import { savePendingDream } from "@/lib/pendingDreamStorage";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { interpretDream } from "@/services/interpretService";
 import { saveDream } from "@/services/dreamService";
@@ -41,7 +42,7 @@ export function WriteDreamPage() {
       return;
     }
 
-    sessionStorage.setItem("pendingDream", JSON.stringify(dreamData));
+    savePendingDream(dreamData);
     navigate("/dream/preview?new=1");
   };
 
@@ -116,9 +117,9 @@ export function WriteDreamPage() {
 
       {!submitting && (
         <CuriosityTease
-          title="같은 꿈을 꾼 사람들, 30일 뒤는?"
-          body="기록 전에도 탐색에서 비슷한 꿈·한 달 뒤 후기를 미리 볼 수 있어요."
-          cta="탐색으로 가기"
+          title="가입하면 같은 꿈 후기를 볼 수 있어요"
+          body="비회원은 내 꿈 해몽만 가능합니다. 회원이 되면 탐색에서 한 달 뒤 후기를 한 건씩 볼 수 있어요."
+          cta="탐색 알아보기"
           to="/explore"
         />
       )}

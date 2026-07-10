@@ -15,7 +15,9 @@ import { StatsBar } from "@/components/StatsBar";
 import { SurvivalRate } from "@/components/SurvivalRate";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/lib/firebase";
+import { useSignupSheet } from "@/hooks/useSignupSheet";
+import { CTA_SIGNUP } from "@/lib/branding";
+import { clearPendingDream, getPendingDreamRaw } from "@/lib/pendingDreamStorage";
 import {
   getDream,
   getOutcomePercentages,
@@ -37,7 +39,8 @@ export function DreamDetailPage() {
   const [searchParams] = useSearchParams();
   const isNew = searchParams.get("new") === "1";
   const navigate = useNavigate();
-  const { signInGoogle, user } = useAuth();
+  const { user } = useAuth();
+  const { openSignupSheet } = useSignupSheet();
   const access = useAccessPolicy();
   const [dream, setDream] = useState<Dream | null>(null);
   const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
@@ -86,7 +89,7 @@ export function DreamDetailPage() {
       }
 
       if (isPreview) {
-        const raw = sessionStorage.getItem("pendingDream");
+        const raw = getPendingDreamRaw();
         if (!raw) {
           setLoading(false);
           return;
@@ -118,15 +121,10 @@ export function DreamDetailPage() {
 
           if (!cancelled) {
             setDream(previewDream);
+            setSummary(null);
+            setStats(null);
             setLoading(false);
           }
-
-          void loadCommunity(interpretation, {
-            embedding: data.embedding,
-            title: data.title,
-            content: data.content,
-            estimate: data.communityEstimate,
-          });
         } catch {
           if (!cancelled) setLoading(false);
         }
@@ -160,28 +158,28 @@ export function DreamDetailPage() {
 
   useEffect(() => {
     async function saveAfterSignup() {
-      const raw = sessionStorage.getItem("pendingDream");
-      if (!access.isMember || !isPreview || !raw || !auth?.currentUser) return;
+      const raw = getPendingDreamRaw();
+      if (!isPreview || !raw || !user || user.isAnonymous) return;
 
       setSaving(true);
       try {
         const data = JSON.parse(raw);
         const dreamId = await saveDream(
-          auth.currentUser.uid,
+          user.uid,
           data.title,
           data.content,
           data.emotions ?? [],
           data.interpretation,
           data.embedding ?? [],
         );
-        sessionStorage.removeItem("pendingDream");
+        clearPendingDream();
         navigate(`/dream/${dreamId}?new=1`, { replace: true });
       } finally {
         setSaving(false);
       }
     }
-    saveAfterSignup();
-  }, [access.isMember, isPreview, navigate]);
+    void saveAfterSignup();
+  }, [user, isPreview, navigate]);
 
   if (loading || saving) {
     return <LoadingSpinner label={saving ? "저장 중..." : "불러오는 중..."} />;
@@ -280,7 +278,7 @@ export function DreamDetailPage() {
               />
               {summary.stories.length > 0 && (
                 <CommunityStoriesPanel
-                  stories={summary.stories.slice(0, access.isPremium ? 3 : 1)}
+                  stories={summary.stories.slice(0, access.isPremium ? 2 : 1)}
                   title={`"${keyword}" — 다른 사람들은?`}
                   variant="compact"
                   blurLocked={!access.isPremium}
@@ -324,31 +322,25 @@ export function DreamDetailPage() {
       )}
 
       {isPreview ? (
-        <>
-          {summary && summary.stories.length > 0 && (
-            <CommunityStoriesPanel
-              stories={summary.stories}
-              blurLocked
-              lockedCount={Math.max(summary.stories.length - 1, 20)}
-              isEstimated={isEstimated}
-            />
-          )}
-          <UpgradeGate
-            title="회원가입하면 저장됩니다"
-            description="30일 타이머 · 유사 꿈 · (프리미엄) 한 달 뒤 통계가 열립니다"
-            ctaLabel="Google로 가입"
-            onCta={signInGoogle}
-          />
-        </>
+        <UpgradeGate
+          title="로그인 · 가입하면 저장됩니다"
+          description="30일 타이머 · 유사 꿈 탐색 · (프리미엄) 한 달 뒤 통계가 열립니다"
+          ctaLabel={CTA_SIGNUP}
+          onCta={() =>
+            openSignupSheet("가입하거나 로그인하면 이 꿈이 저장되고 30일 여정이 시작됩니다.")
+          }
+        />
       ) : (
         !isOwnDream && (
           <>
             {access.isGuest && (
               <UpgradeGate
-                title="회원가입하면 더 열립니다"
+                title="로그인 · 가입하면 더 열립니다"
                 description="유사 꿈 패턴 · 30일 푸시 알림 · 한 달 뒤 후기 작성"
-                ctaLabel="Google로 가입"
-                onCta={signInGoogle}
+                ctaLabel={CTA_SIGNUP}
+                onCta={() =>
+                  openSignupSheet("로그인하거나 가입하면 유사 꿈·30일 알림·후기 작성이 열립니다.")
+                }
               />
             )}
 

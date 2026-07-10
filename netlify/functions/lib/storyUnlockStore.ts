@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 
-export const MEMBER_FREE_STORY_VIEWS = 4;
+export const MEMBER_FREE_STORY_VIEWS = 2;
 
 function keywordAccessKey(keyword: string): string {
   const k = keyword.trim().toLowerCase().replace(/\s+/g, "-");
