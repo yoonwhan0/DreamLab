@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { DreamArchiveCalendar } from "@/components/DreamArchiveCalendar";
 import { DreamArchiveCard } from "@/components/DreamArchiveCard";
-import { ReinterpretRecentPanel } from "@/components/ReinterpretRecentPanel";
+import { CuriosityTease } from "@/components/CuriosityTease";
+import { MyDreamFortuneSection } from "@/components/MyDreamFortuneSection";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/Icon";
 import { PageHero } from "@/components/ui/PageHero";
@@ -99,7 +100,25 @@ export function MyPage() {
       </section>
 
       {access.isMember && dreams.length > 0 && (
-        <ReinterpretRecentPanel dreams={dreams} onUpdated={() => void loadDreams()} />
+        <MyDreamFortuneSection dreams={dreams} />
+      )}
+
+      {access.isMember && !access.isPremium && (
+        <CuriosityTease
+          title="다른 사람들은 한 달 뒤, 어떻게 됐을까요?"
+          body="내 꿈과 비슷한 키워드 — 재물·연애·직장운 3축 맛보기. 8주 그래프 전체는 프리미엄."
+          cta="탐색에서 후기 엿보기"
+          to="/explore"
+        />
+      )}
+
+      {access.isGuest && (
+        <CuriosityTease
+          title="30일 뒤, 그들에게는 무슨 일이?"
+          body="가입하면 내 꿈 저장·알림·같은 꿈 후기 열람이 열립니다."
+          cta="가입하고 결말 보기"
+          to="/my"
+        />
       )}
 
       {access.isGuest && dreams.length > 0 && (

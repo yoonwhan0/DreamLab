@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
+import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
+import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
 import { DreamJourneyStepper } from "@/components/DreamJourneyStepper";
 import { JourneyOnboardingCard } from "@/components/JourneyOnboardingCard";
 import { MyDreamFollowUpSection } from "@/components/MyDreamFollowUpSection";
@@ -270,14 +272,20 @@ export function DreamDetailPage() {
       )}
 
       {showCommunity && summary && stats && summary.totalCount > 0 && (
-        <CommunityStatPreview
-          keyword={keyword}
-          totalCount={summary.totalCount}
-          withFollowUpCount={summary.withFollowUpCount}
-          stats={stats}
-          showCuriosityTease={!access.isPremium}
-          isEstimated={isEstimated}
-        />
+        <>
+          <CommunityStatPreview
+            keyword={keyword}
+            totalCount={summary.totalCount}
+            withFollowUpCount={summary.withFollowUpCount}
+            stats={stats}
+            showCuriosityTease={!access.isPremium}
+            isEstimated={isEstimated}
+          />
+          <DreamFortuneTrendPanel
+            snapshot={buildDreamFortuneSnapshot(keyword, stats)}
+            compact={!access.isPremium}
+          />
+        </>
       )}
 
       {isPreview ? (

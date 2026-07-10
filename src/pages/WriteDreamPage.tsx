@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CuriosityTease } from "@/components/CuriosityTease";
 import { LoadingPulse } from "@/components/motion/LoadingPulse";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
@@ -112,6 +113,15 @@ export function WriteDreamPage() {
           </>
         )}
       </form>
+
+      {!submitting && (
+        <CuriosityTease
+          title="같은 꿈을 꾼 사람들, 30일 뒤는?"
+          body="기록 전에도 탐색에서 비슷한 꿈·한 달 뒤 후기를 미리 엿볼 수 있어요."
+          cta="탐색으로 가기"
+          to="/explore"
+        />
+      )}
     </div>
   );
 }

@@ -18,6 +18,30 @@
   force = true
 
 [[redirects]]
+  from = "/api/story-access"
+  to = "/.netlify/functions/story-access"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/register-story-views"
+  to = "/.netlify/functions/register-story-views"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/create-story-unlock-order"
+  to = "/.netlify/functions/create-story-unlock-order"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/confirm-story-unlock-payment"
+  to = "/.netlify/functions/confirm-story-unlock-payment"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

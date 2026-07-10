@@ -7,7 +7,9 @@ import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { getRandomProvocativeKeywords } from "@/lib/previewKeywords";
-import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
+import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
+import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
+import { previewCommunityForKeyword, estimateToStats } from "@/services/syntheticCommunityService";
 
 const TIERS = [
   {
@@ -15,14 +17,14 @@ const TIERS = [
     name: "비회원",
     price: "무료",
     features: ["자극 패턴 맛보기", "AI 해몽 미리보기"],
-    locked: ["유사 꿈", "30일 알림", "결과·후기 통계"],
+    locked: ["30일 후 운세 그래프", "후기·통계 전체"],
   },
   {
     tier: "member" as const,
     name: "회원 (2단계 필수)",
     price: "무료",
-    features: ["꿈 저장", "유사 꿈 · 키워드", "30일 알림", "후기 작성"],
-    locked: ["30일 후 결과 통계", "전체 후기 열람 — 3단계 필요"],
+    features: ["꿈 저장", "유사 꿈 · 키워드", "30일 알림", "후기 작성", "운세 추이 3축 맛보기"],
+    locked: ["8주 운세 그래프 전체", "재물·연애·직장·건강 전 축 — 3단계"],
   },
   {
     tier: "premium" as const,
@@ -30,9 +32,9 @@ const TIERS = [
     price: "₩4,900/월",
     features: [
       "회원 기능 전체",
-      "30일 후 결과 통계",
-      "익명 후기 전체 열람",
-      "최근 꿈 AI 재해석",
+      "8주 운세 그래프 · 7개 축",
+      "상승/하락 비교 (재물·연애·직장 등)",
+      "30일 후 결과 통계·후기 전체",
       "무제한 탐색",
     ],
     locked: [] as string[],
@@ -53,6 +55,10 @@ export function PremiumPageContent() {
   const { openPremiumSheet } = usePremiumSheet();
   const previewKeyword = useState(() => getRandomProvocativeKeywords(1)[0] ?? "로또")[0];
   const previewStories = previewCommunityForKeyword(previewKeyword).stories;
+  const fortunePreview = buildDreamFortuneSnapshot(
+    previewKeyword,
+    estimateToStats(previewCommunityForKeyword(previewKeyword)),
+  );
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +78,8 @@ export function PremiumPageContent() {
       <div className="flex justify-center -mt-2">
         <TierBadge tier={access.tier} />
       </div>
+
+      <DreamFortuneTrendPanel snapshot={fortunePreview} tier={access.isPremium ? "premium" : access.isMember ? "member" : "guest"} />
 
       <CommunityStoriesPanel
         stories={previewStories}

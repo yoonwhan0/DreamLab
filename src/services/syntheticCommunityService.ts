@@ -1,8 +1,4 @@
 import { resolveResearchAnchor } from "@/lib/dreamAnchor";
-import {
-  buildVariantDreamSnippet,
-  buildVariantDreamTitle,
-} from "@/lib/similarDreamVariation";
 import { getKeywordNarrativePack } from "@/lib/keywordNarratives";
 import {
   formatObservatoryId,
@@ -16,6 +12,12 @@ import {
 } from "@/lib/keywordNarratives";
 import { createSeededRandom, hashSeed, seededInt } from "@/lib/seededRandom";
 import { ensureMultiline } from "@/lib/interpretationTone";
+import {
+  VIVID_AFTER_BY_OUTCOME,
+  VIVID_DREAM_TITLES,
+  VIVID_STORY_PROFILES,
+  pickVividScene,
+} from "@/lib/vividPreviewCopy";
 import type {
   CommunityEstimate,
   CommunityStory,
@@ -35,53 +37,9 @@ const EMOTION_POOL: DreamEmotionId[] = [
   "happy",
 ];
 
-const PROFILES = [
-  "관측자 #A-2847 · 20대",
-  "관측자 #B-1092 · 30대",
-  "관측자 #C-4418 · 20대",
-  "관측자 #D-7731 · 40대",
-  "관측자 #E-3305 · 30대",
-  "관측자 #F-9024 · 20대",
-  "관측자 #G-1566 · 30대",
-  "관측자 #H-6682 · 40대",
-];
+const PROFILES = [...VIVID_STORY_PROFILES];
 
-const GENERIC_AFTER: Record<OutcomeCategory, string[]> = {
-  nothing: [
-    "30일이 지나도 딱히 큰 일은 없었어요. 꿈에서 느낀 공포와 달리, 현실은 조용히 흘렀습니다. 돌아보니 괜히 마음만 앞섰던 것 같아요.",
-    "별일 없이 지나갔습니다. 기록해둔 덕분에 '혹시 큰일 나면 어쩌지' 하는 생각이 조금 가라앉았어요.",
-    "특별한 변화는 없었지만, 비슷한 꿈은 다시 꾸지 않았어요. 마음이 정리된 느낌입니다.",
-  ],
-  good: [
-    "기대하지 않았던 좋은 소식이 있었어요. 꿈과 직접 연결되진 않지만, 한동안 무거웠던 마음이 가벼워졌습니다.",
-    "오래 고민하던 일이 풀렸어요. 꿈 이후로 '최악만 상상하던 버릇'을 멈추니 일이 순조로워진 것 같아요.",
-  ],
-  bad: [
-    "한 달 안에 관계에서 큰 싸움이 났어요. 꿈에서 느낀 배신감이 현실로 번진 것 같기도 했습니다. 그래도 대화로 정리했고, 지금은 그때보다 마음이 편해요.",
-    "직장에서 갑작스러운 압박이 있었어요. 꿈이 경고였는지는 모르겠지만, 힘든 시기였습니다.",
-  ],
-  love: [
-    "30일 후 연락이 왔어요. 꿈의 그리움과 비슷한 감정이었지만, 서두르지 않아도 괜찮다는 걸 알게 됐어요.",
-    "새 만남이 있었어요. 꿈 이후로 '혼자가 아니다'는 감각이 조금 돌아왔습니다.",
-  ],
-  job: [
-    "중요한 결정을 내려야 했어요. 꿈 이후로 '최악을 상정'하기보다 선택에 집중할 수 있었습니다.",
-    "업무 스트레스가 peak였습니다. 그래도 한 달 뒤엔 '그때도 버텼구나' 하고 스스로를 인정하게 됐어요.",
-  ],
-  health: [
-    "검진·컨디션 이슈로 긴장했어요. 꿈의 불길함이 겹쳐 더 무서웠습니다. 결과는 대부분 괜찮았고, 몸을 챙기는 계기가 됐어요.",
-  ],
-  family: [
-    "가족과 오랜 갈등이 다시 떠올랐어요. 날카롭게 부딪히는 일도 있었습니다. 그래도 대화로 조금씩 풀렸어요.",
-  ],
-  money: [
-    "예상치 못한 지출이 터졌어요. 꿈의 '손재'와 겹쳐 패닉이 났습니다. 계획을 세우고 결국 정리됐어요.",
-    "돈 문제로 며칠 밤을 지샜어요. 한 달 뒤 돌아보니 '그때도 넘어갔다'는 게 위로가 됐어요.",
-  ],
-  other: [
-    "꿈과 직접 연결되긴 어렵지만, 그 한 달 동안 방향을 다시 생각했어요. 혼란스러웠지만, 지금은 조금 선명해졌습니다.",
-  ],
-};
+const GENERIC_AFTER: Record<OutcomeCategory, string[]> = VIVID_AFTER_BY_OUTCOME;
 
 export function resolveAnchorKeyword(
   title: string,
@@ -126,7 +84,7 @@ function generateStories(
   rand: () => number,
   anchorKeyword: string,
   pack: KeywordNarrativePack,
-  count = 8,
+  count = 12,
 ): CommunityStory[] {
   const curatedPack = getKeywordNarrativePack(anchorKeyword);
 
@@ -134,10 +92,10 @@ function generateStories(
     const outcome = pickOutcome(rand, pack);
     const snippet = curatedPack
       ? curatedPack.dreamSnippets[i % curatedPack.dreamSnippets.length]!
-      : buildVariantDreamSnippet(anchorKeyword, i);
+      : pickVividScene(i + hashSeed(`${anchorKeyword}-${i}`));
     const dreamTitle = curatedPack
       ? curatedPack.titles[i % curatedPack.titles.length]!
-      : pack.titles[i % pack.titles.length] ?? buildVariantDreamTitle(anchorKeyword, i);
+      : VIVID_DREAM_TITLES[i % VIVID_DREAM_TITLES.length]!;
     const emotions: DreamEmotionId[] = [
       EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
       ...(rand() > 0.4
@@ -217,9 +175,9 @@ export function generateSyntheticCommunity(
     totalCount,
   );
 
-  const stories = generateStories(rand, anchor, pack, 8);
+  const stories = generateStories(rand, anchor, pack, 12);
 
-  const samples = stories.slice(0, 5).map((s) => ({
+  const samples = stories.slice(0, 8).map((s) => ({
     title: s.dreamTitle,
     snippet: s.dreamSnippet,
     emotions: s.emotions,
@@ -304,7 +262,7 @@ export function estimateToStats(estimate: CommunityEstimate): DreamStats {
 export function previewCommunityForKeyword(keyword: string) {
   const anchor = keyword.trim() || "꿈";
   const pack = resolveNarrativePack(anchor);
-  const content = `"${anchor}"이(가) 떠오르는 꿈을 여러 사람이 비슷한 결로 기록해 두었어요. 장면은 각자 달랐습니다.`;
+  const content = `"${anchor}" 꿈 검색하다가 여기 후기 보고 소름 — 장면은 제각각인데 기분은 비슷하더라고요.`;
   const interpretation: DreamInterpretation = {
     usualTake: "",
     symbol: "",

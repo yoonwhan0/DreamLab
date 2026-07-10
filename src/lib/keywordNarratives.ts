@@ -1,5 +1,6 @@
 import { hashSeed, createSeededRandom, seededInt } from "@/lib/seededRandom";
 import type { OutcomeCategory } from "@/types";
+import { VIVID_DREAM_SCENES, VIVID_DREAM_TITLES } from "@/lib/vividPreviewCopy";
 
 export interface KeywordNarrativePack {
   category: string;
@@ -94,6 +95,36 @@ const PACKS: Record<string, KeywordNarrativePack> = {
     afterByOutcome: {
       nothing: [
         "별일 없이 지나갔지만, 연꽃·보살 해몽을 다시 찾아본 기록이 남아 있어요.",
+      ],
+    },
+  },
+  뱀: {
+    category: "anxiety",
+    countRange: [4120, 8900],
+    followUpRate: 0.487,
+    relatedKeywords: ["집", "초록색", "현관", "물", "불안"],
+    titles: [
+      "집 현관으로 들어오는 큰 뱀",
+      "쫓아오지 않는 뱀과 마주한 꿈",
+      "초록색 뱀이 거실에 누워 있는 꿈",
+      "뱀과 눈이 마주친 새벽 꿈",
+    ],
+    dreamSnippets: [
+      "옛날 살던 집인데 큰 뱀이 현관문을 열고 들어왔어요. 무서웠는데 쫓아오진 않았습니다.",
+      "초록색 뱀이 거실 소파 옆에 누워 있었어요. 가까이 다가갈 수는 없었습니다.",
+      "뱀이 갑자기 나타났다 사라졌어요. 깬 뒤에도 등이 서늘했습니다.",
+      "손바닥만 한 뱀이 책상 위를 기어 다녔어요. 잡을지 말지 못 정한 채 깨었습니다.",
+    ],
+    afterByOutcome: {
+      nothing: [
+        "30일이 지나도 딱히 큰 일은 없었어요. 꿈에서 느낀 공포와 달리, 현실은 조용히 흘렀습니다.",
+        "별일 없이 지나갔습니다. '손재·대박' 해몽을 떠올렸지만, 돌아보니 괜히 마음만 앞섰던 것 같아요.",
+      ],
+      good: [
+        "기대하지 않았던 좋은 소식이 있었어요. 꿈과 직접 연결되진 않지만, 한동안 무거웠던 마음이 가벼워졌습니다.",
+      ],
+      money: [
+        "예상치 못한 지출이 있었지만, 크게 흔들리진 않았어요. 꿈의 '손재'와 겹쳐 잠깐 긴장했습니다.",
       ],
     },
   },
@@ -454,19 +485,9 @@ export function defaultPackForKeyword(keyword: string): KeywordNarrativePack {
     category: inferCategoryFromKeyword(k),
     countRange: [base, base + seededInt(rand, 800, 2400)],
     followUpRate: 0.41 + rand() * 0.14,
-    relatedKeywords: ["집", "밤", "불안", "침묵", "문"],
-    titles: [
-      "비슷한 장면을 꾼 기록",
-      "새벽에 깨어난 뒤에도 선명했던 꿈",
-      "한 번 더 떠올린 장면",
-      "말하지 못한 채 남긴 꿈",
-    ],
-    dreamSnippets: [
-      "많은 시선이 느껴지는 장면이었어요. 긴장보다 몰입에 가까웠고, 장소는 익숙하지 않았습니다.",
-      "결정적인 순간 뒤 환호나 안도가 밀려오는 꿈이었어요. 세부 묘사는 달랐지만 결이 비슷했습니다.",
-      "현실과 섞인 듯한 분위기였고, 깬 뒤에도 같은 감정만 오래 남았어요.",
-      "평소와 다른 공간에서 비슷한 감정이 반복되는 꿈이었어요.",
-    ],
+    relatedKeywords: ["집", "밤", "불안", "연락", "돈"],
+    titles: [...VIVID_DREAM_TITLES],
+    dreamSnippets: [...VIVID_DREAM_SCENES].slice(0, 12),
     afterByOutcome: {},
   };
 }

@@ -25,6 +25,11 @@ import {
   sanitizeAiCommunityStory,
   pickNeutralSceneLine,
 } from "./lib/communityStoryQuality";
+import {
+  VIVID_DREAM_TITLES,
+  VIVID_STORY_PROFILES,
+  pickVividAfter,
+} from "../../src/lib/vividPreviewCopy";
 import { recordAiUsage } from "./lib/recordAiUsage";
 
 
@@ -155,7 +160,7 @@ const handler: Handler = async (event) => {
 
       const response = await fetch(
 
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`,
 
         {
 
@@ -430,7 +435,7 @@ function normalizeStories(
 
   const anchor = extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? "꿈";
 
-  const profiles = ["20대 · 여", "30대 · 남", "20대 · 남", "40대 · 여", "30대 · 여"];
+  const profiles = [...VIVID_STORY_PROFILES];
 
   const outcomes = [
 
@@ -450,7 +455,7 @@ function normalizeStories(
 
 
 
-  const stories = raw.slice(0, 6).map((item, i) => {
+  const stories = raw.slice(0, 12).map((item, i) => {
 
     const s = item as Record<string, unknown>;
 
@@ -485,7 +490,7 @@ function normalizeStories(
 
         afterStory ||
 
-        "30일이 지나 특별한 변화는 없었어요.\n다만 꿈의 장면은 자주 떠올랐어요.",
+        pickVividAfter(outcomes[i % outcomes.length]!, i),
 
       recordedDaysAgo: Number(s.recordedDaysAgo) || 7 + i * 3,
 
@@ -505,6 +510,36 @@ function normalizeStories(
 }
 
 
+
+function buildFallbackStories(count = 10) {
+  const outcomes = [
+    "nothing",
+    "good",
+    "bad",
+    "love",
+    "job",
+    "health",
+    "family",
+    "money",
+    "other",
+    "nothing",
+  ] as const;
+
+  return Array.from({ length: count }, (_, i) => {
+    const snippet = pickNeutralSceneLine(i);
+    const outcome = outcomes[i % outcomes.length]!;
+    return {
+      id: `fb-${i + 1}`,
+      dreamTitle: VIVID_DREAM_TITLES[i % VIVID_DREAM_TITLES.length]!,
+      dreamSnippet: snippet,
+      emotions: i % 3 === 0 ? ["scared", "weird"] : ["scared"],
+      outcomeCategory: outcome,
+      afterStory: pickVividAfter(outcome, i),
+      recordedDaysAgo: 5 + i * 4,
+      profile: VIVID_STORY_PROFILES[i % VIVID_STORY_PROFILES.length]!,
+    };
+  });
+}
 
 function fallbackInterpret(title: string, content: string): ParsedInterpretation {
 
@@ -528,43 +563,46 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
 
   const withFollowUpCount = Math.round(totalCount * 0.44);
 
-  const storySnippet = pickNeutralSceneLine(0);
-  const storyTitle = excerptToStoryTitle(storySnippet);
-  const secondSnippet = pickNeutralSceneLine(1);
-  const secondTitle = excerptToStoryTitle(secondSnippet);
+  const fallbackStories = buildFallbackStories(10);
+  const samples = fallbackStories.slice(0, 5).map((s) => ({
+    title: s.dreamTitle,
+    snippet: s.dreamSnippet,
+    emotions: s.emotions,
+  }));
 
 
 
   return {
 
     usualTake: [
-      `전통·인터넷 해몽에서 "${kw}"은(는) 변화나 메시지의 상징으로 자주 언급됩니다.`,
-      `"${kw}"이(가) 나오는 꿈은 '곧 일이 생긴다'거나 '감정이 드러난다'고 설명되기도 합니다.`,
-      `일부 해석은 불안한 장면이 섞이면 나쁜 징조·관계 문제로 단정하기도 합니다.`,
-      `해몽 사이트마다 조금씩 다르지만, 대체로 '${kw}'에 꽤 큰 의미를 부여합니다.`,
+      `인터넷 해몽에서 "${kw}" 꿈은 **대박·행운·큰 변화** 쪽으로 읽히는 경우가 많아요.`,
+      `"${kw}" 나오면 '곧 좋은 소식' 또는 반대로 '손재·주의'라고 단정하는 글도 잔뜩 있습니다.`,
+      `해몽 카페마다 말은 다르지만, 공통점은 **'그냥 넘기면 아깝다'**는 분위기예요.`,
+      `검색만 해도 "${kw} 꿈 대박", "${kw} 꿈 손재" 같은 제목이 줄줄 나옵니다.`,
     ].join("\n"),
 
     alternativeLens: [
-      `보통은 불길한 징조로 읽히지만, "${kw}" 장면은 지금 마음의 압력과 겹쳐 보일 때가 많습니다.`,
-      `꿈의 분위기·감정이 상징보다 먼저일 수 있어요.`,
-      `비슷한 키워드를 남긴 기록들을 보면, 한 달 뒤 답은 별일 없음·갈등·좋은 일로 갈립니다.`,
+      `근데 같은 "${kw}" 꿈을 꾼 사람들 **30일 뒤 후기**를 읽다 보면 이야기가 갈립니다.`,
+      `어떤 사람은 별일 없었다고, 어떤 사람은 연애·돈·싸움이 터졌다고 적어요.`,
+      `해몽만 믿고 끝내기엔, **한 달 뒤 결말**이 더 재밌습니다.`,
+      `비슷한 꿈 후기를 더 보면 '어? 나랑 거의 같은데?' 하는 글이 꽤 있어요.`,
     ].join("\n"),
 
-    symbol: `"${kw}"은(는) 미래를 확정하지 않아요.\n해몽은 입구일 뿐이고,\n한 달 뒤 기록과 겹쳐 봐야 합니다.`,
+    symbol: `"${kw}" 해몽은 입구일 뿐이에요.\n같은 꿈 꾼 사람들 **30일 뒤**가 본편입니다.\n지금은 미리보기만 본 상태예요.`,
 
     psychology:
 
-      "지금 불안하거나 무섭게 느껴질 수 있어요.\n비슷한 키워드를 남긴 기록들을 보면\n별일 없음·갈등·좋은 일이 섞여 나옵니다.",
+      "지금 불안하거나 궁금한 게 정상이에요.\n비슷한 꿈 검색한 사람들 후기를 읽다 보면\n'나만 이런 거 아니구나' 하면서 더 궁금해지는 경우가 많습니다.",
 
     reflection:
 
-      "30일 뒤 한 줄 답이 쌓이면\n이 꿈의 갈릴 지점이 보입니다.\n당신은 어느 쪽에 가까울까요?",
+      "30일 뒤, 당신에게는 어떤 일이?\n같은 꿈 꾼 사람들 답변을 겹쳐 보면\n갈림길이 보이기 시작합니다.",
 
     keywords: keywords.length > 0 ? keywords : ["꿈", "마음", "변화"],
 
     category,
 
-    mood: { anxiety: 40, hope: 35, longing: 25 },
+    mood: { anxiety: 48, hope: 32, longing: 28 },
 
     communityEstimate: {
 
@@ -594,77 +632,9 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
 
       ],
 
-      samples: [
+      samples,
 
-        {
-
-          title: storyTitle,
-
-          snippet: storySnippet,
-
-          emotions: ["scared"],
-
-        },
-
-        {
-
-          title: secondTitle,
-
-          snippet: secondSnippet,
-
-          emotions: ["weird", "scared"],
-
-        },
-
-      ],
-
-      stories: [
-
-        {
-
-          id: "fb-1",
-
-          dreamTitle: storyTitle,
-
-          dreamSnippet: storySnippet,
-
-          emotions: ["scared", "weird"],
-
-          outcomeCategory: "nothing",
-
-          afterStory:
-
-            "30일이 지나도 큰 변화는 없었어요.\n다만 꿈 이후로\n그 상황에 덜 민감해진 것 같습니다.",
-
-          recordedDaysAgo: 14,
-
-          profile: "20대 · 여",
-
-        },
-
-        {
-
-          id: "fb-2",
-
-          dreamTitle: secondTitle,
-
-          dreamSnippet: secondSnippet,
-
-          emotions: ["scared"],
-
-          outcomeCategory: "bad",
-
-          afterStory:
-
-            "한 달 안에 직장·관계에서 갈등이 터졌어요.\n꿈의 불길함과 겹쳐 더 무서웠습니다.\n그래도 지나고 보니, 그때도 결국 버텨냈다는 위로가 됐어요.",
-
-          recordedDaysAgo: 21,
-
-          profile: "30대 · 남",
-
-        },
-
-      ],
+      stories: fallbackStories,
 
       outcomes: {
 

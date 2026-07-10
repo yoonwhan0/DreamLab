@@ -10,11 +10,13 @@ import { useSignupSheet } from "@/hooks/useSignupSheet";
 interface CommunityStoriesPanelProps {
   stories: CommunityStory[];
   title?: string;
-  /** full — 기본 / compact — 2건 / minimal — 홈용 초슬림 */
+  /** full — 기본 / compact — 줄임 / minimal — 홈용 초슬림 */
   variant?: "full" | "compact" | "minimal";
   compact?: boolean;
   blurLocked?: boolean;
   lockedCount?: number;
+  /** 블러 뒤에 희미히 보여줄 다음 후기 */
+  blurPreviewStory?: CommunityStory;
   isEstimated?: boolean;
   keyword?: string;
   centered?: boolean;
@@ -27,6 +29,7 @@ export function CommunityStoriesPanel({
   compact = false,
   blurLocked = false,
   lockedCount,
+  blurPreviewStory,
   isEstimated: _isEstimated = false,
   keyword,
   centered = false,
@@ -39,19 +42,23 @@ export function CommunityStoriesPanel({
 
   const resolvedVariant = variant ?? (compact ? "compact" : "full");
   const isMinimal = resolvedVariant === "minimal";
-  const isCompact = resolvedVariant === "compact";
 
   const first = stories[0];
-  const rest = isCompact || isMinimal ? [] : stories.slice(1);
+  const rest = isMinimal ? [] : stories.slice(1);
   const extraLocked = lockedCount ?? Math.max(stories.length - 1, 0);
   const showBlur = blurLocked && extraLocked > 0;
+  const previewStory = blurPreviewStory ?? stories[1] ?? stories[0];
+
+  const sectionLabel = blurLocked
+    ? access.isGuest
+      ? "후기 한 건만 공개"
+      : "일부만 공개 · 프리미엄"
+    : "30일 뒤 후기";
 
   return (
     <div className={`card card-bezel ${isMinimal ? "p-4 space-y-3" : "p-5 space-y-4"}`}>
       <div className={isMinimal ? "" : "text-center"}>
-        <p className="section-label">
-          {blurLocked ? "30일 뒤 후기 · 1건만 공개" : "30일 뒤 후기"}
-        </p>
+        <p className="section-label">{sectionLabel}</p>
         {!isMinimal && (
           <FormattedText as="h3" className="mt-1 text-base font-semibold text-text">
             {title}
@@ -78,7 +85,7 @@ export function CommunityStoriesPanel({
         </article>
       )}
 
-      {rest.length > 0 && !showBlur && (
+      {rest.length > 0 && (
         <div className="space-y-3">
           {rest.map((story) => (
             <article
@@ -92,10 +99,24 @@ export function CommunityStoriesPanel({
       )}
 
       {showBlur && (
-        <div className="relative rounded-xl overflow-hidden min-h-[6rem] border border-border">
+        <div className="relative rounded-xl overflow-hidden min-h-[8rem] border border-border bg-surface-2">
+          {previewStory && (
+            <div className="p-4 story-blurred pointer-events-none select-none max-h-[9rem] overflow-hidden" aria-hidden>
+              <StoryContent
+                story={previewStory}
+                centered={centered}
+                variant={resolvedVariant}
+              />
+            </div>
+          )}
           <div className="story-blur-overlay absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center motion-pulse-soft">
             <p className="text-sm font-semibold text-text">
               +{extraLocked.toLocaleString()}건 더
+            </p>
+            <p className="text-xs text-text-secondary copy-lines max-w-[16rem]">
+              {access.isGuest
+                ? "같은 꿈을 꾼 이들의 한 달 뒤 — 가입하면 더 열립니다."
+                : "나머지 결말·통계는 프리미엄에서 전부 볼 수 있어요."}
             </p>
             <button
               type="button"

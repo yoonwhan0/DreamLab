@@ -145,12 +145,13 @@ export function resolveResearchAnchor(
   if (primary) {
     const n = normalizeKoreanToken(primary);
     if (isValidKeywordToken(n)) return n;
-    if (n.length >= 2) return n;
+    if (n.length >= 1 && !ANCHOR_STOP_WORDS.has(n)) return n;
   }
 
   for (const k of interpretation.keywords ?? []) {
     const n = normalizeKoreanToken(k);
     if (isValidKeywordToken(n)) return n;
+    if (n.length >= 1 && !ANCHOR_STOP_WORDS.has(n)) return n;
   }
 
   for (const k of interpretation.researchAnchor?.secondary ?? []) {

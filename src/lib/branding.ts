@@ -7,15 +7,16 @@ export const APP_SHORT_NAME = "DreamLab";
 export const APP_SUBTITLE = "DreamLab · 꿈 결과 데이터";
 
 /** 메인 슬로건 — OG·소개용 */
-export const BRAND_TAGLINE = "우리는 꿈의 결과가 궁금했습니다.";
+export const BRAND_TAGLINE =
+  "같은 꿈을 꾼 사람들. 30일 뒤, 그들에게는 무슨 일이 있었을까요?";
 
-/** 홈 첫 화면 — 호기심·금지 엿보기 */
-export const HOME_HERO_TITLE = "당신만 아직 모르는 결말";
+/** 홈 첫 화면 — 호기심·질문형 훅 */
+export const HOME_HERO_TITLE = "같은 꿈을 꾼 사람들.";
 
-/** 서브 훅 — 홈 히어로 (줄 단위) */
-export const BRAND_HOOK_LEAD = "해몽은 여기까지입니다.";
-export const BRAND_HOOK_MID = "같은 꿈을 꾼 이들은 이미 한 달 뒤를 남겼습니다.";
-export const BRAND_HOOK_LINE = "지금, 일부만 열립니다.";
+/** 서브 훅 — 홈 히어로 질문 (액센트) */
+export const BRAND_HOOK_LEAD = "";
+export const BRAND_HOOK_MID = "";
+export const BRAND_HOOK_LINE = "30일 뒤, 그들에게는 무슨 일이 있었을까요?";
 
 /** @deprecated use BRAND_HOOK_LINE */
 export const BRAND_ORACLE_LINE = BRAND_HOOK_LINE;
@@ -35,7 +36,7 @@ export const BRAND_FORBIDDEN_TEASE =
 
 /** OG·메타용 */
 export const BRAND_META_DESCRIPTION =
-  "DreamLab — 당신만 아직 모르는 결말. 해몽 너머, 같은 꿈을 꾼 이들의 한 달 뒤가 일부만 열립니다.";
+  "DreamLab — 같은 꿈을 꾼 사람들. 30일 뒤, 그들에게는 무슨 일이 있었을까요? 해몽 너머, 한 달 뒤 결말을 일부만 엽니다.";
 
 /** 버튼·퍼널 — 짧고 직관적으로 (브랜드 수식어 X) */
 export const CTA_SIGNUP = "무료로 가입하기";
@@ -45,5 +46,5 @@ export const CTA_PREMIUM_SEE_ALL = "프리미엄으로 전체 보기";
 export const CTA_WRITE_DREAM = "꿈 기록하기";
 export const CTA_EXPLORE = "다른 꿈 패턴 탐색";
 export const HINT_GUEST = "지금은 미리보기만 — 가입하면 저장·알림·유사 꿈이 열립니다";
-export const HINT_MEMBER = "지금은 일부만 — 프리미엄이면 한 달 뒤 통계·후기 전체";
+export const HINT_MEMBER = "지금은 일부만 — 프리미엄이면 운세 그래프·후기·통계 전체";
 export const HINT_PREMIUM = "1분 · 기록 무료 · 한 달 뒤 결말 기록";

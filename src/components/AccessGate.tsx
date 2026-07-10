@@ -62,7 +62,7 @@ export function PolicyBanner() {
       <ul className="space-y-2.5 text-[0.9375rem] text-text-secondary">
         <PolicyRow tier="guest" text="비회원 — 꿈 내용 DB 저장 (익명)" />
         <PolicyRow tier="member" text="회원 — 유사 꿈 · 30일 푸시 · 후기 적재" />
-        <PolicyRow tier="premium" text="프리미엄 — 마이페이지 내 꿈 · 통계·후기 전체" />
+        <PolicyRow tier="premium" text="프리미엄 — 8주 운세 그래프 · 통계·후기 전체" />
       </ul>
     </div>
   );

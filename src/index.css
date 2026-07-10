@@ -489,6 +489,8 @@ body {
 .page-desc-accent {
   color: var(--brand-gold-light);
   font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.45;
   text-shadow: 0 0 20px rgba(212, 160, 74, 0.2);
 }
 
@@ -503,7 +505,7 @@ body {
 }
 
 .page-hero .page-title {
-  white-space: normal;
+  white-space: pre-line;
   letter-spacing: 0.04em;
 }
 

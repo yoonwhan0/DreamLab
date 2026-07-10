@@ -23,8 +23,8 @@ export function ConversionGate({ step, keyword, compact = false }: ConversionGat
       ? `“${keyword}” — 당신만 아직 모르는 결말`
       : "당신만 아직 모르는 결말"
     : keyword
-      ? `“${keyword}” — 통계·후기 전체 보기`
-      : "한 달 뒤 통계·후기 전체 보기";
+      ? `“${keyword}” — 8주 운세·통계 전체`
+      : "8주 운세 그래프 · 후기 전체";
 
   const description = isSignup
     ? "같은 꿈을 꾼 이들은 이미 한 달 뒤를 남겼습니다. 가입하고 당신의 결말도 기록하세요."

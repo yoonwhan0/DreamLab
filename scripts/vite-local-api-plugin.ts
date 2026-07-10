@@ -1,10 +1,8 @@
 /**
- * 로컬 Vite dev — /api/interpret-dream 을 Netlify 핸들러로 처리 (Vercel 로그인 불필요)
+ * 로컬 Vite dev — /api/* Netlify 핸들러 프록시
  */
 import type { Plugin, ViteDevServer } from "vite";
 import type { Handler, HandlerEvent } from "@netlify/functions";
-
-type InterpretHandler = Handler;
 
 function toHandlerEvent(req: import("http").IncomingMessage, body: string): HandlerEvent {
   const url = req.url ?? "/";
@@ -12,7 +10,10 @@ function toHandlerEvent(req: import("http").IncomingMessage, body: string): Hand
     httpMethod: req.method ?? "GET",
     body,
     headers: Object.fromEntries(
-      Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(", ") : String(v ?? "")]),
+      Object.entries(req.headers).map(([k, v]) => [
+        k,
+        Array.isArray(v) ? v.join(", ") : String(v ?? ""),
+      ]),
     ),
     isBase64Encoded: false,
     path: url.split("?")[0] ?? url,
@@ -34,15 +35,18 @@ function readBody(req: import("http").IncomingMessage): Promise<string> {
   });
 }
 
-export function localApiPlugin(getHandler: () => Promise<InterpretHandler>): Plugin {
-  let handler: InterpretHandler | null = null;
+type HandlerLoader = () => Promise<Handler>;
+
+export function localApiPlugin(routes: Record<string, HandlerLoader>): Plugin {
+  const handlers = new Map<string, Handler>();
 
   return {
     name: "dreamlab-local-api",
     configureServer(server: ViteDevServer) {
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url ?? "").split("?")[0];
-        if (path !== "/api/interpret-dream") {
+        const loader = routes[path ?? ""];
+        if (!loader) {
           next();
           return;
         }
@@ -53,27 +57,25 @@ export function localApiPlugin(getHandler: () => Promise<InterpretHandler>): Plu
           return;
         }
 
-        if (req.method !== "POST") {
-          res.statusCode = 405;
-          res.setHeader("Content-Type", "text/plain; charset=utf-8");
-          res.end("Method Not Allowed");
-          return;
-        }
-
         try {
-          if (!handler) handler = await getHandler();
-          const body = await readBody(req);
+          if (!handlers.has(path!)) {
+            handlers.set(path!, await loader());
+          }
+          const handler = handlers.get(path!)!;
+          const body =
+            req.method === "GET" || req.method === "HEAD" ? "" : await readBody(req);
           const result = await handler(toHandlerEvent(req, body), {} as never);
           res.statusCode = result.statusCode ?? 500;
+          const isJson =
+            typeof result.body === "string" &&
+            (result.body.startsWith("{") || result.body.startsWith("["));
           res.setHeader(
             "Content-Type",
-            result.statusCode === 200
-              ? "application/json; charset=utf-8"
-              : "text/plain; charset=utf-8",
+            isJson ? "application/json; charset=utf-8" : "text/plain; charset=utf-8",
           );
           res.end(result.body ?? "");
         } catch (err) {
-          console.error("[local-api] interpret-dream error:", err);
+          console.error(`[local-api] ${path} error:`, err);
           res.statusCode = 500;
           res.setHeader("Content-Type", "text/plain; charset=utf-8");
           res.end("Internal Server Error");

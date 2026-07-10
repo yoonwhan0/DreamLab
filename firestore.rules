@@ -43,6 +43,15 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         request.auth.uid == userId || isAdmin()
       );
+
+      match /story_unlocks/{keywordKey} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
+    match /story_payment_orders/{orderId} {
+      allow read, write: if false;
     }
 
     match /dreams/{dreamId} {

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { AppLink } from "@/components/ui/AppLink";
+import { CuriosityTease } from "@/components/CuriosityTease";
 import { HomeFeaturedStoryPanel } from "@/components/HomeFeaturedStoryPanel";
 import { HomeObservatorySignal } from "@/components/HomeObservatorySignal";
 import { Reveal } from "@/components/motion/Reveal";
 import { PageHero } from "@/components/ui/PageHero";
 import { CTA_WRITE_DREAM } from "@/lib/branding";
 import { PAGE_COPY } from "@/lib/productIdeas";
+import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { HOME_FEATURED_KEYWORDS, getKeywordIcon } from "@/lib/keywordIcons";
 import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
@@ -17,6 +19,7 @@ const homePreviews = HOME_FEATURED_KEYWORDS.map((keyword) => ({
 }));
 
 export function HomePage() {
+  const access = useAccessPolicy();
   const [activeIdx, setActiveIdx] = useState(0);
   const active = homePreviews[activeIdx] ?? homePreviews[0]!;
   const hero = PAGE_COPY.home;
@@ -46,7 +49,7 @@ export function HomePage() {
 
       <Reveal delay={110}>
         <div className="space-y-2.5">
-          <p className="text-xs text-text-muted px-1">많이 찾는 꿈</p>
+          <p className="text-xs text-text-muted px-1">이런 꿈, 한 달 뒤는?</p>
           <div className="flex flex-wrap gap-2">
             {homePreviews.map((p, i) => (
               <button
@@ -75,12 +78,23 @@ export function HomePage() {
         </Reveal>
       )}
 
+      {access.isGuest && (
+        <Reveal delay={170}>
+          <CuriosityTease
+            title="30일 뒤 결말, 지금 한 건만 보입니다"
+            body="가입하면 탐색에서 같은 꿈 후기를 더 열어볼 수 있어요."
+            cta="가입하고 더 보기"
+            to="/explore"
+          />
+        </Reveal>
+      )}
+
       <Reveal delay={160}>
         <AppLink
           to="/explore"
           className="block text-center text-sm text-text-muted hover:text-primary transition-colors py-2"
         >
-          당신만 모르는 결말, 더 보기 →
+          30일 뒤 결말, 더 보기 →
         </AppLink>
       </Reveal>
     </div>

@@ -142,6 +142,16 @@ export interface UserProfile {
   role?: "admin" | "user";
 }
 
+/** 키워드별 후기 열람 — Firestore story_unlocks 미러 */
+export interface StoryKeywordAccess {
+  keyword: string;
+  freeCap: number;
+  paidUnlockCount: number;
+  viewedStoryIds: string[];
+  aiBlocked: boolean;
+  maxSlots: number;
+}
+
 export interface SimilarDreamSummary {
   totalCount: number;
   keywords: { keyword: string; count: number }[];

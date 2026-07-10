@@ -1,12 +1,29 @@
 /**
- * 로컬 Vite dev 전용 — /api/interpret-dream (Netlify 핸들러)
- * vite.config.ts에서 정적 import 금지 (프로덕션 config 번들 시 @/ alias 깨짐 방지)
+ * 로컬 Vite dev 전용 — /api/* (Netlify 핸들러)
  */
 import { localApiPlugin } from "./vite-local-api-plugin";
 
 export function attachDevApi() {
-  return localApiPlugin(async () => {
-    const mod = await import("../netlify/functions/interpret-dream");
-    return mod.handler;
+  return localApiPlugin({
+    "/api/interpret-dream": async () => {
+      const mod = await import("../netlify/functions/interpret-dream");
+      return mod.handler;
+    },
+    "/api/story-access": async () => {
+      const mod = await import("../netlify/functions/story-access");
+      return mod.handler;
+    },
+    "/api/register-story-views": async () => {
+      const mod = await import("../netlify/functions/register-story-views");
+      return mod.handler;
+    },
+    "/api/create-story-unlock-order": async () => {
+      const mod = await import("../netlify/functions/create-story-unlock-order");
+      return mod.handler;
+    },
+    "/api/confirm-story-unlock-payment": async () => {
+      const mod = await import("../netlify/functions/confirm-story-unlock-payment");
+      return mod.handler;
+    },
   });
 }

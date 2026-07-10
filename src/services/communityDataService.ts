@@ -62,7 +62,7 @@ function mergeEstimate(
   const aiStories = (estimate.stories ?? [])
     .map((story, i) => sanitizeAiCommunityStory(story, i, content, title))
     .filter((s): s is NonNullable<typeof s> => s !== null);
-  const stories = mergeCommunityStories(aiStories, synthetic.stories);
+  const stories = mergeCommunityStories(aiStories, synthetic.stories, 10);
   const rawSamples =
     estimate.samples?.length >= 3
       ? estimate.samples

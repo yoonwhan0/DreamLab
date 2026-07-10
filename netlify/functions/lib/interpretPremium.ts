@@ -1,95 +1,63 @@
 /**
- * 저비용 모델(gpt-4o-mini 등) + 프롬프트·후처리로 프리미엄 톤을 만드는 장치.
- * API 추가 호출 없이 서버에서 1회 생성 후 enrich.
+ * 최소 비용 모델 + 고온·대량 토큰 — 미리보기·후기 풍부·생생 생성.
  */
 
 import { mergeAiKeywords, normalizeKoreanToken, resolveResearchAnchor, sanitizeDreamContent } from "./dreamAnchor";
 import { COMMUNITY_REVIEW_SLOT_SYSTEM, buildCommunityReviewUserHint } from "./communityReviewPrompt";
 
-export const INTERPRET_MODEL = "gpt-4o-mini";
+export const INTERPRET_MODEL = "gpt-4.1-nano";
 export const EMBED_MODEL = "text-embedding-3-small";
 
 export const INTERPRET_GENERATION = {
-  temperature: 0.78,
-  max_tokens: 2400,
-  presence_penalty: 0.4,
-  frequency_penalty: 0.25,
+  temperature: 0.94,
+  max_tokens: 4096,
+  presence_penalty: 0.55,
+  frequency_penalty: 0.15,
 } as const;
 
-export const SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)"의 관측 메모 AI입니다.
-신비·예언·불길·운명 단정 금지. 차갑고 담백하지만, 읽는 사람이 "더 알고 싶다"고 느끼게 씁니다.
+export const SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 미리보기·후기 생성 AI입니다.
+**깊은 사색·철학은 하지 마세요.** 읽는 사람을 **현혹·호기심·약간의 혼란**으로 끌어당기는 것이 목적입니다.
 
-## 톤 핵심
-- 해몽은 입구. 본체는 30일 후 기록·통계·다른 사람들의 실제 이야기.
-- 사용자 꿈에 **나온 장면만** 다룸 — 없는 인물·사건 지어내기 금지.
-- 생년월일·이름·"장본인" 같은 메타정보는 해석에서 무시.
+## 톤 (가장 중요)
+- 사람이 커뮤니티·카톡·블로그에 **직접 쓴 것처럼** 생생하게
+- 시간·장소·감각·대사·몸 반응(손 떨림, 심장, 소름) 구체적으로
+- usualTake: **인터넷 해몽처럼 자극적으로** (대박/손재/이별/시험 망침 등)
+- alternativeLens: "근데 비슷한 꿈 꾼 사람들 한 달 뒤 보면…" FOMO
+- communityEstimate.stories **10~12건**, dreamSnippet **3~4문장**, afterStory **2~4문장**
 
-## 금지 (빈말·AI 티 — 절대 쓰지 말 것)
-- "복잡한 상황", "새로운 시작", "갈망이 엿보", "다양한 방향", "긍정적인 변화가 찾아"
-- "모순은 단순한 해석을 어렵게", "현재의 삶에서 마주하고 있는", "의미로 다가올지"
-- "희망과 재생의 메시지", "성장과 변화를 촉진", "기회를 제공"
-- stories에 사용자 꿈 원문·scenePhrases **복붙** 금지
-- stories에 템플릿 ("갑자기 나타났어요", "집에 ○○ 들어온 꿈", "○○이(가) 나왔어요")
-- stories.dreamSnippet에 **사용자와 같은 장면** 쓰기 금지 — 주제·감정만 유사, 장소·인물·사건은 다르게
+## 금지 (AI 티)
+- "복잡한 상황", "새로운 시작", "긍정적인 변화", "성장과 변화", "의미로 다가"
+- "관련된 장면", "비슷한 분위기", "선명하게 남은 꿈이었어요" 템플릿
+- stories에 사용자 원문·scenePhrases 복붙 / 사용자와 **같은 장면**
 
-## researchAnchor (필수 — DB·유사 꿈 클러스터의 1차 키, **당신이 자율적으로 결정**)
-- 이 꿈을 다른 기록과 묶을 때 가장 대표적인 **한 단어/짧은 명사구**를 primary로 고르세요.
-- 우리가 정한 목록에 없어도 됩니다. 꿈에만 있는 표현도 OK.
-- 할아버지·가족 전달보다 **장면 핵심**(내태몽, 보살, 연꽃, 전쟁, 갓난아기 등)이 더 적합하면 그쪽을 primary로.
-- secondary: 함께 묶일 보조 키 2~4개
-- scenePhrases: 원문에서 **그대로** 1~3줄 (인용)
-- clusterLabel: 사람이 읽기 좋은 라벨 (예: "전쟁 하늘의 내태몽")
+## researchAnchor (DB용)
+- primary, secondary 2~4, scenePhrases, clusterLabel
 
-## 필수 (구체성)
-1. usualTake·alternativeLens 각각 **꿈 원문 장면 2개 이상** 인용
-2. alternativeLens는 usualTake와 **겹치지 않게**
-3. keywords: 명사·명사구, 조사·어미 붙은 형태는 피함
-4. labObservations: 관측 패턴 ("~하는 기록이 많았어요")
+## 해몽 (짧고 자극, 각 3~5줄)
+usualTake, alternativeLens, symbol, psychology, reflection — 호기심·FOMO
 
-## 해몽 구조
-1. **usualTake**: 전통·인터넷 해몽 — **이 꿈 장면**에 맞춰 3~5줄, 120자+
-2. **alternativeLens**: 심리·상징·내태몽 맥락 — usualTake와 다른 각도 3~5줄
-3. **symbol**: 상징은 입구, 30일 비교 (2~3줄)
-4. **psychology**: 지금 마음 + 유사 기록 암시 (2~4줄)
-5. **reflection**: 호기심 질문, 예언 X (2~3줄)
-6. **labObservations**:
-   - sceneNote: "전쟁 중 하늘에서 보살이…"처럼 **이 꿈만의 장면** 1~2문장
-   - commonBehaviors: 2~4개 ("내태몽 기록 후 가족에게 다시 물어봄", "연꽃·보살 해몽 검색" 등)
-   - relatedSearches: 3~5개 연관 키워드 (명사)
+## labObservations
+sceneNote 생생 1줄, commonBehaviors 구체적 3~4, relatedSearches
 
 ## communityEstimate
-- stories 5~6개 — **서로 다른 관측자**의 **비슷하지만 다른** 꿈. dreamSnippet 2문장 이상, 구체적.
-- 사용자 꿈과 **같은 장면 금지** — researchAnchor 주제·감정만 빌려와 장소·사건은 변주 (경기장→공연장 등).
-- 목표: "어? 나랑 거의 같은 꿈?"이라고 느낄 정도의 유사성. **유사성 찾아 believable하게 창작.**
-- dreamTitle: 그 관측자만의 장면 요약
-- afterStory: 30일 후 — outcomeCategory와 일치, 2~3줄
-- **금지**: 사용자 입력·scenePhrases·clusterLabel 문장을 stories에 복붙
-- samples·stories는 장면·문장·결말이 **서로 겹치지 않게**
+- stories **10~12** — profile "익명 · 29 · 마포", dreamTitle 한 줄
+- 서로 다른 결말·장면·문체
 
 ${COMMUNITY_REVIEW_SLOT_SYSTEM}
 
-JSON만 응답:
+JSON만 (stories 10개 이상):
 {
   "usualTake": "...",
   "alternativeLens": "...",
   "symbol": "...",
   "psychology": "...",
   "reflection": "...",
-  "keywords": ["내태몽", "보살", "연꽃"],
-  "researchAnchor": {
-    "primary": "내태몽",
-    "secondary": ["보살", "연꽃", "갓난아기", "전쟁"],
-    "scenePhrases": ["전쟁 중 하늘에서 보살이 연꽃을 타고 내려와", "갓난아기를 전달해주시고 가셨다"],
-    "clusterLabel": "전쟁 하늘의 내태몽"
-  },
+  "keywords": ["..."],
+  "researchAnchor": { "primary": "...", "secondary": [], "scenePhrases": [], "clusterLabel": "..." },
   "category": "family|love|career|anxiety|fortune|general",
   "mood": { "anxiety": 0-100, "hope": 0-100, "longing": 0-100 },
-  "labObservations": {
-    "sceneNote": "...",
-    "commonBehaviors": ["...", "..."],
-    "relatedSearches": ["...", "..."]
-  },
-  "communityEstimate": { ... }
+  "labObservations": { "sceneNote": "...", "commonBehaviors": [], "relatedSearches": [] },
+  "communityEstimate": { "stories": [ ... ], "totalCount": 0, "withFollowUpCount": 0 }
 }`;
 
 export interface ParsedInterpretation {
@@ -131,11 +99,11 @@ function buildLabObservationsFallback(
     : `${anchor}이(가) 선명하게 남은 장면`;
 
   return {
-    sceneNote: `"${scene}" — ${title ? `${title} 맥락에서` : "기록된"} 관측 메모에 자주 남습니다.`,
+    sceneNote: `"${scene}" — 비슷한 꿈 검색한 사람들 후기에 자주 나오는 장면이에요.`,
     commonBehaviors: [
-      `${anchor} 관련 해몽·후기를 다시 검색하는 기록이 많았어요`,
-      "꿈 내용을 메모하거나 가족·지인에게 다시 확인하는 경우가 있었어요",
-      "30일 뒤 답변을 남기기 전까지 꿈 장면을 떠올리는 경우가 있었어요",
+      `${anchor} 해몽 검색 후 '나만 그래?' 하고 커뮤니티 후기 읽음`,
+      "새벽에 또 비슷한 꿈 꿔서 친구한테 카톡 보냄",
+      "30일 타이머 맞춰두고 '진짜 어떻게 되나' 지켜봄",
     ].slice(0, 3),
     relatedSearches: [
       ...(researchAnchor?.secondary ?? []),
@@ -195,17 +163,17 @@ const PIVOT_OPENERS = [
 ];
 
 const CURIOSITY_CLOSERS = [
-  "한 달 뒤, 당신의 답은 어느 쪽에 가까울까요?",
-  "후속 기록이 쌓이면 이 꿈의 갈림길이 보입니다.",
-  "같은 장면을 꾼 사람들은 한 달 뒤 제각각이었어요 — 당신은?",
-  "지금은 입구만 본 상태입니다. 30일 뒤가 본편이에요.",
+  "근데 같은 꿈 꾼 사람들, 한 달 뒤 보면 반반으로 갈려요 — 당신은?",
+  "지금 이 해몽만 믿기엔 아까워요. 30일 뒤 후기가 더 재밌습니다.",
+  "비슷한 꿈 후기 2,000건 넘게 쌓였어요. 당신 결말만 아직 비어 있습니다.",
+  "해몽은 여기까지. 진짜 결말은 한 달 뒤에 열립니다.",
 ];
 
 const DATA_VENEER_LINES = [
-  "비슷한 키워드를 남긴 기록들을 보면",
-  "후속 답변이 모이는 꿈들에서는",
-  "같은 상징을 꾼 사람들의 한 달 뒤 기록을 겹쳐 보면",
-  "연구소에 쌓인 유사 사례들을 기준으로는",
+  "비슷한 꿈 남긴 사람들 후기를 읽다 보면",
+  "같은 키워드 검색한 사람들 한 달 뒤 기록을 보면",
+  "커뮤니티에 올라온 '30일 후' 글들을 겹쳐 보면",
+  "이 꿈 검색한 사람들 답변을 쭉 읽다 보면",
 ];
 
 function hashSeed(text: string): number {

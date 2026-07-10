@@ -43,9 +43,21 @@ function writeCache(title: string, content: string, result: InterpretResult): vo
 export async function interpretDream(
   title: string,
   content: string,
+  opts?: { skipAi?: boolean },
 ): Promise<InterpretResult> {
   const cached = readCache(title, content);
   if (cached) return cached;
+
+  if (opts?.skipAi) {
+    const interpretation = mockInterpretation(title, content);
+    const result: InterpretResult = {
+      interpretation,
+      embedding: [],
+      communityEstimate: generateSyntheticCommunity(interpretation, title, content),
+    };
+    writeCache(title, content, result);
+    return result;
+  }
 
   try {
     const controller = new AbortController();

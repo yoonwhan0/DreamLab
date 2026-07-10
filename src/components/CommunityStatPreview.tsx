@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ObservatoryMeta } from "@/components/ObservatoryMeta";
-import { BRAND_FORBIDDEN_TEASE } from "@/lib/branding";
 import { formatAnswerRatePercent } from "@/lib/observatoryCredibility";
 import { getOutcomePercentages } from "@/services/dreamService";
 import type { DreamStats } from "@/types";
@@ -102,11 +101,11 @@ export function CommunityStatPreview({
               )}
             </div>
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center bg-surface/80">
-              <p className="text-sm font-semibold text-accent">프리미엄 전용</p>
+              <p className="text-xs text-accent font-semibold">프리미엄 전용</p>
               <p className="text-xs text-text-secondary copy-lines leading-relaxed">
                 {showCuriosityTease && mysteryPercent > 0
-                  ? `나머지 ${mysteryPercent}%의 결말 — 당신만 아직 모릅니다`
-                  : BRAND_FORBIDDEN_TEASE}
+                  ? `나머지 ${mysteryPercent}% 결말 + 8주 운세 그래프 — 프리미엄에서 열림`
+                  : "재물·연애·직장운 8주 추이 — 프리미엄에서 전체"}
               </p>
             </div>
           </div>

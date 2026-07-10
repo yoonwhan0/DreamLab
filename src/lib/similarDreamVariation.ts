@@ -57,9 +57,9 @@ export function buildVariantDreamSnippet(anchor: string, index: number): string 
   const setting = settings[seededInt(rand, 0, settings.length - 1)]!;
   const mood = moods[seededInt(rand, 0, moods.length - 1)]!;
   const templates = [
-    `${setting}에서 ${mood} 꿈이었어요. "${anchor}"와 직접 같진 않지만, 깬 뒤에도 결이 비슷했습니다.`,
-    `${mood} 장면이 ${setting}에서 펼쳐졌어요. 세부 묘사는 달랐는데 불안한 느낌은 비슷했습니다.`,
-    `꿈 속 ${setting} — "${anchor}"을(를) 떠올리게 하는 분위기였어요. 장소는 달랐지만 몰입감은 거의 같았습니다.`,
+    `${setting}에서 ${mood} 꿈이었어요. "${anchor}" 검색하다가 여기 후기 보고 소름 — 장면은 달랐는데 기분은 거의 같았어요. 깨자마자 메모했습니다.`,
+    `${mood} 순간, ${setting}. 친구한테 말했다가 "나도 그런 적 있어" 해서 더 신기했어요. "${anchor}"이랑 직접 같진 않지만 불안한 결은 똑같았습니다.`,
+    `꿈 속 ${setting} — 새벽에 깼는데 심장이 아직 빨랐어요. "${anchor}" 해몽부터 검색했는데, 후기 읽는 게 더 재밌더라고요.`,
   ];
   return templates[seededInt(rand, 0, templates.length - 1)]!;
 }

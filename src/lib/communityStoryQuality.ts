@@ -1,8 +1,10 @@
 import type { CommunityStory } from "@/types";
 import { excerptToStoryTitle } from "@/lib/dreamAnchor";
+import { pickVividScene } from "@/lib/vividPreviewCopy";
 
+/** 옛 템플릿·AI 티 — 이 패턴이면 생동 풀에서 교체 */
 export const TEMPLATE_STORY_SNIPPET_RE =
-  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요|관련된 장면이었어요\. 분위기가 오래|이\(가\) 선명하게 남은 꿈|새벽에 깨어난 .+ 관련 꿈|떠오르는 꿈을 여러 번|비슷한 분위기로 기록|현실과 섞인 듯한 분위기|평소와 다른 공간에서 같은 감정|많은 시선이 느껴지는 장면|긴장보다 몰입에 가까웠|말하지 못한 채 남긴 꿈|한 번 더 떠올린 장면/;
+  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요|관련된 장면이었어요|떠오르는 꿈을 여러 번|비슷한 분위기로 기록|현실과 섞인 듯한 분위기|평소와 다른 공간에서 같은 감정|많은 시선이 느껴지는 장면|긴장보다 몰입에 가까웠|말하지 못한 채 남긴 꿈|한 번 더 떠올린 장면|비슷한 장면을 꾼|결이 비슷했습니다|직접 같진 않지만/;
 
 function normalizeOverlapText(text: string): string {
   return text.replace(/\s+/g, "").toLowerCase();
@@ -43,25 +45,18 @@ export function overlapsUserDreamFields(
   );
 }
 
-const NEUTRAL_SCENE_LINES = [
-  "시험 전날 밤, 문제지가 사라지는 꿈이었어요. 깨고 나서도 가슴이 조금 답답했습니다.",
-  "낯선 복도를 헤매다 늦었다는 알림만 들리는 꿈이었어요. 현실과 섞여서 더 선명했습니다.",
-  "비슷한 주제였지만 장면은 달랐어요. 같은 불안한 결만 겹쳤습니다.",
-  "새벽에 깨었을 때도 장면이 남아 있어서 바로 메모해 두었어요.",
-] as const;
-
 export function pickNeutralSceneLine(index: number): string {
-  return NEUTRAL_SCENE_LINES[index % NEUTRAL_SCENE_LINES.length]!;
+  return pickVividScene(index);
 }
 
 export function repairStorySnippet(snippet: string, index: number): string {
-  if (snippet.length >= 10 && !isTemplateStorySnippet(snippet)) {
+  if (snippet.length >= 24 && !isTemplateStorySnippet(snippet)) {
     return snippet;
   }
-  return pickNeutralSceneLine(index);
+  return pickVividScene(index);
 }
 
-/** AI 후기 — 템플릿·사용자 원문 겹침 제거 (다른 관측자 기록만 허용) */
+/** AI 후기 — 템플릿·사용자 원문 겹침 제거 */
 export function sanitizeAiCommunityStory(
   story: CommunityStory,
   index: number,
@@ -102,7 +97,7 @@ export function isTemplateStorySnippet(text: string): boolean {
 
 export function isQualityCommunityStory(story: CommunityStory): boolean {
   return (
-    story.dreamSnippet.length >= 10 &&
+    story.dreamSnippet.length >= 20 &&
     !isTemplateStorySnippet(story.dreamSnippet) &&
     !isTemplateStorySnippet(story.dreamTitle) &&
     !story.dreamTitle.includes("제목") &&
@@ -113,7 +108,7 @@ export function isQualityCommunityStory(story: CommunityStory): boolean {
 export function mergeCommunityStories(
   aiStories: CommunityStory[],
   syntheticStories: CommunityStory[],
-  minCount = 6,
+  minCount = 10,
 ): CommunityStory[] {
   const merged: CommunityStory[] = [];
   const seen = new Set<string>();
