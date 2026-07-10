@@ -1626,6 +1626,17 @@ textarea.input {
   cursor: default;
 }
 
+.spreadsheet-cell--readonly {
+  cursor: text;
+  user-select: text;
+  background: color-mix(in srgb, var(--color-surface-2) 40%, transparent);
+}
+
+.spreadsheet-cell--readonly:focus {
+  outline: none;
+  background: color-mix(in srgb, var(--color-surface-2) 55%, transparent);
+}
+
 .dream-spreadsheet {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 80%, transparent);
 }

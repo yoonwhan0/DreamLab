@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ConversionGate } from "@/components/ConversionGate";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
-import { LoadingPulse } from "@/components/motion/LoadingPulse";
+import { ExploreDiscoverSection } from "@/components/ExploreDiscoverSection";
 import { AiWritingPulse } from "@/components/motion/AiWritingPulse";
 import { withMinimumDelay } from "@/lib/minimumDelay";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
@@ -53,6 +53,8 @@ function buildExploreDreamContent(query: string): string {
 
 /** AI가 너무 즉시 끝나지 않게 — 작성 연출 최소 시간 */
 const AI_WRITING_MIN_MS = 2200;
+/** fetchStoryAccess·합성 데이터 준비 구간 — 로딩이 보이도록 최소 시간 */
+const FETCH_MIN_MS = 360;
 
 function applyInstantEstimate(keyword: string) {
   const estimate = previewCommunityForKeyword(keyword);
@@ -72,7 +74,9 @@ export function ExplorePage() {
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingKeyword, setPendingKeyword] = useState("");
   const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
   const [stats, setStats] = useState<DreamStats | null>(null);
   const [isEstimated, setIsEstimated] = useState(true);
@@ -83,7 +87,8 @@ export function ExplorePage() {
   const searchGenRef = useRef(0);
   const paidHandledRef = useRef(false);
 
-  const displayKeyword = previewKeywordLabel(activeQuery);
+  const displayKeyword = previewKeywordLabel(pendingKeyword || activeQuery);
+  const isSearchBusy = isFetching || isSyncing;
   const maxSlots =
     access.isPremium || !access.isMember
       ? (summary?.stories.length ?? MEMBER_FREE_STORY_VIEWS)
@@ -94,9 +99,13 @@ export function ExplorePage() {
     if (!q) return;
 
     const gen = ++searchGenRef.current;
-    setActiveQuery(q);
+    setPendingKeyword(q);
     setQuery(q);
     setHasSearched(true);
+    setIsFetching(true);
+    setIsSyncing(false);
+    setSummary(null);
+    setStats(null);
     setPayError("");
 
     let accessState = accessOverride ?? null;
@@ -109,14 +118,23 @@ export function ExplorePage() {
       }
     }
 
+    if (gen !== searchGenRef.current) return;
+
     const restored = accessState?.viewedStoryIds.length ?? 0;
     const initialVisible = restored > 0 ? restored : storyLoadChunk(0);
     setVisibleStoryCount(initialVisible);
 
     const instant = applyInstantEstimate(q);
+
+    await withMinimumDelay(Promise.resolve(), FETCH_MIN_MS);
+
+    if (gen !== searchGenRef.current) return;
+
+    setActiveQuery(q);
     setSummary(instant.summary);
     setStats(instant.stats);
     setIsEstimated(instant.isEstimated);
+    setIsFetching(false);
     setIsSyncing(true);
 
     try {
@@ -263,11 +281,16 @@ export function ExplorePage() {
         />
         <button
           type="button"
+          disabled={isSearchBusy}
           onClick={() => void runSearch(query)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white"
-          aria-label="검색"
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white disabled:opacity-70"
+          aria-label={isSearchBusy ? "검색 중" : "검색"}
         >
-          <Icon icon={AppIcons.search} size="sm" className="text-white" />
+          {isSearchBusy ? (
+            <Icon icon={AppIcons.spinner} size="sm" className="text-white animate-spin" />
+          ) : (
+            <Icon icon={AppIcons.search} size="sm" className="text-white" />
+          )}
         </button>
       </div>
 
@@ -295,19 +318,19 @@ export function ExplorePage() {
       )}
 
       {!hasSearched && (
-        <p className="text-center text-sm text-text-muted py-8 card p-6">
-          키워드를 입력하거나 위 뱃지를 눌러 보세요. 회원이면 한 달 뒤 후기를 열어볼 수
-          있습니다.
-        </p>
+        <ExploreDiscoverSection onSelectKeyword={(term) => void runSearch(term)} />
+      )}
+
+      {hasSearched && isSearchBusy && (
+        <AiWritingPulse keyword={displayKeyword} />
       )}
 
       {hasSearched && summary && stats && activeQuery && (
-        <div className={`space-y-4 ${isSyncing ? "" : "explore-ai-reveal"}`}>
+        <div
+          className={`space-y-4 ${isSyncing ? "" : "explore-ai-reveal"}`}
+          aria-busy={isSearchBusy}
+        >
           {access.isMember && !access.isPremium && <MemberUnlockBanner />}
-
-          {isSyncing && (
-            <AiWritingPulse keyword={displayKeyword} />
-          )}
 
           <div className={isSyncing ? "explore-ai-syncing space-y-4" : "space-y-4"}>
           {storyAccess?.aiBlocked && !access.isPremium && (
@@ -467,9 +490,6 @@ export function ExplorePage() {
         </div>
       )}
 
-      {hasSearched && isSyncing && !summary && (
-        <LoadingPulse label="비슷한 기록을 찾는 중…" />
-      )}
     </div>
   );
 }

@@ -7,14 +7,23 @@ import { OUTCOME_CATEGORIES } from "@/types";
 export const ADMIN_SEED_USER_ID = "dreamlab-seed-data";
 
 export const SPREADSHEET_COLUMNS = [
-  { key: "title", header: "제목", width: 140 },
+  { key: "createdAt", header: "작성일", width: 96 },
+  { key: "source", header: "출처", width: 72 },
+  { key: "userId", header: "회원UID", width: 88 },
+  { key: "userEmail", header: "이메일", width: 140 },
+  { key: "title", header: "제목", width: 120 },
   { key: "content", header: "꿈내용", width: 280 },
+  { key: "category", header: "분류", width: 72 },
   { key: "keywords", header: "키워드", width: 120 },
-  { key: "anchor", header: "앵커", width: 80 },
-  { key: "emotions", header: "감정", width: 90 },
-  { key: "outcomeCategory", header: "30일결과", width: 100 },
+  { key: "anchor", header: "앵커", width: 72 },
+  { key: "emotions", header: "감정", width: 88 },
+  { key: "followUpDueAt", header: "30일예정", width: 96 },
+  { key: "outcomeCategory", header: "30일결과", width: 96 },
   { key: "afterStory", header: "30일후기", width: 240 },
+  { key: "followUpAnsweredAt", header: "후기작성일", width: 96 },
+  { key: "followUpEmotions", header: "후기감정", width: 88 },
   { key: "profile", header: "프로필", width: 120 },
+  { key: "likes", header: "좋아요", width: 56 },
   { key: "isPublic", header: "공개", width: 56 },
 ] as const;
 
@@ -22,20 +31,48 @@ export type SpreadsheetColumnKey = (typeof SPREADSHEET_COLUMNS)[number]["key"];
 
 export interface DreamSpreadsheetRow {
   id?: string;
+  createdAt: string;
+  source: string;
+  userId: string;
+  userEmail: string;
   title: string;
   content: string;
+  category: string;
   keywords: string;
   anchor: string;
   emotions: string;
+  followUpDueAt: string;
   outcomeCategory: string;
   afterStory: string;
+  followUpAnsweredAt: string;
+  followUpEmotions: string;
   profile: string;
+  likes: string;
   isPublic: string;
-  createdAt?: string;
   _errors?: string[];
 }
 
 const HEADER_ALIASES: Record<string, SpreadsheetColumnKey> = {
+  작성일: "createdAt",
+  createdAt: "createdAt",
+  출처: "source",
+  source: "source",
+  회원uid: "userId",
+  userId: "userId",
+  uid: "userId",
+  이메일: "userEmail",
+  email: "userEmail",
+  userEmail: "userEmail",
+  분류: "category",
+  category: "category",
+  "30일예정": "followUpDueAt",
+  followUpDueAt: "followUpDueAt",
+  후기작성일: "followUpAnsweredAt",
+  followUpAnsweredAt: "followUpAnsweredAt",
+  후기감정: "followUpEmotions",
+  followUpEmotions: "followUpEmotions",
+  좋아요: "likes",
+  likes: "likes",
   제목: "title",
   title: "title",
   꿈내용: "content",
@@ -140,14 +177,23 @@ function normalizeHeader(h: string): string {
 
 export function emptyRow(): DreamSpreadsheetRow {
   return {
+    createdAt: "",
+    source: "seed",
+    userId: "",
+    userEmail: "",
     title: "",
     content: "",
+    category: "",
     keywords: "",
     anchor: "",
     emotions: "weird",
+    followUpDueAt: "",
     outcomeCategory: "",
     afterStory: "",
+    followUpAnsweredAt: "",
+    followUpEmotions: "",
     profile: "익명 · 29 · 서울",
+    likes: "0",
     isPublic: "Y",
   };
 }
@@ -191,14 +237,23 @@ export function parseWorkbookToRows(file: ArrayBuffer): DreamSpreadsheetRow[] {
       };
       return validateRow(
         {
+          createdAt: get("createdAt"),
+          source: get("source") || "seed",
+          userId: get("userId"),
+          userEmail: get("userEmail"),
           title: get("title"),
           content: get("content"),
+          category: get("category"),
           keywords: get("keywords"),
           anchor: get("anchor"),
           emotions: get("emotions") || "weird",
+          followUpDueAt: get("followUpDueAt"),
           outcomeCategory: get("outcomeCategory"),
           afterStory: get("afterStory"),
+          followUpAnsweredAt: get("followUpAnsweredAt"),
+          followUpEmotions: get("followUpEmotions"),
           profile: get("profile"),
+          likes: get("likes") || "0",
           isPublic: get("isPublic") || "Y",
         },
         0,
@@ -210,14 +265,23 @@ export function parseWorkbookToRows(file: ArrayBuffer): DreamSpreadsheetRow[] {
 
 export function rowsToSheet(rows: DreamSpreadsheetRow[]): XLSX.WorkBook {
   const data = rows.map((r) => ({
+    작성일: r.createdAt,
+    출처: r.source,
+    회원UID: r.userId,
+    이메일: r.userEmail,
     제목: r.title,
     꿈내용: r.content,
+    분류: r.category,
     키워드: r.keywords,
     앵커: r.anchor,
     감정: r.emotions,
+    "30일예정": r.followUpDueAt,
     "30일결과": r.outcomeCategory,
     "30일후기": r.afterStory,
+    후기작성일: r.followUpAnsweredAt,
+    후기감정: r.followUpEmotions,
     프로필: r.profile,
+    좋아요: r.likes,
     공개: r.isPublic,
   }));
   const ws = XLSX.utils.json_to_sheet(data);
@@ -227,29 +291,47 @@ export function rowsToSheet(rows: DreamSpreadsheetRow[]): XLSX.WorkBook {
   return wb;
 }
 
-export function downloadTemplate(filename = "dreamlab-꿈DB-템플릿.xlsx"): void {
+export function downloadTemplate(filename = "dreamlab-DB-양식.xlsx"): void {
   const sample: DreamSpreadsheetRow[] = [
     {
+      createdAt: "",
+      source: "seed",
+      userId: "",
+      userEmail: "",
       title: "현관문 반쯤 열린 새벽",
       content:
         "새벽 네 시쯤 깼는데 현관문이 반쯤 열린 채였어요. 바깥은 안개였고 누군가 이름을 부르는데 제 목소리 같았습니다.",
+      category: "일반",
       keywords: "집,현관,새벽",
       anchor: "집",
       emotions: "scared,weird",
+      followUpDueAt: "",
       outcomeCategory: "별일 없었음",
       afterStory: "30일 지나도 큰 사건은 없었어요. 그런데 꿈 장면만큼은 자주 떠올랐습니다.",
+      followUpAnsweredAt: "",
+      followUpEmotions: "calm",
       profile: "익명 · 28 · 수원",
+      likes: "0",
       isPublic: "Y",
     },
     {
+      createdAt: "",
+      source: "seed",
+      userId: "",
+      userEmail: "",
       title: "로또 번호가 사라진 날",
       content: "로또 번호가 하늘에 떠 있다가 하나씩 사라졌어요. 깨자마자 번호를 적으려다 손가락이 안 움직였습니다.",
+      category: "재물",
       keywords: "로또,돈,번호",
       anchor: "로또",
       emotions: "weird,happy",
+      followUpDueAt: "",
       outcomeCategory: "좋은 일",
       afterStory: "작은 행운이 있었어요. 로또 당첨은 아니지만 미뤄두던 일이 순조로워졌습니다.",
+      followUpAnsweredAt: "",
+      followUpEmotions: "calm",
       profile: "익명 · 33 · 마포",
+      likes: "0",
       isPublic: "Y",
     },
   ];
@@ -259,6 +341,10 @@ export function downloadTemplate(filename = "dreamlab-꿈DB-템플릿.xlsx"): vo
 
 export function downloadRowsAsXlsx(rows: DreamSpreadsheetRow[], filename: string): void {
   XLSX.writeFile(rowsToSheet(rows), filename);
+}
+
+export function dbExportFilename(): string {
+  return `dreamlab-DB-${new Date().toISOString().slice(0, 10)}.xlsx`;
 }
 
 export function buildSeedInterpretation(row: DreamSpreadsheetRow): DreamInterpretation {

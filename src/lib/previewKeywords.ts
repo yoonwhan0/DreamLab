@@ -96,6 +96,14 @@ export function getExploreDefaultKeyword(): string {
   return getRandomProvocativeKeywords(1)[0] ?? "시험";
 }
 
+/** 탐색 검색 전 미리보기 — 홈 키워드와 겹치지 않게 섞어서 노출 */
+export const EXPLORE_DISCOVER_KEYWORDS = [
+  "비행",
+  "로또",
+  "쫓기는 꿈",
+  "전 남친",
+] as const;
+
 /** @deprecated use getRandomProvocativeKeywords */
 export function getRandomPreviewKeywords(count = 4): string[] {
   return getRandomProvocativeKeywords(count);

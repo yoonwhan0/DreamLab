@@ -9,7 +9,7 @@ import type { AiUsageDailyDoc, KpiSnapshot } from "@/lib/opsConfig";
 
 export function DashboardPage() {
   const { to } = useAdminRoutes();
-  const { labMetrics, dataExposure, followUpPush, loading: configLoading } = useOpsConfig();
+  const { labMetrics, dataExposure, loading: configLoading } = useOpsConfig();
   const [kpi, setKpi] = useState<KpiSnapshot | null>(null);
   const [aiToday, setAiToday] = useState<AiUsageDailyDoc | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
@@ -81,7 +81,11 @@ export function DashboardPage() {
           />
         </div>
         <p className="text-[0.6875rem] text-text-muted mt-2">
-          최대 500건 샘플 집계 · 전체 집계는 모니터링 → nightly 스냅샷 예정
+          최대 500건 샘플 집계 · 상세 원본은{" "}
+          <Link to={to("dreams")} className="text-primary hover:underline">
+            꿈 DB
+          </Link>
+          에서 엑셀처럼 확인
         </p>
       </section>
 
@@ -114,44 +118,27 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid lg:grid-cols-2 gap-4">
-        <div className="card p-4 space-y-2">
-          <h3 className="text-sm font-semibold">빠른 링크</h3>
-          <ul className="text-sm space-y-1.5 text-text-secondary">
-            <li>
-              <Link to={to("data-exposure")} className="text-primary hover:underline">
-                데이터 노출 정책
-              </Link>{" "}
-              — 오가닉/합성/AI 블렌드
-            </li>
-            <li>
-              <Link to={to("settings/push")} className="text-primary hover:underline">
-                푸시 설정
-              </Link>{" "}
-              — 마일스톤 {followUpPush?.milestonesDays.join("·") ?? "30"}일
-            </li>
-            <li>
-              <Link to={to("ai-usage")} className="text-primary hover:underline">
-                AI 사용량
-              </Link>{" "}
-              — interpret-dream 호출 추적
-            </li>
-            <li>
-              <Link to={to("settings/lab-metrics")} className="text-primary hover:underline">
-                홈 KPI
-              </Link>{" "}
-              — 합성 숫자·LIVE 속도
-            </li>
-          </ul>
-        </div>
-        <div className="card p-4 space-y-2">
-          <h3 className="text-sm font-semibold">운영 메모</h3>
-          <ul className="text-xs text-text-muted space-y-1 copy-lines">
-            <li>설정 저장 → Firestore <code>config/*</code> (재배포 불필요)</li>
-            <li>첫 admin: 콘솔에서 <code>users/UID.role = admin</code> 수동 지정</li>
-            <li>AI 로그: 서버에 <code>FIREBASE_CLIENT_EMAIL</code> 등 설정 필요</li>
-          </ul>
-        </div>
+      <section className="card p-4 space-y-2">
+        <h3 className="text-sm font-semibold">운영 메모</h3>
+        <ul className="text-xs text-text-muted space-y-1 copy-lines">
+          <li>
+            메뉴는 <strong className="text-text">대시보드 · 회원 현황 · 꿈 DB</strong> 3개만
+            사용합니다.
+          </li>
+          <li>
+            회원·꿈 원본 →{" "}
+            <Link to={to("members")} className="text-primary hover:underline">
+              회원 현황
+            </Link>
+            ,{" "}
+            <Link to={to("dreams")} className="text-primary hover:underline">
+              꿈 DB
+            </Link>
+          </li>
+          <li>
+            첫 admin: 콘솔에서 <code>users/UID.role = admin</code> 수동 지정
+          </li>
+        </ul>
       </section>
     </div>
   );

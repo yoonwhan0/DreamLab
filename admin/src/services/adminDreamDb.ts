@@ -11,7 +11,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Dream } from "@/types";
+import type { Dream, UserProfile } from "@/types";
 import {
   ADMIN_SEED_USER_ID,
   buildSeedInterpretation,
@@ -29,40 +29,118 @@ function tsToDate(value: { toDate?: () => Date } | undefined): Date | null {
   return value?.toDate?.() ?? null;
 }
 
-function dreamToRow(d: Dream & { seedProfile?: string }): DreamSpreadsheetRow {
+function formatDate(value: Date | null | undefined): string {
+  if (!value) return "";
+  return value.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function resolveSource(data: Record<string, unknown>, userId: string): string {
+  const seedSource = typeof data.seedSource === "string" ? data.seedSource : "";
+  if (seedSource) return seedSource;
+  if (userId === ADMIN_SEED_USER_ID) return "seed";
+  return "user";
+}
+
+function profileFromUser(user: UserProfile | undefined, seedProfile?: string): string {
+  if (seedProfile?.trim()) return seedProfile.trim();
+  if (!user) return "";
+  const parts = [
+    user.isAnonymous ? "익명" : (user.displayName ?? "회원"),
+    user.ageRange,
+    user.country,
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
+function dreamToRow(
+  d: Dream & { seedProfile?: string; seedSource?: string; category?: string },
+  user?: UserProfile,
+): DreamSpreadsheetRow {
   const anchor = d.interpretation?.researchAnchor?.primary ?? "";
+  const keywords =
+    (d.interpretation?.keywords ?? []).join(",") ||
+    (Array.isArray((d as { keywords?: string[] }).keywords)
+      ? (d as { keywords?: string[] }).keywords!.join(",")
+      : "");
+
   return {
     id: d.id,
+    createdAt: formatDate(d.createdAt),
+    source: resolveSource(
+      { seedSource: d.seedSource, userId: d.userId },
+      d.userId,
+    ),
+    userId: d.userId,
+    userEmail: user?.email ?? (user?.isAnonymous ? "(익명)" : ""),
     title: d.title,
     content: d.content,
-    keywords: (d.interpretation?.keywords ?? []).join(","),
+    category: d.category ?? d.interpretation?.category ?? "",
+    keywords,
     anchor,
     emotions: (d.emotions ?? []).join(","),
-    outcomeCategory: d.followUp
-      ? outcomeLabel(d.followUp.outcomeCategory)
-      : "",
+    followUpDueAt: formatDate(d.followUpDueAt),
+    outcomeCategory: d.followUp ? outcomeLabel(d.followUp.outcomeCategory) : "",
     afterStory: d.followUp?.note ?? "",
-    profile: d.seedProfile ?? "",
+    followUpAnsweredAt: formatDate(d.followUp?.answeredAt),
+    followUpEmotions: (d.followUp?.emotions ?? []).join(","),
+    profile: profileFromUser(user, d.seedProfile),
+    likes: String(d.likes ?? 0),
     isPublic: d.isPublic !== false ? "Y" : "N",
-    createdAt: d.createdAt.toLocaleDateString("ko-KR"),
   };
+}
+
+async function fetchUserLookup(): Promise<Map<string, UserProfile>> {
+  if (!db) return new Map();
+  const snap = await getDocs(query(collection(db, "users"), limit(QUERY_LIMIT)));
+  const map = new Map<string, UserProfile>();
+  for (const d of snap.docs) {
+    const data = d.data();
+    map.set(d.id, {
+      uid: d.id,
+      displayName: data.displayName ?? null,
+      email: data.email ?? null,
+      isPremium: data.isPremium ?? false,
+      isAnonymous: data.isAnonymous ?? false,
+      fcmTokens: data.fcmTokens ?? [],
+      gender: data.gender,
+      ageRange: data.ageRange,
+      country: data.country,
+      role: data.role === "admin" ? "admin" : "user",
+      createdAt: tsToDate(data.createdAt) ?? new Date(),
+    });
+  }
+  return map;
 }
 
 export async function fetchDreamSpreadsheetRows(): Promise<DreamSpreadsheetRow[]> {
   if (!db) return [];
-  const snap = await getDocs(
-    query(collection(db, "dreams"), orderBy("createdAt", "desc"), limit(QUERY_LIMIT)),
-  );
+
+  const [snap, users] = await Promise.all([
+    getDocs(query(collection(db, "dreams"), orderBy("createdAt", "desc"), limit(QUERY_LIMIT))),
+    fetchUserLookup(),
+  ]);
 
   return snap.docs.map((d) => {
     const data = d.data();
-    const dream: Dream & { seedProfile?: string } = {
+    const dream: Dream & {
+      seedProfile?: string;
+      seedSource?: string;
+      category?: string;
+      keywords?: string[];
+    } = {
       id: d.id,
-      userId: data.userId,
+      userId: data.userId ?? "",
       title: data.title ?? "",
-      content: data.content,
+      content: data.content ?? "",
       emotions: data.emotions ?? [],
       interpretation: data.interpretation,
+      embedding: data.embedding,
       createdAt: tsToDate(data.createdAt) ?? new Date(),
       followUpDueAt: tsToDate(data.followUpDueAt) ?? new Date(),
       followUp: data.followUp
@@ -74,8 +152,11 @@ export async function fetchDreamSpreadsheetRows(): Promise<DreamSpreadsheetRow[]
       isPublic: data.isPublic ?? true,
       likes: data.likes ?? 0,
       seedProfile: data.seedProfile as string | undefined,
+      seedSource: data.seedSource as string | undefined,
+      category: data.category as string | undefined,
+      keywords: data.keywords as string[] | undefined,
     };
-    return dreamToRow(dream);
+    return dreamToRow(dream, users.get(dream.userId));
   });
 }
 
@@ -100,7 +181,7 @@ function rowToFirestorePayload(row: DreamSpreadsheetRow, adminUid: string) {
     ),
     followUpReminderSent: hasFollowUp,
     isPublic: parseIsPublic(row.isPublic),
-    likes: 0,
+    likes: Number.parseInt(row.likes, 10) || 0,
     seedProfile: row.profile.trim() || null,
     seedSource: "admin-import",
     importedBy: adminUid,
@@ -130,6 +211,7 @@ export async function importSpreadsheetRows(
 ): Promise<ImportResult> {
   if (!db) throw new Error("Firebase 미설정");
 
+  /** 항상 새 document ID — 기존 dreams 문서는 건드리지 않음 */
   const valid = rows.filter((r) => r.content.trim().length >= 8);
   const errors: string[] = [];
   let imported = 0;
@@ -189,4 +271,18 @@ export async function deleteSpreadsheetRows(ids: string[]): Promise<number> {
     await batch.commit();
   }
   return deleted;
+}
+
+export function countRowsBySource(rows: DreamSpreadsheetRow[]): {
+  total: number;
+  user: number;
+  seed: number;
+} {
+  let user = 0;
+  let seed = 0;
+  for (const row of rows) {
+    if (row.source === "user") user += 1;
+    else seed += 1;
+  }
+  return { total: rows.length, user, seed };
 }

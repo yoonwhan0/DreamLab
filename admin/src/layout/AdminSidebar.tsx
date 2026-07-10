@@ -12,11 +12,11 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const { user, logout } = useAdminAuth();
-  const { embedded, root, to } = useAdminRoutes();
+  const { root, to } = useAdminRoutes();
 
   const linkTo = (segment: string) => {
-    if (embedded) return segment || ".";
-    return segment ? to(segment) : root;
+    if (!segment) return root;
+    return to(segment);
   };
 
   return (
@@ -34,7 +34,7 @@ export function AdminSidebar() {
                 to={linkTo(item.segment)}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                  `flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors touch-manipulation ${
                     isActive
                       ? "bg-primary/15 text-primary font-medium"
                       : "text-text-secondary hover:text-text hover:bg-surface"
