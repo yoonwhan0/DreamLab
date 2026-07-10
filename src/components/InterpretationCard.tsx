@@ -126,7 +126,7 @@ export function InterpretationCard({
               lock={premiumLock}
               label="한 달 뒤 · 갈릴 지점"
               preview={
-                <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={2} />
+                <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={5} />
               }
             >
               <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={6} />
@@ -140,7 +140,7 @@ export function InterpretationCard({
               preview={
                 <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-2">
                   <p className="text-[0.6875rem] font-semibold text-primary">비슷한 꿈을 꾼 사람들</p>
-                  <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={2}>
+                  <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={5}>
                     {interpretation.labObservations.sceneNote}
                   </FormattedBlocks>
                 </div>

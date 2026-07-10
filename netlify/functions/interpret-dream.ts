@@ -435,8 +435,6 @@ function normalizeStories(
 
   const anchor = extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? "꿈";
 
-  const profiles = [...VIVID_STORY_PROFILES];
-
   const outcomes = [
     "good",
     "bad",
@@ -485,7 +483,7 @@ function normalizeStories(
 
       recordedDaysAgo: Number(s.recordedDaysAgo) || 7 + i * 3,
 
-      profile: String(s.profile ?? profiles[i % profiles.length]!),
+      profile: "익명 기록",
 
     };
 
@@ -652,4 +650,3 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
 
 
 export { handler };
-

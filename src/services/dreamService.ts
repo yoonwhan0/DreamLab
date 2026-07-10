@@ -350,7 +350,7 @@ export function buildSimilarDreamSummary(
   const stories: CommunityStory[] = dreams
     .filter((d) => d.followUp)
     .slice(0, 8)
-    .map((d, i) => dreamToStory(d, i));
+    .map((d) => dreamToStory(d));
 
   return {
     totalCount: dreams.length,
@@ -364,7 +364,7 @@ export function buildSimilarDreamSummary(
   };
 }
 
-function dreamToStory(dream: Dream, index: number): CommunityStory {
+function dreamToStory(dream: Dream): CommunityStory {
   const followUp = dream.followUp!;
   const daysAgo = Math.max(
     1,
@@ -388,7 +388,7 @@ function dreamToStory(dream: Dream, index: number): CommunityStory {
     outcomeCategory: followUp.outcomeCategory,
     afterStory: followUp.note,
     recordedDaysAgo: daysAgo,
-    profile: ["20대 · 여", "30대 · 남", "20대 · 남", "40대 · 여"][index % 4],
+    profile: "익명 기록",
   };
 }
 

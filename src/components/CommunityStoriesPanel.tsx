@@ -138,13 +138,13 @@ function StoryContent({
       <div className="space-y-2 text-sm">
         <div className="space-y-1">
           <p className="text-[0.625rem] font-semibold text-text-muted uppercase">꿈</p>
-          <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={2}>
+          <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={5}>
             {story.dreamSnippet}
           </FormattedBlocks>
         </div>
         <div className="space-y-1">
           <p className="text-[0.625rem] font-semibold text-text-muted uppercase">30일 후</p>
-          <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={2}>
+          <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={5}>
             {story.afterStory}
           </FormattedBlocks>
         </div>
@@ -186,7 +186,7 @@ function StoryContent({
           <p className="text-xs font-semibold text-text-muted">꿈</p>
           <FormattedBlocks
             className="text-text-secondary"
-            maxLines={variant === "compact" ? 2 : 4}
+            maxLines={variant === "compact" ? 5 : 5}
           >
             {story.dreamSnippet}
           </FormattedBlocks>
@@ -195,7 +195,7 @@ function StoryContent({
           <p className="text-xs font-semibold text-text-muted">30일 후</p>
           <FormattedBlocks
             className="text-text-secondary"
-            maxLines={variant === "compact" ? 2 : 5}
+            maxLines={5}
           >
             {story.afterStory}
           </FormattedBlocks>
@@ -218,7 +218,6 @@ function StoryContent({
 
 function formatStoryProfile(profile: string): string {
   const trimmed = profile.trim();
-  if (!trimmed) return "익명";
-  if (trimmed.includes("익명")) return trimmed;
-  return `${trimmed} · 익명`;
+  if (!trimmed) return "익명 기록";
+  return "익명 기록";
 }

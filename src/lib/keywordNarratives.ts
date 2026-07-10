@@ -1151,15 +1151,14 @@ export function defaultPackForKeyword(keyword: string): KeywordNarrativePack {
   const seed = hashSeed(`default-pack-${k}`);
   const rand = createSeededRandom(seed);
   const base = seededInt(rand, 1840, 4680);
-  const title = k.includes("꿈") ? k : `${k} 꿈`;
   return {
     category: inferCategoryFromKeyword(k),
     countRange: [base, base + seededInt(rand, 800, 2400)],
     followUpRate: 0.41 + rand() * 0.14,
     relatedKeywords: [k, "밤", "불안"].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4),
-    titles: [title],
+    titles: [`${k} 앞에서 멈춰 있던 꿈`],
     dreamSnippets: [
-      `"${k}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 같은 키워드로 기록됐습니다.`,
+      `꿈에서 저는 "${k}" 앞에 서 있었습니다. 장소는 낯설었는데 그 주변만 이상하게 또렷했어요. 깨고 나서도 그 장면이 먼저 떠올라서 바로 메모했습니다.`,
     ],
     afterByOutcome: {},
   };

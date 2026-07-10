@@ -12,7 +12,7 @@ export const COMMUNITY_REVIEW_SLOT_SYSTEM = `## communityEstimate — 「한 달
 - dreamSnippet: **3~4문장**. 카톡/블로그 후기처럼. "새벽 4시에 깼는데", "손이 떨려서", "친구한테만 말함" 등
 - afterStory: 30일 후 **2~4문장**. 우연·담담한 고백·작은 변화 섞기. outcomeCategory와 맞출 것
 - dreamTitle: 그 사람만의 한 줄 (예: "현관문 반쯤 열린 새벽", "로또 번호가 사라진 날")
-- profile: "익명 · 나이 · 지역" 느낌 (예: "익명 · 29 · 마포")
+- profile: 항상 "익명 기록". 나이·지역·성별은 쓰지 말 것
 
 ### 유사성 규칙
 - 사용자 원문·scenePhrases **복붙 금지** — 주제·감정만 맞추고 장면은 **완전히 새로**
