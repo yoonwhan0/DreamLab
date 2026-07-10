@@ -1,16 +1,10 @@
 import { resolveResearchAnchor } from "@/lib/dreamAnchor";
 import {
-  alignStoryToKeyword,
-  ANONYMOUS_STORY_PROFILE,
   buildCoherentStoryForKeyword,
-  ensureAfterStoryLines,
-  ensureDreamStoryLines,
-  genericDreamTitle,
-  genericKeywordSnippet,
+  isManualStoryKeyword,
 } from "@/lib/coherentCommunityStory";
 import { getKeywordNarrativePack } from "@/lib/keywordNarratives";
 import {
-  formatObservatoryId,
   cohortSizeForKeyword,
   humanizeCount,
 } from "@/lib/observatoryCredibility";
@@ -19,8 +13,7 @@ import {
   inferCategoryFromKeyword,
   type KeywordNarrativePack,
 } from "@/lib/keywordNarratives";
-import { createSeededRandom, hashSeed, seededInt } from "@/lib/seededRandom";
-import { VIVID_AFTER_BY_OUTCOME } from "@/lib/vividPreviewCopy";
+import { createSeededRandom, hashSeed } from "@/lib/seededRandom";
 import type {
   CommunityEstimate,
   CommunityStory,
@@ -40,73 +33,13 @@ const EMOTION_POOL: DreamEmotionId[] = [
   "happy",
 ];
 
-const GENERIC_AFTER: Record<OutcomeCategory, string[]> = VIVID_AFTER_BY_OUTCOME;
-
-function pickOutcome(rand: () => number, pack: KeywordNarrativePack): OutcomeCategory {
-  const keys = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
-  const hasCustom = Object.keys(pack.afterByOutcome).length > 0;
-  const weights = hasCustom
-    ? keys.map((k) => (pack.afterByOutcome[k]?.length ? 22 : 8))
-    : [12, 22, 12, 10, 9, 8, 7, 20];
-  const total = weights.reduce((a, b) => a + b, 0);
-  let r = rand() * total;
-  for (let i = 0; i < keys.length; i++) {
-    r -= weights[i]!;
-    if (r <= 0) return keys[i]!;
-  }
-  return "other";
-}
-
-function pickAfterStory(
-  outcome: OutcomeCategory,
-  pack: KeywordNarrativePack,
-  rand: () => number,
-): string {
-  const custom = pack.afterByOutcome[outcome];
-  const pool = custom?.length ? custom : GENERIC_AFTER[outcome];
-  return pool[seededInt(rand, 0, pool.length - 1)] ?? pool[0];
-}
-
 function buildStoryAt(
-  rand: () => number,
+  _rand: () => number,
   anchorKeyword: string,
-  pack: KeywordNarrativePack,
+  _pack: KeywordNarrativePack,
   index: number,
 ): CommunityStory {
-  const curatedPack = getKeywordNarrativePack(anchorKeyword);
-  const outcome = pickOutcome(rand, pack);
-  const slot = curatedPack ? index % curatedPack.dreamSnippets.length : index;
-
-  const dreamTitle = curatedPack
-    ? curatedPack.titles[slot % curatedPack.titles.length]!
-    : genericDreamTitle(anchorKeyword, index);
-  const dreamSnippet = curatedPack
-    ? curatedPack.dreamSnippets[slot]!
-    : genericKeywordSnippet(anchorKeyword, index);
-  const afterStory = curatedPack
-    ? pickAfterStory(outcome, curatedPack, rand)
-    : pickAfterStory(outcome, pack, rand);
-
-  const emotions: DreamEmotionId[] = [
-    EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
-    ...(rand() > 0.4 ? [EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)]] : []),
-  ];
-  const daysAgo = seededInt(rand, 3, 41);
-
-  return alignStoryToKeyword(
-    {
-      id: formatObservatoryId(anchorKeyword, index),
-      dreamTitle,
-      dreamSnippet: ensureDreamStoryLines(dreamSnippet, anchorKeyword, index),
-      emotions,
-      outcomeCategory: outcome,
-      afterStory: ensureAfterStoryLines(afterStory, outcome, index, anchorKeyword),
-      recordedDaysAgo: daysAgo,
-      profile: ANONYMOUS_STORY_PROFILE,
-    },
-    anchorKeyword,
-    index,
-  );
+  return buildCoherentStoryForKeyword(anchorKeyword, index);
 }
 
 function generateStories(
@@ -297,7 +230,8 @@ export function estimateToStats(estimate: CommunityEstimate): DreamStats {
 }
 
 export function previewCommunityForKeyword(keyword: string) {
-  const anchor = keyword.trim() || "꿈";
+  const raw = keyword.trim();
+  const anchor = isManualStoryKeyword(raw) ? raw : "시험";
   const pack = resolveNarrativePack(anchor);
   const content = `${anchor} 꿈을 기록해 두고 한 달 뒤에 다시 읽었습니다. 장면은 제각각이어도 남는 감정이 비슷한 경우가 있더라고요.`;
   const interpretation: DreamInterpretation = {

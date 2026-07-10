@@ -619,34 +619,25 @@ export function buildCoherentStoryForKeyword(keyword: string, index = 0): Commun
     return {
       id: formatObservatoryId(anchor, index),
       dreamTitle: manual.title,
-      dreamSnippet: ensureDreamStoryLines(manual.dreamSnippet, anchor, index),
+      dreamSnippet: manual.dreamSnippet,
       emotions: manual.emotions,
       outcomeCategory: manual.outcomeCategory,
-      afterStory: ensureAfterStoryLines(
-        manual.afterStory,
-        manual.outcomeCategory,
-        index,
-        anchor,
-      ),
+      afterStory: manual.afterStory,
       recordedDaysAgo: 12 + (Math.abs(hashSeed(`manual-days-${anchor}`)) % 24),
       profile: ANONYMOUS_STORY_PROFILE,
     };
   }
 
   const curated = getKeywordNarrativePack(anchor);
-  const pack = resolveNarrativePack(anchor);
+  const pack = curated ?? resolveNarrativePack(anchor);
   const seed = hashSeed(`coherent-story-${anchor}-${index}`);
   const rand = createSeededRandom(seed);
   const outcome = pickOutcome(rand, pack);
-  const slot = curated ? index % curated.dreamSnippets.length : index;
+  const slot = index % pack.dreamSnippets.length;
 
-  const dreamTitle = curated
-    ? curated.titles[slot % curated.titles.length]!
-    : genericDreamTitle(anchor, index);
-  const dreamSnippet = curated
-    ? ensureDreamStoryLines(curated.dreamSnippets[slot]!, anchor, index)
-    : genericKeywordSnippet(anchor, index);
-  const afterStory = pickAfterStory(outcome, curated ?? pack, rand);
+  const dreamTitle = pack.titles[slot % pack.titles.length]!;
+  const dreamSnippet = ensureDreamStoryLines(pack.dreamSnippets[slot]!, anchor, index);
+  const afterStory = pickAfterStory(outcome, pack, rand);
 
   const emotions: DreamEmotionId[] = [
     EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],

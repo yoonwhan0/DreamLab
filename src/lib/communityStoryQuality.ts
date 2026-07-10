@@ -3,11 +3,9 @@ import { excerptToStoryTitle } from "@/lib/dreamAnchor";
 import {
   alignStoryToKeyword,
   buildCoherentStoryForKeyword,
-  genericKeywordSnippet,
   isGenericVividPoolSnippet,
   storyRelatesToAnchor,
 } from "@/lib/coherentCommunityStory";
-import { pickVividScene } from "@/lib/vividPreviewCopy";
 
 /** 옛 템플릿·AI 티 — 이 패턴이면 키워드 맞춤 풀에서 교체 */
 export const TEMPLATE_STORY_SNIPPET_RE =
@@ -52,8 +50,8 @@ export function overlapsUserDreamFields(
   );
 }
 
-export function pickNeutralSceneLine(index: number): string {
-  return pickVividScene(index);
+export function pickNeutralSceneLine(index: number, anchorKeyword = "시험"): string {
+  return buildCoherentStoryForKeyword(anchorKeyword, index).dreamSnippet;
 }
 
 export function repairStorySnippet(
@@ -69,8 +67,7 @@ export function repairStorySnippet(
     (!anchor || storyRelatesToAnchor(snippet, anchor));
 
   if (usable) return snippet;
-  if (anchor) return genericKeywordSnippet(anchor, index);
-  return pickVividScene(index);
+  return buildCoherentStoryForKeyword(anchor || "시험", index).dreamSnippet;
 }
 
 /** AI 후기 — 템플릿·사용자 원문 겹침 제거, 키워드 맥락 유지 */
