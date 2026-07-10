@@ -14,4 +14,6 @@ export {
   resolveAnchorFromText,
   extractDreamAnchor,
   extractDreamSymbols,
+  extractDreamExcerpts,
+  excerptToStoryTitle,
 } from "../../../src/lib/dreamAnchor";

@@ -30,9 +30,9 @@ function buildExploreDreamContent(query: string): string {
   const q = query.trim();
   if (q.length >= 40) return q;
   if (q.length >= 20) {
-    return `${q}이(가) 선명하게 보였던 꿈이었어요. 그 장면이 계속 머리에 남아서 궁금해졌어요.`;
+    return `${q} 장면이 선명하게 남았어요. 깬 뒤에도 그 분위기가 계속 떠올랐어요.`;
   }
-  return `꿈 속에서 ${q}이(가) 나왔어요. ${q}과(와) 관련된 장면이 선명했고, 무섭기도 하고 궁금했어요.`;
+  return `${q}과(와) 관련된 장면이었어요. 분위기가 오래 남아서 기록해 두었어요.`;
 }
 
 function loadLocalPreview(keyword: string) {
@@ -85,6 +85,7 @@ export function ExplorePage() {
       const community = await resolveCommunityData(interpretation, {
         embedding,
         title: q,
+        content: dreamContent,
         estimate: communityEstimate,
       });
 

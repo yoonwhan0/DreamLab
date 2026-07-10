@@ -243,3 +243,35 @@ export function isStrongAnchor(token: string): boolean {
 export function extractDreamAnchor(content: string): string | null {
   return extractHeuristicKeywords(content, 1)[0] ?? null;
 }
+
+/** 커뮤니티 후기·샘플용 — 사용자 꿈 본문에서 장면 발췌 (템플릿 대신) */
+export function extractDreamExcerpts(text: string, limit = 4): string[] {
+  const cleaned = sanitizeDreamContent(text);
+  if (!cleaned) return [];
+
+  const sentences = cleaned
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[.!?…])\s+/))
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 12 && s.length <= 220);
+
+  if (sentences.length === 0) {
+    const chunk = cleaned.slice(0, 160).trim();
+    return chunk.length >= 10 ? [chunk] : [];
+  }
+
+  if (sentences.length <= limit) return sentences;
+
+  const result: string[] = [];
+  const step = Math.max(1, Math.floor(sentences.length / limit));
+  for (let i = 0; i < sentences.length && result.length < limit; i += step) {
+    result.push(sentences[i]!);
+  }
+  return result;
+}
+
+export function excerptToStoryTitle(excerpt: string, maxLen = 28): string {
+  const oneLine = excerpt.replace(/\s+/g, " ").trim();
+  if (oneLine.length <= maxLen) return oneLine;
+  return `${oneLine.slice(0, maxLen - 1)}…`;
+}

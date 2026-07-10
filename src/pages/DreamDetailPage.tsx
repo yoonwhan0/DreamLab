@@ -53,6 +53,7 @@ export function DreamDetailPage() {
         setLoading(false);
         void loadCommunity(DEMO_DREAM.interpretation, {
           title: DEMO_DREAM.title,
+          content: DEMO_DREAM.content,
         });
         return;
       }
@@ -96,6 +97,7 @@ export function DreamDetailPage() {
           void loadCommunity(interpretation, {
             embedding: data.embedding,
             title: data.title,
+            content: data.content,
             estimate: data.communityEstimate,
           });
         } catch {
@@ -114,6 +116,7 @@ export function DreamDetailPage() {
         void loadCommunity(d.interpretation, {
           embedding: d.embedding,
           title: d.title,
+          content: d.content,
         });
       }
     }
@@ -123,6 +126,7 @@ export function DreamDetailPage() {
       options: {
         embedding?: number[];
         title?: string;
+        content?: string;
         estimate?: CommunityEstimate;
       },
     ) {

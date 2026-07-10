@@ -18,7 +18,7 @@ import {
 
 } from "./lib/interpretPremium";
 
-import { extractHeuristicKeywords, mergeAiKeywords } from "./lib/dreamAnchor";
+import { extractHeuristicKeywords, mergeAiKeywords, extractDreamExcerpts, excerptToStoryTitle } from "./lib/dreamAnchor";
 import { recordAiUsage } from "./lib/recordAiUsage";
 
 
@@ -67,7 +67,7 @@ const handler: Handler = async (event) => {
 
 
 
-  let parsed = enrichInterpretation(fallbackInterpret(fullText, title), title, content);
+  let parsed = enrichInterpretation(fallbackInterpret(title, content), title, content);
 
   let embedding: number[] = [];
 
@@ -290,7 +290,7 @@ function normalizeParsed(
 ): ParsedInterpretation {
 
   const fullText = `${title}\n${content}`;
-  const fallback = fallbackInterpret(fullText, title);
+  const fallback = fallbackInterpret(title, content);
   const ce = (raw.communityEstimate ?? {}) as Record<string, unknown>;
   const aiKeywords = Array.isArray(raw.keywords)
     ? (raw.keywords as string[]).slice(0, 8)
@@ -413,7 +413,7 @@ function normalizeParsed(
 
 
 const TEMPLATE_STORY_RE =
-  /갑자기 나타났어요|집에 .+ 들어온 꿈|나를 쫓지는 않았지만|계속 시선이 느껴졌어요/;
+  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요/;
 
 
 
@@ -515,31 +515,41 @@ function normalizeStories(
 
 
 
-function fallbackInterpret(text: string, title: string): ParsedInterpretation {
+function fallbackInterpret(title: string, content: string): ParsedInterpretation {
 
-  const keywords = extractHeuristicKeywords(text, 5);
-
-
+  const fullText = `${title}\n${content}`;
+  const keywords = extractHeuristicKeywords(fullText, 5);
+  const excerpts = extractDreamExcerpts(fullText, 3);
+  const kw = keywords[0] ?? extractHeuristicKeywords(title, 1)[0] ?? "꿈";
 
   let category = "general";
 
-  if (/부모|어머니|아버지|할머|할아버|돌아가/.test(text)) category = "family";
+  if (/부모|어머니|아버지|할머|할아버|돌아가/.test(fullText)) category = "family";
 
-  else if (/연애|남친|여친|결혼|이별/.test(text)) category = "love";
+  else if (/연애|남친|여친|결혼|이별/.test(fullText)) category = "love";
 
-  else if (/직장|회사|시험|학교|취업|이직/.test(text)) category = "career";
+  else if (/직장|회사|시험|학교|취업|이직/.test(fullText)) category = "career";
 
-  else if (/뱀|죽|피|추락|쫓/.test(text)) category = "anxiety";
+  else if (/뱀|죽|피|추락|쫓/.test(fullText)) category = "anxiety";
 
-  else if (/돈|재물|황금|복권/.test(text)) category = "fortune";
+  else if (/돈|재물|황금|복권/.test(fullText)) category = "fortune";
 
-
-
-  const kw = keywords[0] ?? extractHeuristicKeywords(title, 1)[0] ?? "꿈";
-
-  const totalCount = 400 + (text.length % 900);
+  const totalCount = 400 + (fullText.length % 900);
 
   const withFollowUpCount = Math.round(totalCount * 0.44);
+
+  const storySnippet =
+    excerpts[0] ??
+    "많은 시선이 느껴지는 장면이었어요. 긴장보다 몰입에 가까웠습니다.";
+  const storyTitle = excerpts[0]
+    ? excerptToStoryTitle(excerpts[0])
+    : "비슷한 장면을 꾼 기록";
+  const secondSnippet =
+    excerpts[1] ??
+    "결정적인 순간 뒤 환호나 안도가 밀려오는 꿈이었어요.";
+  const secondTitle = excerpts[1]
+    ? excerptToStoryTitle(excerpts[1])
+    : "새벽에 깨어난 뒤에도 선명했던 꿈";
 
 
 
@@ -606,9 +616,9 @@ function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
         {
 
-          title: `${kw}이(가) 나오는 꿈`,
+          title: storyTitle,
 
-          snippet: `${kw}이(가) 갑자기 나타났어요. 무서웠지만 직접 해치지는 않았습니다.`,
+          snippet: storySnippet,
 
           emotions: ["scared"],
 
@@ -616,9 +626,9 @@ function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
         {
 
-          title: `집에 ${kw}이(가) 들어온 꿈`,
+          title: secondTitle,
 
-          snippet: `옛날 살던 집에서 ${kw}을(를) 봤는데 현실과 섞인 느낌이었어요.`,
+          snippet: secondSnippet,
 
           emotions: ["weird", "scared"],
 
@@ -632,9 +642,9 @@ function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
           id: "fb-1",
 
-          dreamTitle: `${kw}이(가) 나오는 꿈`,
+          dreamTitle: storyTitle,
 
-          dreamSnippet: `${kw}이(가) 나를 쫓지는 않았지만, 계속 시선이 느껴졌어요.`,
+          dreamSnippet: storySnippet,
 
           emotions: ["scared", "weird"],
 
@@ -654,9 +664,9 @@ function fallbackInterpret(text: string, title: string): ParsedInterpretation {
 
           id: "fb-2",
 
-          dreamTitle: `집에 ${kw}이(가) 들어온 꿈`,
+          dreamTitle: secondTitle,
 
-          dreamSnippet: `낯선 공간에서 ${kw}을(를) 마주쳤어요.`,
+          dreamSnippet: secondSnippet,
 
           emotions: ["scared"],
 

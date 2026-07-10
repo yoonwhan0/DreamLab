@@ -45,7 +45,7 @@ export interface CommunityDataResult {
 }
 
 const TEMPLATE_STORY_RE =
-  /갑자기 나타났어요|집에 .+ 들어온 꿈|나를 쫓지는 않았지만|계속 시선이 느껴졌어요/;
+  /갑자기 나타났|들어온 꿈|나를 쫓지는 않았지만|계속 시선이|선명하게 보였던 꿈이었어요|꿈 속에서 .+ 나왔어요/;
 
 function isQualityStory(story: CommunityStory): boolean {
   return (
@@ -60,8 +60,9 @@ function mergeEstimate(
   estimate: CommunityEstimate | null | undefined,
   interpretation: DreamInterpretation,
   title: string,
+  content = "",
 ): CommunityEstimate {
-  const synthetic = generateSyntheticCommunity(interpretation, title);
+  const synthetic = generateSyntheticCommunity(interpretation, title, content);
   if (!estimate) return synthetic;
 
   const aiStories = estimate.stories?.filter(isQualityStory) ?? [];
@@ -110,13 +111,14 @@ export async function resolveCommunityData(
   options: {
     embedding?: number[];
     title?: string;
+    content?: string;
     estimate?: CommunityEstimate | null;
   } = {},
 ): Promise<CommunityDataResult> {
-  const { embedding, title = "", estimate } = options;
+  const { embedding, title = "", content = "", estimate } = options;
   const exposure = await getDataExposureConfig();
   const minReal = exposure.minRealCommunityCount || MIN_REAL_COMMUNITY_COUNT;
-  const merged = mergeEstimate(estimate, interpretation, title);
+  const merged = mergeEstimate(estimate, interpretation, title, content);
 
   if (exposure.blendMode === "synthetic_only") {
     return {

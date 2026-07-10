@@ -1,4 +1,4 @@
-import { resolveResearchAnchor } from "@/lib/dreamAnchor";
+import { resolveResearchAnchor, extractDreamExcerpts, excerptToStoryTitle } from "@/lib/dreamAnchor";
 import {
   formatObservatoryId,
   cohortSizeForKeyword,
@@ -121,13 +121,27 @@ function generateStories(
   rand: () => number,
   anchorKeyword: string,
   pack: KeywordNarrativePack,
+  interpretation: DreamInterpretation,
+  title: string,
+  content: string,
   count = 8,
 ): CommunityStory[] {
+  const excerpts = extractDreamExcerpts(`${title}\n${content}`, count);
+  const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
+
   return Array.from({ length: count }, (_, i) => {
     const outcome = pickOutcome(rand, pack);
-    const title = pack.titles[i % pack.titles.length] ?? pack.titles[0]!;
+    const fromUser = excerpts[i];
     const snippet =
-      pack.dreamSnippets[i % pack.dreamSnippets.length] ?? pack.dreamSnippets[0]!;
+      fromUser ??
+      pack.dreamSnippets[i % pack.dreamSnippets.length] ??
+      pack.dreamSnippets[0]!;
+    const dreamTitle =
+      i === 0 && clusterTitle
+        ? clusterTitle
+        : fromUser
+          ? excerptToStoryTitle(fromUser)
+          : (pack.titles[i % pack.titles.length] ?? pack.titles[0]!);
     const emotions: DreamEmotionId[] = [
       EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
       ...(rand() > 0.4
@@ -138,7 +152,7 @@ function generateStories(
 
     return {
       id: formatObservatoryId(anchorKeyword, i),
-      dreamTitle: title,
+      dreamTitle,
       dreamSnippet: snippet,
       emotions,
       outcomeCategory: outcome,
@@ -185,6 +199,7 @@ function buildCounts(
 export function generateSyntheticCommunity(
   interpretation: DreamInterpretation,
   title = "",
+  content = "",
 ): CommunityEstimate {
   const anchor = resolveAnchorKeyword(title, interpretation);
   const pack = resolveNarrativePack(anchor);
@@ -206,7 +221,15 @@ export function generateSyntheticCommunity(
     totalCount,
   );
 
-  const stories = generateStories(rand, anchor, pack, 8);
+  const stories = generateStories(
+    rand,
+    anchor,
+    pack,
+    interpretation,
+    title,
+    content,
+    8,
+  );
 
   const samples = stories.slice(0, 5).map((s) => ({
     title: s.dreamTitle,
@@ -301,5 +324,5 @@ export function previewCommunityForKeyword(keyword: string) {
     keywords: [anchor, ...pack.relatedKeywords.slice(0, 2)],
     category: inferCategoryFromKeyword(anchor),
   };
-  return generateSyntheticCommunity(interpretation, anchor);
+  return generateSyntheticCommunity(interpretation, anchor, anchor);
 }
