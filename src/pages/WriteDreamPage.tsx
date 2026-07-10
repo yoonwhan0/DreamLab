@@ -107,7 +107,7 @@ export function WriteDreamPage() {
               disabled={authLoading}
               className="btn-primary disabled:opacity-50"
             >
-              해몽 받기
+              기록하고 해석받기
             </button>
           </>
         )}

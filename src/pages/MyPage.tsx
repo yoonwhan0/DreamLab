@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { TierBadge } from "@/components/AccessGate";
-import { ConversionGate } from "@/components/ConversionGate";
+import { DreamArchiveCalendar } from "@/components/DreamArchiveCalendar";
 import { DreamArchiveCard } from "@/components/DreamArchiveCard";
 import { ReinterpretRecentPanel } from "@/components/ReinterpretRecentPanel";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -50,7 +49,6 @@ export function MyPage() {
   return (
     <div className="space-y-5">
       <PageHero title={PAGE_COPY.my.title} desc={PAGE_COPY.my.desc} centered={false} />
-      <TierBadge tier={access.tier} />
 
       {dreams.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
@@ -61,19 +59,16 @@ export function MyPage() {
       )}
 
       {access.isMember && dreams.length > 0 && (
-        <ReinterpretRecentPanel dreams={dreams} onUpdated={() => void loadDreams()} />
+        <DreamArchiveCalendar dreams={dreams} />
       )}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-text">내 꿈 기록</h2>
+          <h2 className="text-sm font-semibold text-text">최근 꿈</h2>
           <Link to="/write" className="text-xs font-medium text-primary shrink-0">
             + 새 꿈
           </Link>
         </div>
-        <p className="text-xs text-text-muted -mt-1">
-          카드를 누르면 내 해몽과 30일 여정만 봅니다. 남의 후기는 탐색에서.
-        </p>
 
         {authLoading || dreamsLoading ? (
           <LoadingSpinner label="아카이브 불러오는 중" />
@@ -86,7 +81,7 @@ export function MyPage() {
           />
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {previewDreams.map((dream) => (
                 <DreamArchiveCard key={dream.id} dream={dream} />
               ))}
@@ -103,6 +98,10 @@ export function MyPage() {
         )}
       </section>
 
+      {access.isMember && dreams.length > 0 && (
+        <ReinterpretRecentPanel dreams={dreams} onUpdated={() => void loadDreams()} />
+      )}
+
       {access.isGuest && dreams.length > 0 && (
         <button
           type="button"
@@ -118,11 +117,13 @@ export function MyPage() {
       )}
 
       {!access.isMember && dreams.length === 0 && (
-        <ConversionGate step={2} compact />
-      )}
-
-      {access.isMember && !access.isPremium && (
-        <ConversionGate step={3} compact />
+        <button
+          type="button"
+          onClick={() => openSignupSheet("가입하면 꿈 저장·30일 알림·후기 작성이 열립니다.")}
+          className="btn-secondary w-full text-sm"
+        >
+          가입하고 아카이브 열기
+        </button>
       )}
     </div>
   );

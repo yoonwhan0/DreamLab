@@ -3,7 +3,7 @@ import { ConversionGate } from "@/components/ConversionGate";
 import { LoadingPulse } from "@/components/motion/LoadingPulse";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
 import { PageHero } from "@/components/ui/PageHero";
-import { CONSUMER_JOURNEY, PAGE_COPY } from "@/lib/productIdeas";
+import { PAGE_COPY } from "@/lib/productIdeas";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { StatsBar } from "@/components/StatsBar";
@@ -19,6 +19,7 @@ import {
   previewCommunityForKeyword,
 } from "@/services/syntheticCommunityService";
 import { inferCategoryFromKeyword } from "@/lib/keywordNarratives";
+import { getKeywordIcon } from "@/lib/keywordIcons";
 import { getOutcomePercentages } from "@/services/dreamService";
 import type { DreamStats, SimilarDreamSummary } from "@/types";
 import {
@@ -143,25 +144,6 @@ export function ExplorePage() {
     <div className="space-y-5">
       <PageHero title={PAGE_COPY.explore.title} desc={PAGE_COPY.explore.desc} />
 
-      <section className="card p-4 space-y-2">
-        <p className="section-label">이 탭에서 하는 일</p>
-        <p className="text-sm text-text-secondary leading-relaxed">
-          <strong className="text-text font-medium">남들이 꾼 비슷한 꿈</strong>과{" "}
-          <strong className="text-text font-medium">한 달 뒤에 남긴 후기</strong>를 봅니다. 내
-          꿈 기록은 <span className="text-primary">마이</span> 탭에서 확인하세요.
-        </p>
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {CONSUMER_JOURNEY.map((step) => (
-            <span
-              key={step.step}
-              className={`chip text-[0.625rem] ${step.step === 4 ? "chip-primary" : ""}`}
-            >
-              {step.step}. {step.label}
-            </span>
-          ))}
-        </div>
-      </section>
-
       <div className="relative">
         <input
           type="search"
@@ -189,6 +171,9 @@ export function ExplorePage() {
             onClick={() => void runSearch(term)}
             className="chip hover:bg-surface-3"
           >
+            <span className="mr-1" aria-hidden>
+              {getKeywordIcon(term)}
+            </span>
             {term}
           </button>
         ))}
@@ -236,6 +221,7 @@ export function ExplorePage() {
             <>
               <CommunityStoriesPanel
                 stories={visibleStories}
+                variant="compact"
                 blurLocked={false}
                 lockedCount={0}
                 keyword={activeQuery}

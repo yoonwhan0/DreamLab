@@ -43,37 +43,35 @@ export function ReinterpretRecentPanel({ dreams, onUpdated }: ReinterpretRecentP
   };
 
   return (
-    <section className="card-highlight p-5 space-y-4">
+    <section className="card p-4 space-y-3">
       <div>
-        <p className="section-label">프리미엄 · AI 재해석</p>
-        <h3 className="mt-1 text-base font-semibold text-text">최근 꿈 다시 해석해 보기</h3>
-        <p className="mt-1 text-sm text-text-secondary leading-relaxed">
-          같은 꿈도 시간이 지나면 다른 각도로 읽힙니다. 최근 기록 3건까지 AI 해몽을
-          새로 받을 수 있어요.
-        </p>
+        <h3 className="text-sm font-semibold text-text">
+          AI 재해석
+          {!access.isPremium && (
+            <span className="ml-1.5 text-xs font-normal text-accent" aria-label="프리미엄">
+              ⭐
+            </span>
+          )}
+        </h3>
+        <p className="mt-0.5 text-xs text-text-muted">최근 기록 3건</p>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {recent.map((dream) => (
           <li
             key={dream.id}
-            className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 px-3 py-2.5"
+            className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2"
           >
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-text line-clamp-1">
-                {dream.title || "꿈 기록"}
-              </p>
-              <p className="text-[0.6875rem] text-text-muted">
-                {dream.createdAt.toLocaleDateString("ko-KR")}
-              </p>
-            </div>
+            <p className="min-w-0 flex-1 text-sm text-text line-clamp-1">
+              {dream.title || "꿈 기록"}
+            </p>
             <button
               type="button"
               disabled={busyId !== null}
               onClick={() => void handleReinterpret(dream)}
-              className="btn-secondary !w-auto !min-h-[2.25rem] shrink-0 px-3 text-xs !normal-case !tracking-normal disabled:opacity-50"
+              className="shrink-0 text-xs font-medium text-primary disabled:opacity-50"
             >
-              {busyId === dream.id ? "해석 중…" : access.isPremium ? "다시 해석" : "프리미엄"}
+              {busyId === dream.id ? "…" : "다시 해석"}
             </button>
           </li>
         ))}
@@ -85,15 +83,6 @@ export function ReinterpretRecentPanel({ dreams, onUpdated }: ReinterpretRecentP
         </div>
       )}
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      {!access.isPremium && (
-        <button
-          type="button"
-          onClick={() => openPremiumSheet("최근 꿈 AI 재해석은 프리미엄 전용입니다.")}
-          className="btn-primary !min-h-[2.75rem] text-sm !normal-case !tracking-normal"
-        >
-          프리미엄으로 재해석 열기
-        </button>
-      )}
     </section>
   );
 }
