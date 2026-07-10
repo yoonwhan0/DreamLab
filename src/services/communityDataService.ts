@@ -20,6 +20,7 @@ import type { DataExposureConfig } from "@/lib/opsConfig";
 import { DEFAULT_DATA_EXPOSURE } from "@/lib/opsConfig";
 import {
   mergeCommunityStories,
+  overlapsUserDreamFields,
   sanitizeAiCommunityStory,
 } from "@/lib/communityStoryQuality";
 
@@ -59,10 +60,10 @@ function mergeEstimate(
   const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
 
   const aiStories = (estimate.stories ?? [])
-    .map((story, i) => sanitizeAiCommunityStory(story, i, clusterTitle))
+    .map((story, i) => sanitizeAiCommunityStory(story, i, content, title))
     .filter((s): s is NonNullable<typeof s> => s !== null);
   const stories = mergeCommunityStories(aiStories, synthetic.stories);
-  const samples =
+  const rawSamples =
     estimate.samples?.length >= 3
       ? estimate.samples
       : stories.slice(0, 5).map((s) => ({
@@ -70,6 +71,28 @@ function mergeEstimate(
           snippet: s.dreamSnippet,
           emotions: s.emotions,
         }));
+  const samples = rawSamples
+    .filter(
+      (sample) =>
+        !overlapsUserDreamFields(content, title, {
+          title: sample.title,
+          snippet: sample.snippet,
+        }) &&
+        !overlapsUserDreamFields(content, clusterTitle ?? "", {
+          title: sample.title,
+          snippet: sample.snippet,
+        }),
+    )
+    .concat(
+      synthetic.samples.filter(
+        (sample) =>
+          !overlapsUserDreamFields(content, title, {
+            title: sample.title,
+            snippet: sample.snippet,
+          }),
+      ),
+    )
+    .slice(0, 5);
 
   return {
     ...synthetic,

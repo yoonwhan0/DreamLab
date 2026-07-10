@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { useAdminRoutes } from "@admin/lib/adminRoutes";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 import { StatusBanner } from "@admin/components/AdminUi";
 
 export function LoginPage() {
+  const { root } = useAdminRoutes();
   const { signInGoogle, signInEmail, error, loading, user, isAdmin } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export function LoginPage() {
   }
 
   if (!loading && user && isAdmin) {
-    return <Navigate to="" replace />;
+    return <Navigate to={root} replace />;
   }
 
   const handleEmail = async (e: React.FormEvent) => {

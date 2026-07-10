@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { useAdminRoutePath } from "@admin/hooks/useAdminRoutePath";
+import { useAdminRoutes } from "@admin/lib/adminRoutes";
 import { AdminLayout } from "@admin/layout/AdminLayout";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 import { LoginPage } from "@admin/pages/LoginPage";
@@ -18,6 +18,7 @@ import { SystemSettingsPage } from "@admin/pages/SystemSettingsPage";
 import { StatusBanner } from "@admin/components/AdminUi";
 
 function AdminGate({ children }: { children: ReactNode }) {
+  const { login } = useAdminRoutes();
   const { user, isAdmin, loading } = useAdminAuth();
 
   if (loading) {
@@ -28,7 +29,7 @@ function AdminGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) return <Navigate to="login" replace />;
+  if (!user || user.isAnonymous) return <Navigate to={login} replace />;
   if (!isAdmin) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-6 bg-bg">
@@ -48,7 +49,7 @@ function AdminGate({ children }: { children: ReactNode }) {
 
 /** 사용자 PWA `/superadmin/*` 또는 standalone Admin에서 공용 */
 export function AdminApp() {
-  const routePath = useAdminRoutePath();
+  const { root, login } = useAdminRoutes();
 
   if (!isFirebaseConfigured) {
     const isProd = import.meta.env.PROD;
@@ -77,28 +78,27 @@ export function AdminApp() {
 
   return (
     <Routes>
-      <Route path={routePath}>
-        <Route path="login" element={<LoginPage />} />
-        <Route
-          element={
-            <AdminGate>
-              <AdminLayout />
-            </AdminGate>
-          }
-        >
-          <Route index element={<DashboardPage />} />
-          <Route path="monitoring" element={<MonitoringPage />} />
-          <Route path="members" element={<MembersPage />} />
-          <Route path="dreams" element={<DreamsPage />} />
-          <Route path="follow-up" element={<FollowUpPage />} />
-          <Route path="data-exposure" element={<DataExposurePage />} />
-          <Route path="ai-usage" element={<AiUsagePage />} />
-          <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
-          <Route path="settings/push" element={<PushSettingsPage />} />
-          <Route path="settings/system" element={<SystemSettingsPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to={routePath} replace />} />
+      <Route path={login} element={<LoginPage />} />
+      <Route
+        path={root}
+        element={
+          <AdminGate>
+            <AdminLayout />
+          </AdminGate>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="monitoring" element={<MonitoringPage />} />
+        <Route path="members" element={<MembersPage />} />
+        <Route path="dreams" element={<DreamsPage />} />
+        <Route path="follow-up" element={<FollowUpPage />} />
+        <Route path="data-exposure" element={<DataExposurePage />} />
+        <Route path="ai-usage" element={<AiUsagePage />} />
+        <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
+        <Route path="settings/push" element={<PushSettingsPage />} />
+        <Route path="settings/system" element={<SystemSettingsPage />} />
       </Route>
+      <Route path="*" element={<Navigate to={root} replace />} />
     </Routes>
   );
 }

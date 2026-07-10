@@ -123,10 +123,8 @@ function generateStories(
   rand: () => number,
   anchorKeyword: string,
   pack: KeywordNarrativePack,
-  interpretation: DreamInterpretation,
   count = 8,
 ): CommunityStory[] {
-  const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
   const curatedPack = getKeywordNarrativePack(anchorKeyword);
 
   return Array.from({ length: count }, (_, i) => {
@@ -135,11 +133,9 @@ function generateStories(
       curatedPack?.dreamSnippets[i % curatedPack.dreamSnippets.length] ??
       pickNeutralSceneLine(i + seededInt(rand, 0, 3));
     const dreamTitle =
-      i === 0 && clusterTitle
-        ? clusterTitle
-        : curatedPack?.titles[i % curatedPack.titles.length] ??
-          pack.titles[i % pack.titles.length] ??
-          excerptToStoryTitle(snippet);
+      curatedPack?.titles[i % curatedPack.titles.length] ??
+      pack.titles[i % pack.titles.length] ??
+      excerptToStoryTitle(snippet);
     const emotions: DreamEmotionId[] = [
       EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
       ...(rand() > 0.4
@@ -219,13 +215,7 @@ export function generateSyntheticCommunity(
     totalCount,
   );
 
-  const stories = generateStories(
-    rand,
-    anchor,
-    pack,
-    interpretation,
-    8,
-  );
+  const stories = generateStories(rand, anchor, pack, 8);
 
   const samples = stories.slice(0, 5).map((s) => ({
     title: s.dreamTitle,

@@ -13,25 +13,27 @@ import {
 } from "lucide-react";
 import { BRAND_TAGLINE } from "@/lib/branding";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
+import { useAdminRoutes } from "@admin/lib/adminRoutes";
 
 const NAV_MAIN = [
-  { to: "", label: "대시보드", icon: LayoutDashboard, end: true },
-  { to: "monitoring", label: "모니터링", icon: Activity },
-  { to: "members", label: "회원", icon: Users },
-  { to: "dreams", label: "꿈 DB", icon: Database },
-  { to: "follow-up", label: "Follow-up", icon: Waypoints },
-  { to: "data-exposure", label: "데이터 노출", icon: Sliders },
-  { to: "ai-usage", label: "AI 사용량", icon: Brain },
+  { segment: "", label: "대시보드", icon: LayoutDashboard, end: true },
+  { segment: "monitoring", label: "모니터링", icon: Activity },
+  { segment: "members", label: "회원", icon: Users },
+  { segment: "dreams", label: "꿈 DB", icon: Database },
+  { segment: "follow-up", label: "Follow-up", icon: Waypoints },
+  { segment: "data-exposure", label: "데이터 노출", icon: Sliders },
+  { segment: "ai-usage", label: "AI 사용량", icon: Brain },
 ] as const;
 
 const NAV_SETTINGS = [
-  { to: "settings/lab-metrics", label: "홈 KPI", icon: LayoutDashboard },
-  { to: "settings/push", label: "푸시", icon: Bell },
-  { to: "settings/system", label: "시스템", icon: Settings },
+  { segment: "settings/lab-metrics", label: "홈 KPI", icon: LayoutDashboard },
+  { segment: "settings/push", label: "푸시", icon: Bell },
+  { segment: "settings/system", label: "시스템", icon: Settings },
 ] as const;
 
 export function AdminSidebar() {
   const { user, logout } = useAdminAuth();
+  const { root, to } = useAdminRoutes();
 
   return (
     <aside className="admin-sidebar flex flex-col w-56 shrink-0 border-r border-border bg-surface/60 min-h-dvh">
@@ -41,8 +43,8 @@ export function AdminSidebar() {
       </div>
 
       <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
-        <NavGroup title="운영" items={NAV_MAIN} />
-        <NavGroup title="설정" items={NAV_SETTINGS} />
+        <NavGroup title="운영" items={NAV_MAIN} root={root} to={to} />
+        <NavGroup title="설정" items={NAV_SETTINGS} root={root} to={to} />
       </nav>
 
       <div className="p-3 border-t border-border space-y-2">
@@ -67,9 +69,13 @@ export function AdminSidebar() {
 function NavGroup({
   title,
   items,
+  root,
+  to,
 }: {
   title: string;
-  items: readonly { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[];
+  items: readonly { segment: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[];
+  root: string;
+  to: (segment?: string) => string;
 }) {
   return (
     <div>
@@ -78,9 +84,9 @@ function NavGroup({
       </p>
       <ul className="space-y-0.5">
         {items.map((item) => (
-          <li key={item.to}>
+          <li key={item.segment || "root"}>
             <NavLink
-              to={item.to}
+              to={item.segment ? to(item.segment) : root}
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-colors ${

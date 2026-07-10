@@ -91,7 +91,7 @@ export function useAccessPolicy(): AccessPolicy & { loading: boolean } {
 
   const isMasterPremium = isMasterAccountEmail(user?.email ?? profile?.email);
 
-  const isPremium = isMember && (Boolean(profile?.isPremium) || isMasterPremium);
+  const isPremium = isMasterPremium || (isMember && Boolean(profile?.isPremium));
 
 
 
