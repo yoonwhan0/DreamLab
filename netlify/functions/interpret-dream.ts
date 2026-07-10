@@ -428,7 +428,6 @@ function normalizeStories(
 ): ParsedInterpretation["communityEstimate"]["stories"] {
   if (!Array.isArray(raw) || raw.length === 0) return fallback;
 
-  const clusterTitle = researchAnchor?.clusterLabel?.trim();
   const anchor = extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? "꿈";
 
   const profiles = ["20대 · 여", "30대 · 남", "20대 · 남", "40대 · 여", "30대 · 여"];
@@ -458,12 +457,9 @@ function normalizeStories(
     const dreamTitleRaw = String(s.dreamTitle ?? s.title ?? `${anchor} 관련 꿈`);
     const dreamSnippetRaw = String(s.dreamSnippet ?? s.snippet ?? "");
     const dreamSnippet = repairStorySnippet(dreamSnippetRaw, i);
-    const dreamTitle =
-      i === 0 && clusterTitle
-        ? clusterTitle
-        : isTemplateStorySnippet(dreamTitleRaw)
-          ? excerptToStoryTitle(dreamSnippet)
-          : dreamTitleRaw;
+    const dreamTitle = isTemplateStorySnippet(dreamTitleRaw)
+      ? excerptToStoryTitle(dreamSnippet)
+      : dreamTitleRaw;
 
     const afterStory = ensureMultiline(String(s.afterStory ?? ""), 4);
 
@@ -502,7 +498,7 @@ function normalizeStories(
 
 
   const valid = stories
-    .map((s, i) => sanitizeAiCommunityStory(s, i, clusterTitle))
+    .map((s, i) => sanitizeAiCommunityStory(s, i, content, title))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
   return valid.length >= 1 ? valid : fallback;

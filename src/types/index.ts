@@ -183,3 +183,8 @@ export function formatDaysUntil(dueDate: Date): string {
 export function isFollowUpDue(dueDate: Date): boolean {
   return new Date() >= dueDate;
 }
+
+/** 후기 미작성이면 기간과 무관하게 작성 가능 (followUpDueAt은 푸시용) */
+export function canWriteFollowUpNow(dream: { followUp?: unknown }): boolean {
+  return !dream.followUp;
+}

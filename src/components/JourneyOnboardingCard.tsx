@@ -27,7 +27,7 @@ export function JourneyOnboardingCard({
         </FormattedBlocks>
       ) : (
         <div className="space-y-2 text-[0.9375rem] leading-relaxed text-text-secondary copy-lines">
-          <p>꿈이 저장됐습니다. 한 달 뒤 알림이 오면 실제 경험을 남겨 주세요.</p>
+          <p>꿈이 저장됐습니다. 후기는 지금 적어도 되고, 안 적으면 한 달 뒤 알림이 옵니다.</p>
           <p>당신의 답이 다음 사람의 통계가 됩니다.</p>
         </div>
       )}

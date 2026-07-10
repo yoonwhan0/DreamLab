@@ -271,9 +271,7 @@ export function FollowUpPage() {
 
 
       <p className="text-center text-xs text-text-muted">
-
-        익명 통계 · 답변 시 구독 할인 자격
-
+        익명 통계 · 미리 적어도 됩니다 · 안 적으면 30일에 알림
       </p>
 
     </div>

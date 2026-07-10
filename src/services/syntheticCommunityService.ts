@@ -1,5 +1,8 @@
-import { resolveResearchAnchor, excerptToStoryTitle } from "@/lib/dreamAnchor";
-import { pickNeutralSceneLine } from "@/lib/communityStoryQuality";
+import { resolveResearchAnchor } from "@/lib/dreamAnchor";
+import {
+  buildVariantDreamSnippet,
+  buildVariantDreamTitle,
+} from "@/lib/similarDreamVariation";
 import { getKeywordNarrativePack } from "@/lib/keywordNarratives";
 import {
   formatObservatoryId,
@@ -129,13 +132,12 @@ function generateStories(
 
   return Array.from({ length: count }, (_, i) => {
     const outcome = pickOutcome(rand, pack);
-    const snippet =
-      curatedPack?.dreamSnippets[i % curatedPack.dreamSnippets.length] ??
-      pickNeutralSceneLine(i + seededInt(rand, 0, 3));
-    const dreamTitle =
-      curatedPack?.titles[i % curatedPack.titles.length] ??
-      pack.titles[i % pack.titles.length] ??
-      excerptToStoryTitle(snippet);
+    const snippet = curatedPack
+      ? curatedPack.dreamSnippets[i % curatedPack.dreamSnippets.length]!
+      : buildVariantDreamSnippet(anchorKeyword, i);
+    const dreamTitle = curatedPack
+      ? curatedPack.titles[i % curatedPack.titles.length]!
+      : pack.titles[i % pack.titles.length] ?? buildVariantDreamTitle(anchorKeyword, i);
     const emotions: DreamEmotionId[] = [
       EMOTION_POOL[seededInt(rand, 0, EMOTION_POOL.length - 1)],
       ...(rand() > 0.4
@@ -302,7 +304,7 @@ export function estimateToStats(estimate: CommunityEstimate): DreamStats {
 export function previewCommunityForKeyword(keyword: string) {
   const anchor = keyword.trim() || "꿈";
   const pack = resolveNarrativePack(anchor);
-  const content = `"${anchor}"이(가) 떠오르는 꿈을 여러 번 꾼 것 같아요. 장면은 사람마다 다르지만 비슷한 분위기로 기록해 두었어요.`;
+  const content = `"${anchor}"이(가) 떠오르는 꿈을 여러 사람이 비슷한 결로 기록해 두었어요. 장면은 각자 달랐습니다.`;
   const interpretation: DreamInterpretation = {
     usualTake: "",
     symbol: "",

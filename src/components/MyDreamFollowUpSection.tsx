@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import { EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedText } from "@/components/ui/FormattedText";
-import { formatDaysUntil, isFollowUpDue, OUTCOME_CATEGORIES, type Dream } from "@/types";
+import {
+  canWriteFollowUpNow,
+  formatDaysUntil,
+  isFollowUpDue,
+  OUTCOME_CATEGORIES,
+  type Dream,
+} from "@/types";
 
 interface MyDreamFollowUpSectionProps {
   dream: Dream;
@@ -10,24 +16,25 @@ interface MyDreamFollowUpSectionProps {
 
 /** 내 꿈 상세 — 30일 여정·내 후기 (커뮤니티/탐색과 분리) */
 export function MyDreamFollowUpSection({ dream, dreamId }: MyDreamFollowUpSectionProps) {
-  const due = isFollowUpDue(dream.followUpDueAt);
   const answered = Boolean(dream.followUp);
+  const canWrite = canWriteFollowUpNow(dream);
+  const due = isFollowUpDue(dream.followUpDueAt);
 
   return (
     <section className="card-highlight p-5 space-y-4">
       <div>
         <p className="section-label">내 30일 여정</p>
         <h3 className="mt-1 text-base font-semibold text-text">
-          {answered
-            ? "한 달 뒤, 내가 남긴 후기"
-            : due
-              ? "지금 후기를 남길 수 있어요"
-              : `아직 ${formatDaysUntil(dream.followUpDueAt)}`}
+          {answered ? "한 달 뒤, 내가 남긴 후기" : "지금 후기를 남길 수 있어요"}
         </h3>
-        {!answered && !due && (
+        {canWrite && (
           <p className="mt-1 text-sm text-text-secondary leading-relaxed">
-            알림이 오면 그때 현실에서 어떤 일이 있었는지 적어 주세요. 이 기록은{" "}
-            <strong className="text-text font-medium">내 아카이브</strong>에만 남습니다.
+            미리 적어도 됩니다. 아직 안 적었다면{" "}
+            <span className="text-text font-medium">
+              {due ? "알림이 왔거나 곧 옵니다" : `${formatDaysUntil(dream.followUpDueAt)} 알림`}
+            </span>
+            이 옵니다. 이 기록은 <strong className="text-text font-medium">내 아카이브</strong>
+            에만 남습니다.
           </p>
         )}
       </div>
@@ -47,16 +54,11 @@ export function MyDreamFollowUpSection({ dream, dreamId }: MyDreamFollowUpSectio
           </FormattedText>
           <EmotionIconGroup ids={dream.followUp.emotions} size="sm" />
         </div>
-      ) : due ? (
+      ) : canWrite ? (
         <Link to={`/follow-up/${dreamId}`} className="btn-primary !normal-case !tracking-normal">
           그 꿈 이후, 어떤 일이 있었나요?
         </Link>
-      ) : (
-        <p className="text-sm text-text-muted text-center py-2">
-          남의 후기가 아니라, <span className="text-text-secondary">내 한 달 뒤</span>를 기다리는
-          중이에요.
-        </p>
-      )}
+      ) : null}
     </section>
   );
 }

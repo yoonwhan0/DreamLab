@@ -3,11 +3,11 @@ import { DreamJourneyStepper } from "@/components/DreamJourneyStepper";
 import { AppLink } from "@/components/ui/AppLink";
 import { EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedText } from "@/components/ui/FormattedText";
-import { OUTCOME_CATEGORIES, isFollowUpDue, type Dream } from "@/types";
+import { OUTCOME_CATEGORIES, canWriteFollowUpNow, type Dream } from "@/types";
 
 export function DreamArchiveCard({ dream }: { dream: Dream }) {
   const answered = Boolean(dream.followUp);
-  const due = isFollowUpDue(dream.followUpDueAt);
+  const canWrite = canWriteFollowUpNow(dream);
 
   return (
     <article className="card card-bezel p-4 space-y-3">
@@ -56,18 +56,19 @@ export function DreamArchiveCard({ dream }: { dream: Dream }) {
             </span>
           </div>
         </div>
-      ) : due ? (
-        <Link
-          to={`/follow-up/${dream.id}`}
-          className="btn-primary !min-h-[2.75rem] text-sm !normal-case !tracking-normal"
-        >
-          한 달이 지났어요 — 후기 남기기
-        </Link>
-      ) : (
-        <p className="text-xs text-text-muted text-center py-1">
-          30일 뒤 알림 후, 여기에 내 후기가 쌓입니다
-        </p>
-      )}
+      ) : canWrite ? (
+        <div className="space-y-1.5">
+          <Link
+            to={`/follow-up/${dream.id}`}
+            className="btn-primary !min-h-[2.75rem] text-sm !normal-case !tracking-normal"
+          >
+            후기 남기기
+          </Link>
+          <p className="text-[0.6875rem] text-text-muted text-center">
+            미리 적어도 OK · 안 적으면 30일에 알림
+          </p>
+        </div>
+      ) : null}
     </article>
   );
 }

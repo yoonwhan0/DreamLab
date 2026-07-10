@@ -18,21 +18,17 @@ export function DreamJourneyStepper({
   const progress = answered ? 100 : getJourneyProgress(createdAt, followUpDueAt);
   const badge = formatDaysBadge(followUpDueAt, answered);
 
-  const step2Label = answered
-    ? "답변 완료"
-    : due
-      ? "답변 가능"
-      : "대기";
+  const step2Label = answered ? "답변 완료" : "작성 가능";
 
   if (compact) {
     return (
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium text-primary tabular-nums">
-            {answered ? "✓ 완료" : due ? "⏳ 답변 가능" : `⏳ ${badge}`}
+            {answered ? "✓ 완료" : due ? "⏳ 알림 도착" : `⏳ ${badge} · 작성 가능`}
           </span>
-          {!answered && !due && (
-            <span className="text-[0.6875rem] text-text-muted">30일 여정</span>
+          {!answered && (
+            <span className="text-[0.6875rem] text-text-muted">30일 알림</span>
           )}
         </div>
         {!answered && (
@@ -60,7 +56,7 @@ export function DreamJourneyStepper({
       <div className="flex items-center gap-1 text-[0.6875rem] font-medium">
         <StepDot done label="기록" />
         <StepLine progress={progress} />
-        <StepDot active={!answered && !due} done={due || answered} label={step2Label} />
+        <StepDot active={!answered} done={answered} label={step2Label} />
         <StepLine progress={answered ? 100 : due ? 50 : 0} />
         <StepDot done={answered} locked={!answered} label="결과" />
       </div>
