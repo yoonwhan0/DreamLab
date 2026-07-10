@@ -57,6 +57,11 @@ export const PAGE_COPY = {
     title: "전체 아카이브",
     desc: "기록한 꿈을 시간순으로 모두 봅니다.",
   },
+  about: {
+    label: "DreamLab",
+    title: "우리는 어떤 것을 연구하나",
+    desc: "꿈의 결말을 데이터로 모읍니다. 해몽 너머, 한 달 뒤를 관측합니다.",
+  },
 } as const;
 
 export const SERVICE_PROMISE = BRAND_MANIFESTO;

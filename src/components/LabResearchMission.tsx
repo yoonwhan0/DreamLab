@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { BRAND_CLOSING, BRAND_MANIFESTO, BRAND_TAGLINE } from "@/lib/branding";
 import { ContributionGrid } from "@/components/ContributionGrid";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
@@ -22,57 +21,42 @@ const RESEARCH_TOPICS = [
   },
 ] as const;
 
-/** 마이 · 홈 — 「우리는 어떤 것을 연구하나」 */
-export function LabResearchMission({ defaultOpen = false }: { defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
+/** 연구소 소개 본문 — /about 전용 페이지 */
+export function LabResearchMissionBody() {
   const { stats } = useLiveLabMetrics();
 
   return (
-    <div className="card card-bezel overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full px-4 py-3.5 text-left flex items-center justify-between gap-2 hover:bg-surface-2/50 transition-colors"
-        aria-expanded={open}
-      >
-        <span className="text-sm font-semibold text-text">우리는 어떤 것을 연구하나</span>
-        <span className="text-xs text-text-muted shrink-0">{open ? "접기 ▲" : "펼치기 ▼"}</span>
-      </button>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
+        <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
+          {BRAND_MANIFESTO}
+        </p>
+      </div>
 
-      {open && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/60 motion-accordion-open">
-          <div className="pt-3 space-y-2">
-            <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
-            <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
-              {BRAND_MANIFESTO}
+      <ul className="space-y-2">
+        {RESEARCH_TOPICS.map((item) => (
+          <li
+            key={item.title}
+            className="rounded-lg border border-border bg-surface-2/80 px-3 py-2.5"
+          >
+            <p className="text-xs font-semibold text-primary">{item.title}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-text-secondary leading-relaxed">
+              {item.body}
             </p>
-          </div>
+          </li>
+        ))}
+      </ul>
 
-          <ul className="space-y-2">
-            {RESEARCH_TOPICS.map((item) => (
-              <li
-                key={item.title}
-                className="rounded-lg border border-border bg-surface-2/80 px-3 py-2.5"
-              >
-                <p className="text-xs font-semibold text-primary">{item.title}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-text-secondary leading-relaxed">
-                  {item.body}
-                </p>
-              </li>
-            ))}
-          </ul>
-
-          <div className="rounded-xl border border-primary/20 bg-primary-soft/15 p-3 space-y-2">
-            <p className="text-[0.625rem] font-semibold text-text-muted uppercase tracking-wider text-center">
-              전체 관측 밀도
-            </p>
-            <ContributionGrid grid={stats.contributionGrid} />
-            <p className="text-[0.6875rem] text-text-muted text-center">
-              {stats.totalDreams.toLocaleString()}건 기록 · {BRAND_CLOSING}
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="rounded-xl border border-primary/20 bg-primary-soft/15 p-3 space-y-2">
+        <p className="text-[0.625rem] font-semibold text-text-muted uppercase tracking-wider text-center">
+          전체 관측 밀도
+        </p>
+        <ContributionGrid grid={stats.contributionGrid} />
+        <p className="text-[0.6875rem] text-text-muted text-center">
+          {stats.totalDreams.toLocaleString()}건 기록 · {BRAND_CLOSING}
+        </p>
+      </div>
     </div>
   );
 }

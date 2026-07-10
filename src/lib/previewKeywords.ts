@@ -66,6 +66,30 @@ function daySeed(): number {
   return hashSeed(`${y}-${m}-${d}-preview`);
 }
 
+/** 홈 키워드 칩 개수 */
+export const HOME_KEYWORD_BADGE_COUNT = 12;
+
+/** 탐색 검색 칩 개수 */
+export const EXPLORE_KEYWORD_CHIP_COUNT = 20;
+
+/** 탐색 미리보기(후기 카드) 개수 */
+export const EXPLORE_DISCOVER_PREVIEW_COUNT = 6;
+
+export function shuffleKeywordPool(
+  pool: string[],
+  count: number,
+  rng: () => number = Math.random,
+): string[] {
+  const unique = [...new Set(pool.map((k) => k.trim()).filter(Boolean))];
+  const copy = [...unique];
+  const picked: string[] = [];
+  while (picked.length < count && copy.length > 0) {
+    const idx = Math.floor(rng() * copy.length);
+    picked.push(copy.splice(idx, 1)[0]!);
+  }
+  return picked;
+}
+
 function pickFromPool(pool: string[], count: number, random: boolean): string[] {
   const copy = [...pool];
   const picked: string[] = [];

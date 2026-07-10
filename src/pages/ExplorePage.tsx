@@ -16,6 +16,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { SurvivalRate } from "@/components/SurvivalRate";
 import { AppIcons, Icon } from "@/components/ui/Icon";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { useFeaturedKeywords } from "@/hooks/useFeaturedKeywords";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { resolveCommunityData } from "@/services/communityDataService";
 import { interpretDream } from "@/services/interpretService";
@@ -38,7 +39,7 @@ import {
 } from "@/services/storyUnlockService";
 import type { DreamStats, SimilarDreamSummary, StoryKeywordAccess } from "@/types";
 import {
-  POPULAR_SEARCHES,
+  EXPLORE_KEYWORD_CHIP_COUNT,
   provocativeSearchPlaceholder,
   previewKeywordLabel,
 } from "@/lib/previewKeywords";
@@ -66,6 +67,7 @@ function applyInstantEstimate(keyword: string) {
 export function ExplorePage() {
   const access = useAccessPolicy();
   const { openPremiumSheet } = usePremiumSheet();
+  const exploreKeywords = useFeaturedKeywords(EXPLORE_KEYWORD_CHIP_COUNT);
   const [searchParams] = useSearchParams();
   const [placeholder] = useState(provocativeSearchPlaceholder);
 
@@ -263,9 +265,9 @@ export function ExplorePage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {POPULAR_SEARCHES.map((term) => (
+        {exploreKeywords.map((term, index) => (
           <button
-            key={term}
+            key={`${term}-${index}`}
             type="button"
             onClick={() => void runSearch(term)}
             className="chip hover:bg-surface-3"

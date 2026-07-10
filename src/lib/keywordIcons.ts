@@ -45,4 +45,3 @@ export function getKeywordIcon(keyword: string): string {
   return "✨";
 }
 
-export const HOME_FEATURED_KEYWORDS = ["뱀", "죽은 사람", "임신", "시험"] as const;

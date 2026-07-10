@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
+import { useFeaturedKeywords } from "@/hooks/useFeaturedKeywords";
 import { getKeywordIcon } from "@/lib/keywordIcons";
 import { inferCategoryFromKeyword } from "@/lib/keywordNarratives";
 import {
-  EXPLORE_DISCOVER_KEYWORDS,
+  EXPLORE_DISCOVER_PREVIEW_COUNT,
   previewKeywordLabel,
 } from "@/lib/previewKeywords";
 import {
@@ -21,10 +22,11 @@ interface ExploreDiscoverSectionProps {
 /** 탐색 — 검색 전 여러 키워드 후기·통계 맛보기 */
 export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSectionProps) {
   const access = useAccessPolicy();
+  const discoverKeywords = useFeaturedKeywords(EXPLORE_DISCOVER_PREVIEW_COUNT);
 
   const items = useMemo(
     () =>
-      EXPLORE_DISCOVER_KEYWORDS.map((keyword) => {
+      discoverKeywords.map((keyword) => {
         const estimate = previewCommunityForKeyword(keyword);
         return {
           keyword,
@@ -34,7 +36,7 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
           summary: estimateToSummary(estimate, inferCategoryFromKeyword(keyword)),
         };
       }).filter((item) => item.estimate.stories[0]),
-    [],
+    [discoverKeywords],
   );
 
   if (items.length === 0) return null;
@@ -52,8 +54,8 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
         </p>
       </div>
 
-      {items.map(({ keyword, label, estimate, stats, summary }) => (
-        <article key={keyword} className="space-y-3">
+      {items.map(({ keyword, label, estimate, stats, summary }, index) => (
+        <article key={`${keyword}-${index}`} className="space-y-3">
           <button
             type="button"
             onClick={() => onSelectKeyword(keyword)}

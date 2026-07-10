@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { AppLink } from "@/components/ui/AppLink";
 import { CuriosityTease } from "@/components/CuriosityTease";
 import { HomeFeaturedStoryPanel } from "@/components/HomeFeaturedStoryPanel";
@@ -8,20 +8,23 @@ import { PageHero } from "@/components/ui/PageHero";
 import { CTA_WRITE_DREAM } from "@/lib/branding";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
-import { HOME_FEATURED_KEYWORDS, getKeywordIcon } from "@/lib/keywordIcons";
-import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
+import { useHomeFeaturedKeywords } from "@/hooks/useHomeFeaturedKeywords";
+import { getKeywordIcon } from "@/lib/keywordIcons";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
-
-const homePreviews = HOME_FEATURED_KEYWORDS.map((keyword) => ({
-  keyword,
-  label: previewKeywordLabel(keyword),
-  data: previewCommunityForKeyword(keyword),
-}));
+import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
 
 export function HomePage() {
   const access = useAccessPolicy();
-  const [activeIdx, setActiveIdx] = useState(0);
-  const active = homePreviews[activeIdx] ?? homePreviews[0]!;
+  const { keywords, activeIdx, setActiveIdx } = useHomeFeaturedKeywords();
+  const activeKeyword = keywords[activeIdx] ?? keywords[0];
+  const activePreview = useMemo(() => {
+    if (!activeKeyword) return null;
+    return {
+      keyword: activeKeyword,
+      label: previewKeywordLabel(activeKeyword),
+      data: previewCommunityForKeyword(activeKeyword),
+    };
+  }, [activeKeyword]);
   const hero = PAGE_COPY.home;
 
   return (
@@ -51,29 +54,29 @@ export function HomePage() {
         <div className="space-y-2.5">
           <p className="text-xs text-text-muted px-1">이런 꿈, 한 달 뒤는?</p>
           <div className="flex flex-wrap gap-2">
-            {homePreviews.map((p, i) => (
+            {keywords.map((keyword, i) => (
               <button
-                key={p.keyword}
+                key={`${keyword}-${i}`}
                 type="button"
                 onClick={() => setActiveIdx(i)}
                 className={`chip ${i === activeIdx ? "chip-primary" : ""}`}
               >
                 <span className="mr-1" aria-hidden>
-                  {getKeywordIcon(p.keyword)}
+                  {getKeywordIcon(keyword)}
                 </span>
-                {p.keyword}
+                {keyword}
               </button>
             ))}
           </div>
         </div>
       </Reveal>
 
-      {active.data.stories[0] && (
+      {activePreview?.data.stories[0] && (
         <Reveal delay={120}>
           <HomeFeaturedStoryPanel
-            keyword={active.keyword}
-            label={active.label}
-            estimate={active.data}
+            keyword={activePreview.keyword}
+            label={activePreview.label}
+            estimate={activePreview.data}
           />
         </Reveal>
       )}

@@ -27,6 +27,7 @@ import { FollowUpPage } from "@/pages/FollowUpPage";
 import { MyDreamsPage } from "@/pages/MyDreamsPage";
 
 import { ExplorePage } from "@/pages/ExplorePage";
+import { AboutPage } from "@/pages/AboutPage";
 import { MyPage } from "@/pages/MyPage";
 
 
@@ -72,6 +73,7 @@ export default function App() {
                         }
                       />
                       <Route path="/explore" element={<ExplorePage />} />
+                      <Route path="/about" element={<AboutPage />} />
                       <Route path="/my" element={<MyPage />} />
                       <Route path="/premium" element={<Navigate to="/my#pricing" replace />} />
                       <Route path="*" element={<Navigate to="/" replace />} />

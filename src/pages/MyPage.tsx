@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { DreamArchiveCalendar } from "@/components/DreamArchiveCalendar";
 import { DreamArchiveCard } from "@/components/DreamArchiveCard";
 import { CuriosityTease } from "@/components/CuriosityTease";
-import { LabResearchMission } from "@/components/LabResearchMission";
+import { LabResearchMissionTeaser } from "@/components/LabResearchMissionTeaser";
 import { MyDreamFortuneSection } from "@/components/MyDreamFortuneSection";
 import { MyPricingSection } from "@/components/MyPricingSection";
 import { ConversionGate } from "@/components/ConversionGate";
@@ -110,7 +110,7 @@ export function MyPage() {
         <MyDreamFortuneSection dreams={dreams} />
       )}
 
-      <LabResearchMission />
+      <LabResearchMissionTeaser />
 
       <MyPricingSection />
 

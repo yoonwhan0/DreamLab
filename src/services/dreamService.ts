@@ -32,6 +32,7 @@ const USERS = "users";
 
 /** Firestore 읽기 비용 절감 — 유사 꿈 검색 상한 */
 const SIMILAR_DREAM_QUERY_LIMIT = 30;
+const POPULAR_KEYWORD_QUERY_LIMIT = 500;
 
 function dreamFromDoc(id: string, data: DocumentData): Dream {
   return {
@@ -192,6 +193,46 @@ export async function updateDreamInterpretation(
     category: interpretation.category,
     reinterpretedAt: Timestamp.now(),
   });
+}
+
+/** 공개 꿈 DB에서 키워드 빈도 집계 — 홈 칩 등 */
+export async function fetchPopularDreamKeywords(topPool = 48): Promise<string[]> {
+  if (!db || !isFirebaseConfigured) return [];
+
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, DREAMS),
+        where("isPublic", "==", true),
+        limit(POPULAR_KEYWORD_QUERY_LIMIT),
+      ),
+    );
+
+    const counts: Record<string, number> = {};
+    for (const dreamDoc of snap.docs) {
+      const data = dreamDoc.data();
+      const fromTop = Array.isArray(data.keywords) ? data.keywords : [];
+      const fromInterp = Array.isArray(data.interpretation?.keywords)
+        ? data.interpretation.keywords
+        : [];
+      const merged = [...fromTop, ...fromInterp];
+      const seen = new Set<string>();
+      for (const raw of merged) {
+        if (typeof raw !== "string") continue;
+        const kw = raw.trim();
+        if (kw.length < 2 || seen.has(kw)) continue;
+        seen.add(kw);
+        counts[kw] = (counts[kw] ?? 0) + 1;
+      }
+    }
+
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, topPool)
+      .map(([keyword]) => keyword);
+  } catch {
+    return [];
+  }
 }
 
 export async function findSimilarDreams(
