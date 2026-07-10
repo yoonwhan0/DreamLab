@@ -62,7 +62,7 @@ FIREBASE_PRIVATE_KEY              # JSON private_key 문자열만, \n 이스케�
 
 ```bash
 firebase login
-firebase use dreamlab-b6a8e   # 프로젝트 ID
+firebase use <프로젝트_ID>   # firebase use --add 로 선택
 npm run deploy:rules          # firestore:rules
 firebase deploy --only firestore:indexes
 firebase deploy --only functions   # Blaze — 30일 푸시

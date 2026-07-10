@@ -49,7 +49,7 @@
 [build.environment]
   NODE_VERSION = "20"
   # Firebase 웹 SDK는 클라이언트 공개 설정 — dist·SW 번들에 포함됨
-  SECRETS_SCAN_OMIT_PATHS = "dist/**,dist-admin/**,public/firebase-messaging-sw.js"
+  SECRETS_SCAN_OMIT_PATHS = "dist/**,dist-admin/**,public/firebase-messaging-sw.js,doc/**"
   SECRETS_SCAN_OMIT_KEYS = "VITE_FIREBASE_API_KEY,VITE_FIREBASE_AUTH_DOMAIN,VITE_FIREBASE_PROJECT_ID,VITE_FIREBASE_STORAGE_BUCKET,VITE_FIREBASE_MESSAGING_SENDER_ID,VITE_FIREBASE_APP_ID"
 
 [functions]
