@@ -4,12 +4,12 @@ importScripts(
 );
 
 firebase.initializeApp({
-  "apiKey": "PLACEHOLDER",
-  "authDomain": "PLACEHOLDER",
-  "projectId": "PLACEHOLDER",
-  "storageBucket": "PLACEHOLDER",
-  "messagingSenderId": "PLACEHOLDER",
-  "appId": "PLACEHOLDER"
+  "apiKey": "AIzaSyA57MTJol_qYwSISORpU94oIn79Yan7H6o",
+  "authDomain": "dreamlab-b6a8e.firebaseapp.com",
+  "projectId": "dreamlab-b6a8e",
+  "storageBucket": "dreamlab-b6a8e.firebasestorage.app",
+  "messagingSenderId": "522912633577",
+  "appId": "1:522912633577:web:95de2ee62b03f519cbd678"
 });
 
 const messaging = firebase.messaging();

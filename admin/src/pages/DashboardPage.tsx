@@ -117,25 +117,25 @@ export function DashboardPage() {
           <h3 className="text-sm font-semibold">빠른 링크</h3>
           <ul className="text-sm space-y-1.5 text-text-secondary">
             <li>
-              <Link to="/data-exposure" className="text-primary hover:underline">
+              <Link to="data-exposure" className="text-primary hover:underline">
                 데이터 노출 정책
               </Link>{" "}
               — 오가닉/합성/AI 블렌드
             </li>
             <li>
-              <Link to="/settings/push" className="text-primary hover:underline">
+              <Link to="settings/push" className="text-primary hover:underline">
                 푸시 설정
               </Link>{" "}
               — 마일스톤 {followUpPush?.milestonesDays.join("·") ?? "30"}일
             </li>
             <li>
-              <Link to="/ai-usage" className="text-primary hover:underline">
+              <Link to="ai-usage" className="text-primary hover:underline">
                 AI 사용량
               </Link>{" "}
               — interpret-dream 호출 추적
             </li>
             <li>
-              <Link to="/settings/lab-metrics" className="text-primary hover:underline">
+              <Link to="settings/lab-metrics" className="text-primary hover:underline">
                 홈 KPI
               </Link>{" "}
               — 합성 숫자·LIVE 속도

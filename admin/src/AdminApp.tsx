@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { useAdminRoutePath } from "@admin/hooks/useAdminRoutePath";
 import { AdminLayout } from "@admin/layout/AdminLayout";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 import { LoginPage } from "@admin/pages/LoginPage";
@@ -47,6 +48,8 @@ function AdminGate({ children }: { children: ReactNode }) {
 
 /** 사용자 PWA `/superadmin/*` 또는 standalone Admin에서 공용 */
 export function AdminApp() {
+  const routePath = useAdminRoutePath();
+
   if (!isFirebaseConfigured) {
     const isProd = import.meta.env.PROD;
     return (
@@ -74,26 +77,28 @@ export function AdminApp() {
 
   return (
     <Routes>
-      <Route path="login" element={<LoginPage />} />
-      <Route
-        element={
-          <AdminGate>
-            <AdminLayout />
-          </AdminGate>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="monitoring" element={<MonitoringPage />} />
-        <Route path="members" element={<MembersPage />} />
-        <Route path="dreams" element={<DreamsPage />} />
-        <Route path="follow-up" element={<FollowUpPage />} />
-        <Route path="data-exposure" element={<DataExposurePage />} />
-        <Route path="ai-usage" element={<AiUsagePage />} />
-        <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
-        <Route path="settings/push" element={<PushSettingsPage />} />
-        <Route path="settings/system" element={<SystemSettingsPage />} />
+      <Route path={routePath}>
+        <Route path="login" element={<LoginPage />} />
+        <Route
+          element={
+            <AdminGate>
+              <AdminLayout />
+            </AdminGate>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="monitoring" element={<MonitoringPage />} />
+          <Route path="members" element={<MembersPage />} />
+          <Route path="dreams" element={<DreamsPage />} />
+          <Route path="follow-up" element={<FollowUpPage />} />
+          <Route path="data-exposure" element={<DataExposurePage />} />
+          <Route path="ai-usage" element={<AiUsagePage />} />
+          <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
+          <Route path="settings/push" element={<PushSettingsPage />} />
+          <Route path="settings/system" element={<SystemSettingsPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to={routePath} replace />} />
       </Route>
-      <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   );
 }

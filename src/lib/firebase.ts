@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { enableIndexedDbPersistence, getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 import { getMessaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
@@ -19,13 +19,9 @@ export const isFirebaseConfigured = Boolean(
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
-
-if (db && typeof window !== "undefined") {
-  enableIndexedDbPersistence(db).catch(() => {
-    // 멀티탭 등으로 실패해도 앱은 동작
-  });
-}
+export const db = app
+  ? initializeFirestore(app, { localCache: persistentLocalCache() })
+  : null;
 
 export async function getMessagingInstance() {
   if (!app) return null;
