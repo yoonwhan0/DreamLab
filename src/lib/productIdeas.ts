@@ -30,7 +30,7 @@ export const PAGE_COPY = {
   },
   explore: {
     title: "패턴 탐색",
-    desc: "같은 꿈을 꾼 사람들 — 몇 명이었고, 한 달 뒤 몇 %가 결말을 남겼는지. 일부만 공개됩니다.",
+    desc: "비슷한 꿈을 꾼 사람들이 한 달 뒤에 남긴 기록을 봅니다.",
   },
   write: {
     title: "관측 기록",
