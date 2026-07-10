@@ -7,15 +7,8 @@ import { AdminLayout } from "@admin/layout/AdminLayout";
 import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 import { LoginPage } from "@admin/pages/LoginPage";
 import { DashboardPage } from "@admin/pages/DashboardPage";
-import { MonitoringPage } from "@admin/pages/MonitoringPage";
 import { MembersPage } from "@admin/pages/MembersPage";
 import { DreamsPage } from "@admin/pages/DreamsPage";
-import { FollowUpPage } from "@admin/pages/FollowUpPage";
-import { DataExposurePage } from "@admin/pages/DataExposurePage";
-import { AiUsagePage } from "@admin/pages/AiUsagePage";
-import { PushSettingsPage } from "@admin/pages/PushSettingsPage";
-import { LabMetricsPage } from "@admin/pages/LabMetricsPage";
-import { SystemSettingsPage } from "@admin/pages/SystemSettingsPage";
 import { StatusBanner } from "@admin/components/AdminUi";
 
 function AdminGate({ children }: { children: ReactNode }) {
@@ -63,15 +56,9 @@ function AdminShellRoutes() {
       }
     >
       <Route index element={<DashboardPage />} />
-      <Route path="monitoring" element={<MonitoringPage />} />
       <Route path="members" element={<MembersPage />} />
       <Route path="dreams" element={<DreamsPage />} />
-      <Route path="follow-up" element={<FollowUpPage />} />
-      <Route path="data-exposure" element={<DataExposurePage />} />
-      <Route path="ai-usage" element={<AiUsagePage />} />
-      <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
-      <Route path="settings/push" element={<PushSettingsPage />} />
-      <Route path="settings/system" element={<SystemSettingsPage />} />
+      <Route path="*" element={<Navigate to="." replace />} />
     </Route>
   );
 
@@ -90,22 +77,16 @@ function AdminShellRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<AdminGate><AdminLayout /></AdminGate>}>
         <Route index element={<DashboardPage />} />
-        <Route path="monitoring" element={<MonitoringPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="dreams" element={<DreamsPage />} />
-        <Route path="follow-up" element={<FollowUpPage />} />
-        <Route path="data-exposure" element={<DataExposurePage />} />
-        <Route path="ai-usage" element={<AiUsagePage />} />
-        <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
-        <Route path="settings/push" element={<PushSettingsPage />} />
-        <Route path="settings/system" element={<SystemSettingsPage />} />
+        <Route path="*" element={<Navigate to={root} replace />} />
       </Route>
       <Route path="*" element={<Navigate to={root} replace />} />
     </Routes>
   );
 }
 
-/** 사용자 PWA `/superadmin/*` 또는 standalone Admin에서 공용 */
+/** 사용자 PWA `/superadmin/*` — 대시보드 · 회원 · 꿈 DB */
 export function AdminApp() {
   if (!isFirebaseConfigured) {
     const isProd = import.meta.env.PROD;
@@ -117,14 +98,13 @@ export function AdminApp() {
           </StatusBanner>
           {isProd ? (
             <p>
-              Netlify → Environment variables → <code>VITE_FIREBASE_*</code> 6개 +
-              <code> VITE_DEMO_MODE=false</code> (Scope: <strong>Builds</strong>) 저장 후{" "}
-              <strong>Redeploy</strong> 하세요.
+              Netlify → Environment variables → <code>VITE_FIREBASE_*</code> 저장 후 Redeploy
+              하세요.
             </p>
           ) : (
             <p>
-              프로젝트 루트 <code>.env</code>에 Firebase 웹 설정을 넣고{" "}
-              <code>npm run dev</code>를 다시 실행하세요.
+              프로젝트 루트 <code>.env</code>에 Firebase 웹 설정을 넣고 dev 서버를 다시
+              실행하세요.
             </p>
           )}
         </div>

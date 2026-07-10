@@ -41,11 +41,15 @@ export async function fetchKpiSnapshot(): Promise<KpiSnapshot | null> {
 
   let anonymousUsers = 0;
   let premiumUsers = 0;
+  let memberUsers = 0;
 
   usersSnap.docs.forEach((d) => {
     const data = d.data();
-    if (data.isAnonymous === true) anonymousUsers += 1;
-    if (data.isPremium === true) premiumUsers += 1;
+    const isAnonymous = data.isAnonymous === true;
+    const isPremium = data.isPremium === true;
+    if (isAnonymous) anonymousUsers += 1;
+    else if (isPremium) premiumUsers += 1;
+    else memberUsers += 1;
   });
 
   let dreamsToday = 0;
@@ -78,6 +82,7 @@ export async function fetchKpiSnapshot(): Promise<KpiSnapshot | null> {
     computedAt: new Date(),
     totalUsers: usersSnap.size,
     anonymousUsers,
+    memberUsers,
     premiumUsers,
     totalDreams,
     dreamsToday,

@@ -136,6 +136,8 @@ export interface KpiSnapshot {
   computedAt: Date;
   totalUsers: number;
   anonymousUsers: number;
+  /** 가입 회원 (익명·프리미엄 제외) */
+  memberUsers: number;
   premiumUsers: number;
   totalDreams: number;
   dreamsToday: number;

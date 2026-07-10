@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { ConversionGate } from "@/components/ConversionGate";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
 import { LoadingPulse } from "@/components/motion/LoadingPulse";
+import { AiWritingPulse } from "@/components/motion/AiWritingPulse";
+import { withMinimumDelay } from "@/lib/minimumDelay";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
 import { PageHero } from "@/components/ui/PageHero";
 import { PAGE_COPY } from "@/lib/productIdeas";
@@ -48,6 +50,9 @@ function buildExploreDreamContent(query: string): string {
   if (q.length >= 40) return q;
   return `"${q}"이(가) 떠오르는 꿈을 여러 번 꾼 것 같아요. 장면은 사람마다 다르지만 비슷한 분위기로 기록해 두었어요.`;
 }
+
+/** AI가 너무 즉시 끝나지 않게 — 작성 연출 최소 시간 */
+const AI_WRITING_MIN_MS = 2200;
 
 function applyInstantEstimate(keyword: string) {
   const estimate = previewCommunityForKeyword(keyword);
@@ -115,24 +120,32 @@ export function ExplorePage() {
     setIsSyncing(true);
 
     try {
-      const dreamContent = buildExploreDreamContent(q);
       const skipAi = Boolean(accessState?.aiBlocked);
-      const { interpretation, embedding, communityEstimate } = await interpretDream(
-        q,
-        dreamContent,
-        { skipAi },
+
+      const loadAi = async () => {
+        const dreamContent = buildExploreDreamContent(q);
+        const { interpretation, embedding, communityEstimate } = await interpretDream(
+          q,
+          dreamContent,
+          { skipAi },
+        );
+
+        if (gen !== searchGenRef.current) return null;
+
+        return resolveCommunityData(interpretation, {
+          embedding,
+          title: q,
+          content: dreamContent,
+          estimate: communityEstimate,
+        });
+      };
+
+      const community = await withMinimumDelay(
+        loadAi(),
+        skipAi ? 0 : AI_WRITING_MIN_MS,
       );
 
-      if (gen !== searchGenRef.current) return;
-
-      const community = await resolveCommunityData(interpretation, {
-        embedding,
-        title: q,
-        content: dreamContent,
-        estimate: communityEstimate,
-      });
-
-      if (gen !== searchGenRef.current) return;
+      if (gen !== searchGenRef.current || !community) return;
 
       if (access.isMember) {
         setSummary(community.summary);
@@ -289,13 +302,14 @@ export function ExplorePage() {
       )}
 
       {hasSearched && summary && stats && activeQuery && (
-        <div className="space-y-4">
+        <div className={`space-y-4 ${isSyncing ? "" : "explore-ai-reveal"}`}>
           {access.isMember && !access.isPremium && <MemberUnlockBanner />}
 
           {isSyncing && (
-            <p className="text-xs text-text-muted text-center">최신 기록을 불러오는 중…</p>
+            <AiWritingPulse keyword={displayKeyword} />
           )}
 
+          <div className={isSyncing ? "explore-ai-syncing space-y-4" : "space-y-4"}>
           {storyAccess?.aiBlocked && !access.isPremium && (
             <p className="text-xs text-center text-text-muted card p-3">
               이 키워드는 무료 4건 열람 기록이 저장되어 AI 재생성 없이 캐시·합성 데이터를
@@ -449,6 +463,7 @@ export function ExplorePage() {
               </div>
             </div>
           )}
+          </div>
         </div>
       )}
 
