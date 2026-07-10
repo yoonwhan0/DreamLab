@@ -58,7 +58,7 @@ function AdminShellRoutes() {
       <Route index element={<DashboardPage />} />
       <Route path="members" element={<MembersPage />} />
       <Route path="dreams" element={<DreamsPage />} />
-      <Route path="*" element={<Navigate to="." replace />} />
+      <Route path="*" element={<Navigate to={embedded ? ADMIN_ENTRY_PATH : "/"} replace />} />
     </Route>
   );
 

@@ -8,7 +8,9 @@ import {
   downloadTemplate,
   emptyRow,
   parseWorkbookToRows,
+  spreadsheetTextareaRows,
   type DreamSpreadsheetRow,
+  type SpreadsheetColumnKey,
 } from "@admin/lib/dreamSpreadsheetSchema";
 import {
   deleteSpreadsheetRows,
@@ -20,7 +22,19 @@ import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 
 /** 업로드 행 — Firestore에 항상 새 문서로 추가 */
 function stripIdsForImport(rows: DreamSpreadsheetRow[]): DreamSpreadsheetRow[] {
-  return rows.map(({ id: _id, ...row }) => row);
+  return rows.map(({ id: _id, docId: _docId, ...row }) => ({
+    ...row,
+    docId: "",
+    id: undefined,
+  }));
+}
+
+function rowDocId(row: DreamSpreadsheetRow): string {
+  return row.docId || row.id || "";
+}
+
+function isPersistedRow(row: DreamSpreadsheetRow): boolean {
+  return rowDocId(row).length > 0;
 }
 
 export function DreamSpreadsheet() {
@@ -55,7 +69,7 @@ export function DreamSpreadsheet() {
 
   const handleLoadClick = () => void load();
 
-  const updateCell = (rowIndex: number, key: keyof DreamSpreadsheetRow, value: string) => {
+  const updateCell = (rowIndex: number, key: SpreadsheetColumnKey, value: string) => {
     setRows((prev) =>
       prev.map((r, i) => (i === rowIndex ? { ...r, [key]: value, _errors: undefined } : r)),
     );
@@ -106,14 +120,14 @@ export function DreamSpreadsheet() {
 
   const commitNewRows = async () => {
     if (!user) return;
-    const newRows = rows.filter((r) => !r.id && r.content.trim().length >= 8);
+    const newRows = rows.filter((r) => !isPersistedRow(r) && r.content.trim().length >= 8);
     if (newRows.length === 0) {
       setError("저장할 새 행이 없습니다 (꿈내용 8자 이상, ID 없는 행)");
       return;
     }
     setBusy(true);
     setError(null);
-    const beforeCount = rows.filter((r) => r.id).length;
+    const beforeCount = rows.filter((r) => isPersistedRow(r)).length;
     try {
       const result = await importSpreadsheetRows(stripIdsForImport(newRows), user.uid);
       setMessage(`${result.imported}건 추가 저장 · DB ${beforeCount} → ${beforeCount + result.imported}건`);
@@ -133,8 +147,10 @@ export function DreamSpreadsheet() {
 
   const deleteSelected = async () => {
     const ids = [...selected]
-      .map((i) => rows[i]?.id)
-      .filter((id): id is string => Boolean(id));
+      .map((i) => rows[i])
+      .filter((row): row is DreamSpreadsheetRow => Boolean(row))
+      .map((row) => rowDocId(row))
+      .filter(Boolean);
     if (ids.length === 0) {
       setRows((prev) => prev.filter((_, i) => !selected.has(i)));
       setSelected(new Set());
@@ -299,10 +315,9 @@ export function DreamSpreadsheet() {
       {error && <StatusBanner type="warn">{error}</StatusBanner>}
 
       <p className="text-[0.6875rem] text-text-muted copy-lines">
-        <strong className="text-text">DB 양식</strong>으로 채운 뒤{" "}
-        <strong className="text-text">DB 업로드</strong> → 추가 저장.{" "}
-        <strong className="text-text">DB 다운로드</strong>는 현재 Firestore 목록 전체를
-        xlsx로 받습니다.
+        Firestore <code>dreams</code> 문서 필드 전체({SPREADSHEET_COLUMNS.length}열) — 꿈내용·AI
+        해몽·30일 후기·메타데이터 누락 없이 표시.{" "}
+        <strong className="text-text">DB 업로드</strong>는 기존 데이터에 추가만 됩니다.
       </p>
 
       {rows.length > 0 && (
@@ -325,8 +340,8 @@ export function DreamSpreadsheet() {
       )}
 
       <div className="dream-spreadsheet card overflow-hidden border border-border">
-        <div className="overflow-auto max-h-[min(70vh,720px)]">
-          <table className="w-full border-collapse text-xs min-w-[1800px]">
+        <div className="overflow-auto max-h-[min(88vh,960px)]">
+          <table className="w-full border-collapse text-xs min-w-[4200px]">
             <thead className="sticky top-0 z-10 bg-surface-2">
               <tr>
                 <th className="spreadsheet-th w-10">#</th>
@@ -352,19 +367,18 @@ export function DreamSpreadsheet() {
                     {col.header}
                   </th>
                 ))}
-                <th className="spreadsheet-th w-20">ID</th>
               </tr>
             </thead>
             <tbody>
               {loading && filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={SPREADSHEET_COLUMNS.length + 3} className="p-8 text-center text-text-muted">
+                  <td colSpan={SPREADSHEET_COLUMNS.length + 2} className="p-8 text-center text-text-muted">
                     Firestore에서 꿈 기록 불러오는 중…
                   </td>
                 </tr>
               ) : filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={SPREADSHEET_COLUMNS.length + 3} className="p-8 text-center text-text-muted">
+                  <td colSpan={SPREADSHEET_COLUMNS.length + 2} className="p-8 text-center text-text-muted">
                     {rows.length > 0
                       ? "필터 조건에 맞는 행이 없습니다."
                       : "데이터 없음 — DB 양식을 받아 채운 뒤 DB 업로드하세요."}
@@ -372,13 +386,13 @@ export function DreamSpreadsheet() {
                 </tr>
               ) : (
                 filteredEntries.map(({ row, index: rowIndex }) => {
-                  const isPersisted = Boolean(row.id);
-                  const isEditable = !isPersisted;
+                  const persisted = isPersistedRow(row);
+                  const isEditable = !persisted;
 
                   return (
                     <tr
-                      key={row.id ?? `new-${rowIndex}`}
-                      className={`spreadsheet-tr ${row._errors ? "bg-red-500/5" : ""} ${isPersisted ? "" : "bg-primary/5"}`}
+                      key={rowDocId(row) || `new-${rowIndex}`}
+                      className={`spreadsheet-tr ${row._errors ? "bg-red-500/5" : ""} ${persisted ? "" : "bg-primary/5"}`}
                     >
                       <td className="spreadsheet-td text-text-muted tabular-nums text-center">
                         {rowIndex + 1}
@@ -397,23 +411,21 @@ export function DreamSpreadsheet() {
                           }}
                         />
                       </td>
-                      {SPREADSHEET_COLUMNS.map((col) => (
-                        <td key={col.key} className="spreadsheet-td p-0">
-                          <textarea
-                            value={String(row[col.key as keyof DreamSpreadsheetRow] ?? "")}
-                            rows={col.key === "content" || col.key === "afterStory" ? 3 : 2}
-                            readOnly={!isEditable}
-                            className={`spreadsheet-cell ${isPersisted ? "spreadsheet-cell--readonly" : ""}`}
-                            onChange={(e) => updateCell(rowIndex, col.key, e.target.value)}
-                          />
-                        </td>
-                      ))}
-                      <td
-                        className="spreadsheet-td text-[0.625rem] text-text-muted font-mono"
-                        title={row.id}
-                      >
-                        {row.id ? row.id.slice(0, 8) : "NEW"}
-                      </td>
+                      {SPREADSHEET_COLUMNS.map((col) => {
+                        const cellValue = String(row[col.key] ?? "");
+                        return (
+                          <td key={col.key} className="spreadsheet-td p-0">
+                            <textarea
+                              value={cellValue}
+                              rows={spreadsheetTextareaRows(col.key, cellValue)}
+                              readOnly={!isEditable}
+                              wrap="soft"
+                              className={`spreadsheet-cell ${persisted ? "spreadsheet-cell--readonly" : ""}`}
+                              onChange={(e) => updateCell(rowIndex, col.key, e.target.value)}
+                            />
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })

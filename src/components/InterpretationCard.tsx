@@ -6,6 +6,8 @@ import {
 
 import { ANCHOR_STOP_WORDS, mergeAiKeywords } from "@/lib/dreamAnchor";
 import { FormattedBlocks, FormattedText } from "@/components/ui/FormattedText";
+import { InterpretationTierBlur } from "@/components/InterpretationTierBlur";
+import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 
 export function InterpretationCard({
   interpretation,
@@ -16,9 +18,10 @@ export function InterpretationCard({
   interpretation: DreamInterpretation;
   dreamContent?: string;
   dreamTitle?: string;
-  /** 내 아카이브 — 커뮤니티·탐색 티저 없이 해몽만 */
+  /** 내 아카이브 — 내 꿈 AI 해몽 + (하단) 비슷한 꿈은 별도 섹션 */
   mode?: "default" | "personal";
 }) {
+  const access = useAccessPolicy();
   const keywords = mergeAiKeywords(
     interpretation.keywords,
     dreamTitle,
@@ -27,24 +30,29 @@ export function InterpretationCard({
   ).filter((k) => !ANCHOR_STOP_WORDS.has(k) && k.length >= 2);
 
   const personal = mode === "personal";
+  const lockGuest = access.isGuest;
+  const lockPremium = access.isMember && !access.isPremium;
+
+  const guestLock = lockGuest ? ("guest" as const) : false;
+  const premiumLock = lockPremium ? ("premium" as const) : false;
 
   return (
     <div className="card card-bezel card-glow p-5 space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="section-label">{personal ? "AI 해몽" : "관측 메모"}</p>
-          {!personal && (
-            <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-              일반 해몽
-              <span className="mx-1.5 text-border-strong">→</span>
-              다른 관점
-              <span className="mx-1.5 text-border-strong">→</span>
-              30일 데이터
+          {personal ? (
+            <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed copy-lines">
+              <strong className="text-text-secondary">당신 꿈</strong>만 보고 쓴 연구소 해석입니다.
+              비슷한 꿈·한 달 뒤 후기는 아래 또는 탐색에서 봅니다.
             </p>
-          )}
-          {personal && (
+          ) : (
             <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-              기록 직후 받은 해석입니다. 한 달 뒤 내 후기와 함께 아카이브에 남아요.
+              AI 해몽
+              <span className="mx-1.5 text-border-strong">→</span>
+              연구소 입장
+              <span className="mx-1.5 text-border-strong">→</span>
+              비슷한 꿈 데이터
             </p>
           )}
         </div>
@@ -53,27 +61,57 @@ export function InterpretationCard({
         </span>
       </div>
 
-      <LensBlock
-        label="일반적인 해몽"
-        hint="인터넷·전통에서 흔히 말하는 해석"
-        content={interpretation.usualTake}
-        variant="usual"
-      />
+      <InterpretationTierBlur
+        lock={guestLock}
+        label="연구소 AI 해몽"
+        preview={
+          <LensBlock
+            label="연구소 AI 해몽"
+            hint="당신 꿈 장면만 보고 쓴 해몽"
+            content={interpretation.usualTake}
+            variant="usual"
+            maxLines={4}
+          />
+        }
+      >
+        <LensBlock
+          label="연구소 AI 해몽"
+          hint="당신 꿈 장면만 보고 쓴 해몽 — 인터넷·전통 해몽과 대비"
+          content={interpretation.usualTake}
+          variant="usual"
+          maxLines={10}
+        />
+      </InterpretationTierBlur>
 
       {interpretation.alternativeLens && (
-        <LensBlock
-          label="다른 관점"
-          hint="연구소가 겹쳐 보는 해석"
-          content={interpretation.alternativeLens}
-          variant="alt"
-        />
+        <InterpretationTierBlur
+          lock={guestLock || premiumLock}
+          label="연구소 입장 해석"
+          preview={
+            <LensBlock
+              label="연구소 입장 해석"
+              hint="심리·상질 관점"
+              content={interpretation.alternativeLens}
+              variant="alt"
+              maxLines={3}
+            />
+          }
+        >
+          <LensBlock
+            label="연구소 입장 해석"
+            hint="연구소가 이 꿈 장면을 심리·상질로 풀어 쓴 해석"
+            content={interpretation.alternativeLens}
+            variant="alt"
+            maxLines={10}
+          />
+        </InterpretationTierBlur>
       )}
 
       <div className="rounded-xl border border-primary/20 bg-primary-soft/30 p-4 space-y-3">
         <p className="text-[0.6875rem] font-semibold text-text-muted">지금 상태</p>
         <FormattedBlocks
           className="text-[0.9375rem] font-medium text-text"
-          maxLines={5}
+          maxLines={8}
         >
           {interpretation.psychology}
         </FormattedBlocks>
@@ -88,40 +126,61 @@ export function InterpretationCard({
       </div>
 
       <div className="space-y-4 text-sm">
-        <Section title="상징 (입구)" content={interpretation.symbol} />
-        <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} />
+        <Section title="상징 (입구)" content={interpretation.symbol} maxLines={6} />
+        <InterpretationTierBlur
+          lock={premiumLock}
+          label="한 달 뒤 · 갈릴 지점"
+          preview={
+            <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={2} />
+          }
+        >
+          <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} maxLines={6} />
+        </InterpretationTierBlur>
       </div>
 
-      {interpretation.labObservations && !personal && (
-        <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-3">
-          <div>
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-primary">
-              연구소 관측
-            </p>
-            <p className="text-[0.625rem] text-text-muted mt-0.5">
-              비슷한 장면을 남긴 기록에서 자주 보이는 패턴
-            </p>
-          </div>
-          <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={3}>
-            {interpretation.labObservations.sceneNote}
-          </FormattedBlocks>
-          {interpretation.labObservations.commonBehaviors.length > 0 && (
-            <ul className="space-y-1.5 text-[0.8125rem] text-text-secondary list-disc pl-4">
-              {interpretation.labObservations.commonBehaviors.map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-          )}
-          {interpretation.labObservations.relatedSearches.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {interpretation.labObservations.relatedSearches.map((k) => (
-                <span key={k} className="chip text-xs">
-                  #{k}
-                </span>
-              ))}
+      {interpretation.labObservations && (
+        <InterpretationTierBlur
+          lock={guestLock || premiumLock}
+          label="비슷한 꿈을 꾼 사람들"
+          preview={
+            <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-2">
+              <p className="text-[0.6875rem] font-semibold text-primary">비슷한 꿈을 꾼 사람들</p>
+              <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={2}>
+                {interpretation.labObservations.sceneNote}
+              </FormattedBlocks>
             </div>
-          )}
-        </div>
+          }
+        >
+          <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-3">
+            <div>
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-primary">
+                비슷한 꿈을 꾼 사람들
+              </p>
+              <p className="text-[0.625rem] text-text-muted mt-0.5">
+                같은 유형·키워드로 기록된 사람들의 패턴 (당신 꿈 해몽과는 별도)
+              </p>
+            </div>
+            <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={5}>
+              {interpretation.labObservations.sceneNote}
+            </FormattedBlocks>
+            {interpretation.labObservations.commonBehaviors.length > 0 && (
+              <ul className="space-y-1.5 text-[0.8125rem] text-text-secondary list-disc pl-4">
+                {interpretation.labObservations.commonBehaviors.map((b) => (
+                  <li key={b}>{b}</li>
+                ))}
+              </ul>
+            )}
+            {interpretation.labObservations.relatedSearches.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {interpretation.labObservations.relatedSearches.map((k) => (
+                  <span key={k} className="chip text-xs">
+                    #{k}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </InterpretationTierBlur>
       )}
 
       {keywords.length > 0 && (
@@ -138,15 +197,15 @@ export function InterpretationCard({
       )}
 
       {!personal && (
-      <div className="rounded-lg border border-border/60 bg-surface-2/60 p-3.5 space-y-2.5">
-        <FormattedText className="text-[0.6875rem] text-text-muted leading-relaxed" maxLines={4}>
-          {DISTINCT_INTERPRETATION_NOTE}
-        </FormattedText>
-        <div className="h-px bg-border/50" aria-hidden />
-        <FormattedText className="text-[0.6875rem] text-text-muted leading-relaxed" maxLines={4}>
-          {LEGAL_DISCLAIMER}
-        </FormattedText>
-      </div>
+        <div className="rounded-lg border border-border/60 bg-surface-2/60 p-3.5 space-y-2.5">
+          <FormattedText className="text-[0.6875rem] text-text-muted leading-relaxed" maxLines={4}>
+            {DISTINCT_INTERPRETATION_NOTE}
+          </FormattedText>
+          <div className="h-px bg-border/50" aria-hidden />
+          <FormattedText className="text-[0.6875rem] text-text-muted leading-relaxed" maxLines={4}>
+            {LEGAL_DISCLAIMER}
+          </FormattedText>
+        </div>
       )}
     </div>
   );
@@ -157,11 +216,13 @@ function LensBlock({
   hint,
   content,
   variant,
+  maxLines = 6,
 }: {
   label: string;
   hint: string;
   content: string;
   variant: "usual" | "alt";
+  maxLines?: number;
 }) {
   const isAlt = variant === "alt";
 
@@ -188,10 +249,10 @@ function LensBlock({
       <FormattedBlocks
         className={
           isAlt
-            ? "text-[0.9375rem] font-medium text-text"
-            : "text-[0.9375rem] text-text-secondary"
+            ? "text-[0.9375rem] font-medium text-text leading-relaxed"
+            : "text-[0.9375rem] text-text-secondary leading-relaxed"
         }
-        maxLines={6}
+        maxLines={maxLines}
       >
         {content}
       </FormattedBlocks>
@@ -199,11 +260,19 @@ function LensBlock({
   );
 }
 
-function Section({ title, content }: { title: string; content: string }) {
+function Section({
+  title,
+  content,
+  maxLines = 4,
+}: {
+  title: string;
+  content: string;
+  maxLines?: number;
+}) {
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-semibold text-text-muted">{title}</p>
-      <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={4}>
+      <FormattedBlocks className="text-[0.875rem] text-text-secondary leading-relaxed" maxLines={maxLines}>
         {content}
       </FormattedBlocks>
     </div>
@@ -223,4 +292,3 @@ function MoodBar({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
-

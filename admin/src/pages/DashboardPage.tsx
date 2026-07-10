@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { computeResearchLabStats } from "@/lib/researchLab";
 import { PageHeader, StatCard, StatusBanner } from "@admin/components/AdminUi";
 import { fetchAiUsage, fetchKpiSnapshot } from "@admin/services/adminMetrics";
 import { useOpsConfig } from "@admin/hooks/useOpsConfig";
-import { useAdminRoutes } from "@admin/lib/adminRoutes";
+import { computeResearchLabStats } from "@/lib/researchLab";
 import type { AiUsageDailyDoc, KpiSnapshot } from "@/lib/opsConfig";
 
 export function DashboardPage() {
-  const { to } = useAdminRoutes();
   const { labMetrics, dataExposure, loading: configLoading } = useOpsConfig();
   const [kpi, setKpi] = useState<KpiSnapshot | null>(null);
   const [aiToday, setAiToday] = useState<AiUsageDailyDoc | null>(null);
@@ -45,8 +42,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="운영 대시보드"
-        desc="실제 DB 지표와 사용자에게 노출되는 합성 KPI를 한 화면에서 비교합니다."
+        title="대시보드"
+        desc="실데이터 요약 — 상세 원본은 회원·꿈 DB 메뉴에서 확인합니다."
       />
 
       {kpiError && <StatusBanner type="warn">{kpiError}</StatusBanner>}
@@ -81,11 +78,7 @@ export function DashboardPage() {
           />
         </div>
         <p className="text-[0.6875rem] text-text-muted mt-2">
-          최대 500건 샘플 집계 · 상세 원본은{" "}
-          <Link to={to("dreams")} className="text-primary hover:underline">
-            꿈 DB
-          </Link>
-          에서 엑셀처럼 확인
+          최대 500건 샘플 집계
         </p>
       </section>
 
@@ -116,29 +109,6 @@ export function DashboardPage() {
             hint={`실DB 전환 기준 ≥${dataExposure?.minRealCommunityCount ?? 5}건`}
           />
         </div>
-      </section>
-
-      <section className="card p-4 space-y-2">
-        <h3 className="text-sm font-semibold">운영 메모</h3>
-        <ul className="text-xs text-text-muted space-y-1 copy-lines">
-          <li>
-            메뉴는 <strong className="text-text">대시보드 · 회원 현황 · 꿈 DB</strong> 3개만
-            사용합니다.
-          </li>
-          <li>
-            회원·꿈 원본 →{" "}
-            <Link to={to("members")} className="text-primary hover:underline">
-              회원 현황
-            </Link>
-            ,{" "}
-            <Link to={to("dreams")} className="text-primary hover:underline">
-              꿈 DB
-            </Link>
-          </li>
-          <li>
-            첫 admin: 콘솔에서 <code>users/UID.role = admin</code> 수동 지정
-          </li>
-        </ul>
       </section>
     </div>
   );

@@ -6,7 +6,7 @@ import { useAdminRoutes } from "@admin/lib/adminRoutes";
 
 const NAV_ITEMS = [
   { segment: "", label: "대시보드", icon: LayoutDashboard, end: true as const },
-  { segment: "members", label: "회원 현황", icon: Users, end: false as const },
+  { segment: "members", label: "회원", icon: Users, end: false as const },
   { segment: "dreams", label: "꿈 DB", icon: Database, end: false as const },
 ] as const;
 

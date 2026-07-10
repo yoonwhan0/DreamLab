@@ -6,7 +6,7 @@ export function DreamsPage() {
     <div className="space-y-4">
       <PageHeader
         title="꿈 DB"
-        desc="DB 양식 · DB 다운로드 · DB 업로드(추가)로 시드 데이터를 넣고, 회원 기록은 엑셀처럼 조회합니다."
+        desc="Firestore dreams 전체 필드(해몽·30일 후기·메타)를 누락 없이 표시 · DB 양식/다운로드/업로드(추가)"
       />
       <DreamSpreadsheet />
     </div>

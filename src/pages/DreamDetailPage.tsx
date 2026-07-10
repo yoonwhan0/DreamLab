@@ -140,7 +140,7 @@ export function DreamDetailPage() {
       setLoading(false);
 
       const own = d ? isOwnDreamRecord(d, user?.uid) : false;
-      if (d && !own && access.canViewSimilarTypes) {
+      if (d && access.canViewSimilarTypes) {
         void loadCommunity(d.interpretation, {
           embedding: d.embedding,
           title: d.title,
@@ -261,12 +261,49 @@ export function DreamDetailPage() {
       {isOwnDream && id && !isPreview && (
         <>
           <MyDreamFollowUpSection dream={dream} dreamId={id} />
+
+          {access.isMember && summary && stats && summary.totalCount > 0 && (
+            <section className="space-y-4">
+              <div className="text-center space-y-1">
+                <p className="section-label">비슷한 꿈을 꾼 사람들</p>
+                <p className="text-xs text-text-muted copy-lines px-2">
+                  AI 해몽과 별도 — 같은 유형·키워드로 기록된 사람들의 한 달 뒤 데이터입니다.
+                </p>
+              </div>
+              <CommunityStatPreview
+                keyword={keyword}
+                totalCount={summary.totalCount}
+                withFollowUpCount={summary.withFollowUpCount}
+                stats={stats}
+                showCuriosityTease={!access.isPremium}
+                lockOutcomes={!access.isPremium}
+                isEstimated={isEstimated}
+              />
+              {summary.stories.length > 0 && (
+                <CommunityStoriesPanel
+                  stories={summary.stories.slice(0, access.isPremium ? 3 : 1)}
+                  title={`"${keyword}" — 다른 사람들은?`}
+                  variant="compact"
+                  blurLocked={!access.isPremium}
+                  lockedCount={Math.max(
+                    summary.withFollowUpCount - 1,
+                    summary.stories.length - 1 + 10,
+                    12,
+                  )}
+                  blurPreviewStory={summary.stories[1]}
+                  keyword={anchor}
+                  isEstimated={isEstimated}
+                />
+              )}
+            </section>
+          )}
+
           <p className="text-center text-xs text-text-muted leading-relaxed px-2">
-            다른 사람들의 비슷한 꿈·한 달 뒤 통계는{" "}
+            더 많은 비슷한 꿈·통계는{" "}
             <Link to="/explore" className="text-primary font-medium hover:underline">
               탐색
             </Link>
-            탭에서 볼 수 있어요.
+            에서 볼 수 있어요.
           </p>
         </>
       )}

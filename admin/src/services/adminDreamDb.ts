@@ -1,17 +1,15 @@
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   limit,
   orderBy,
   query,
-  setDoc,
   Timestamp,
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Dream, UserProfile } from "@/types";
+import type { UserProfile } from "@/types";
 import {
   ADMIN_SEED_USER_ID,
   buildSeedInterpretation,
@@ -37,7 +35,20 @@ function formatDate(value: Date | null | undefined): string {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
+}
+
+function joinList(value: unknown, sep = ", "): string {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean).join(sep);
+  if (typeof value === "string") return value;
+  return "";
+}
+
+function yn(value: unknown): string {
+  if (value === true) return "Y";
+  if (value === false) return "N";
+  return "";
 }
 
 function resolveSource(data: Record<string, unknown>, userId: string): string {
@@ -58,40 +69,67 @@ function profileFromUser(user: UserProfile | undefined, seedProfile?: string): s
   return parts.join(" · ");
 }
 
-function dreamToRow(
-  d: Dream & { seedProfile?: string; seedSource?: string; category?: string },
+function dreamDocToRow(
+  docId: string,
+  data: Record<string, unknown>,
   user?: UserProfile,
 ): DreamSpreadsheetRow {
-  const anchor = d.interpretation?.researchAnchor?.primary ?? "";
-  const keywords =
-    (d.interpretation?.keywords ?? []).join(",") ||
-    (Array.isArray((d as { keywords?: string[] }).keywords)
-      ? (d as { keywords?: string[] }).keywords!.join(",")
-      : "");
+  const interp = (data.interpretation ?? {}) as Record<string, unknown>;
+  const anchorObj = (interp.researchAnchor ?? {}) as Record<string, unknown>;
+  const mood = (interp.mood ?? {}) as Record<string, unknown>;
+  const lab = (interp.labObservations ?? {}) as Record<string, unknown>;
+  const followUp = (data.followUp ?? {}) as Record<string, unknown>;
+  const userId = String(data.userId ?? "");
+  const seedProfile = typeof data.seedProfile === "string" ? data.seedProfile : "";
+
+  const rootKeywords = joinList(data.keywords);
+  const interpKeywords = joinList(interp.keywords);
 
   return {
-    id: d.id,
-    createdAt: formatDate(d.createdAt),
-    source: resolveSource(
-      { seedSource: d.seedSource, userId: d.userId },
-      d.userId,
-    ),
-    userId: d.userId,
+    id: docId,
+    docId,
+    createdAt: formatDate(tsToDate(data.createdAt as { toDate?: () => Date })),
+    source: resolveSource(data, userId),
+    userId,
     userEmail: user?.email ?? (user?.isAnonymous ? "(익명)" : ""),
-    title: d.title,
-    content: d.content,
-    category: d.category ?? d.interpretation?.category ?? "",
-    keywords,
-    anchor,
-    emotions: (d.emotions ?? []).join(","),
-    followUpDueAt: formatDate(d.followUpDueAt),
-    outcomeCategory: d.followUp ? outcomeLabel(d.followUp.outcomeCategory) : "",
-    afterStory: d.followUp?.note ?? "",
-    followUpAnsweredAt: formatDate(d.followUp?.answeredAt),
-    followUpEmotions: (d.followUp?.emotions ?? []).join(","),
-    profile: profileFromUser(user, d.seedProfile),
-    likes: String(d.likes ?? 0),
-    isPublic: d.isPublic !== false ? "Y" : "N",
+    title: String(data.title ?? ""),
+    content: String(data.content ?? ""),
+    emotions: joinList(data.emotions),
+    category: String(data.category ?? interp.category ?? ""),
+    keywords: rootKeywords || interpKeywords,
+    anchor: String(anchorObj.primary ?? ""),
+    clusterLabel: String(anchorObj.clusterLabel ?? ""),
+    secondaryAnchors: joinList(anchorObj.secondary, " | "),
+    scenePhrases: joinList(anchorObj.scenePhrases, " | "),
+    usualTake: String(interp.usualTake ?? ""),
+    alternativeLens: String(interp.alternativeLens ?? ""),
+    symbol: String(interp.symbol ?? ""),
+    psychology: String(interp.psychology ?? ""),
+    reflection: String(interp.reflection ?? ""),
+    moodAnxiety: mood.anxiety != null ? String(mood.anxiety) : "",
+    moodHope: mood.hope != null ? String(mood.hope) : "",
+    moodLonging: mood.longing != null ? String(mood.longing) : "",
+    labSceneNote: String(lab.sceneNote ?? ""),
+    labBehaviors: joinList(lab.commonBehaviors, " | "),
+    labRelatedSearches: joinList(lab.relatedSearches, ", "),
+    followUpDueAt: formatDate(tsToDate(data.followUpDueAt as { toDate?: () => Date })),
+    followUpReminderSent: yn(data.followUpReminderSent),
+    outcomeCategory:
+      followUp.outcomeCategory != null
+        ? outcomeLabel(followUp.outcomeCategory as Parameters<typeof outcomeLabel>[0])
+        : "",
+    afterStory: String(followUp.note ?? ""),
+    followUpAnsweredAt: formatDate(
+      tsToDate(followUp.answeredAt as { toDate?: () => Date } | undefined),
+    ),
+    followUpEmotions: joinList(followUp.emotions),
+    profile: profileFromUser(user, seedProfile),
+    seedProfile,
+    likes: String(data.likes ?? 0),
+    isPublic: data.isPublic === false ? "N" : "Y",
+    seedSource: typeof data.seedSource === "string" ? data.seedSource : "",
+    importedBy: typeof data.importedBy === "string" ? data.importedBy : "",
+    importedAt: formatDate(tsToDate(data.importedAt as { toDate?: () => Date })),
   };
 }
 
@@ -126,38 +164,7 @@ export async function fetchDreamSpreadsheetRows(): Promise<DreamSpreadsheetRow[]
     fetchUserLookup(),
   ]);
 
-  return snap.docs.map((d) => {
-    const data = d.data();
-    const dream: Dream & {
-      seedProfile?: string;
-      seedSource?: string;
-      category?: string;
-      keywords?: string[];
-    } = {
-      id: d.id,
-      userId: data.userId ?? "",
-      title: data.title ?? "",
-      content: data.content ?? "",
-      emotions: data.emotions ?? [],
-      interpretation: data.interpretation,
-      embedding: data.embedding,
-      createdAt: tsToDate(data.createdAt) ?? new Date(),
-      followUpDueAt: tsToDate(data.followUpDueAt) ?? new Date(),
-      followUp: data.followUp
-        ? {
-            ...data.followUp,
-            answeredAt: tsToDate(data.followUp.answeredAt) ?? new Date(),
-          }
-        : undefined,
-      isPublic: data.isPublic ?? true,
-      likes: data.likes ?? 0,
-      seedProfile: data.seedProfile as string | undefined,
-      seedSource: data.seedSource as string | undefined,
-      category: data.category as string | undefined,
-      keywords: data.keywords as string[] | undefined,
-    };
-    return dreamToRow(dream, users.get(dream.userId));
-  });
+  return snap.docs.map((d) => dreamDocToRow(d.id, d.data(), users.get(String(d.data().userId ?? ""))));
 }
 
 function rowToFirestorePayload(row: DreamSpreadsheetRow, adminUid: string) {
@@ -179,11 +186,11 @@ function rowToFirestorePayload(row: DreamSpreadsheetRow, adminUid: string) {
     followUpDueAt: Timestamp.fromDate(
       hasFollowUp ? new Date(now.getTime() - 86_400_000) : new Date(now.getTime() + 30 * 86_400_000),
     ),
-    followUpReminderSent: hasFollowUp,
+    followUpReminderSent: row.followUpReminderSent === "Y" || hasFollowUp,
     isPublic: parseIsPublic(row.isPublic),
     likes: Number.parseInt(row.likes, 10) || 0,
-    seedProfile: row.profile.trim() || null,
-    seedSource: "admin-import",
+    seedProfile: row.seedProfile.trim() || row.profile.trim() || null,
+    seedSource: row.seedSource.trim() || "admin-import",
     importedBy: adminUid,
     importedAt: Timestamp.now(),
     ...(hasFollowUp
@@ -211,7 +218,6 @@ export async function importSpreadsheetRows(
 ): Promise<ImportResult> {
   if (!db) throw new Error("Firebase 미설정");
 
-  /** 항상 새 document ID — 기존 dreams 문서는 건드리지 않음 */
   const valid = rows.filter((r) => r.content.trim().length >= 8);
   const errors: string[] = [];
   let imported = 0;
@@ -241,21 +247,6 @@ export async function importSpreadsheetRows(
   }
 
   return { imported, failed, errors };
-}
-
-export async function updateSpreadsheetRow(
-  row: DreamSpreadsheetRow,
-  adminUid: string,
-): Promise<void> {
-  if (!db || !row.id) throw new Error("ID 없음");
-  await setDoc(doc(db, "dreams", row.id), rowToFirestorePayload(row, adminUid), {
-    merge: false,
-  });
-}
-
-export async function deleteSpreadsheetRow(id: string): Promise<void> {
-  if (!db) return;
-  await deleteDoc(doc(db, "dreams", id));
 }
 
 export async function deleteSpreadsheetRows(ids: string[]): Promise<number> {
