@@ -36,6 +36,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/admin-delete-dreams"
+  to = "/.netlify/functions/admin-delete-dreams"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

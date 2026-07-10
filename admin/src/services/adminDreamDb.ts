@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -17,7 +18,8 @@ import {
 } from "@admin/lib/dreamSpreadsheetSchema";
 
 const QUERY_LIMIT = 500;
-const BATCH_SIZE = 20;
+/** Firestore rules — 배치당 get() 10회 제한 대응 */
+const BATCH_SIZE = 8;
 
 function tsToDate(value: { toDate?: () => Date } | undefined): Date | null {
   return value?.toDate?.() ?? null;
@@ -161,6 +163,11 @@ function rowWithErrors(row: DreamSpreadsheetRow): boolean {
   return Boolean(row._errors?.length);
 }
 
+/** 서버 Admin API 미배포·미설정 시 Firestore 클라이언트 폴백 */
+function shouldFallbackToClientApi(res: Response): boolean {
+  return res.status === 503 || res.status === 404;
+}
+
 async function importViaServerApi(rows: DreamSpreadsheetRow[]): Promise<ImportResult | null> {
   if (!auth?.currentUser) return null;
 
@@ -184,10 +191,22 @@ async function importViaServerApi(rows: DreamSpreadsheetRow[]): Promise<ImportRe
     return null;
   }
 
-  // API 미설정·인증 실패 시 Firestore 직접 저장으로 폴백
-  if (res.status === 503 || res.status === 403) return null;
+  if (shouldFallbackToClientApi(res)) return null;
 
   const text = await res.text();
+  if (res.status === 403) {
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      detail = parsed.error ?? text;
+    } catch {
+      /* raw */
+    }
+    throw new Error(
+      `${detail || "Admin API 인증 실패"} — yoonwhan0@gmail.com 또는 users.role=admin 계정으로 로그인하세요.`,
+    );
+  }
+
   if (!res.ok) {
     let message = text;
     try {
@@ -264,19 +283,84 @@ export async function importSpreadsheetRows(rows: DreamSpreadsheetRow[]): Promis
   };
 }
 
-export async function deleteSpreadsheetRows(ids: string[]): Promise<number> {
+async function deleteViaServerApi(ids: string[]): Promise<number | null> {
+  if (!auth?.currentUser || ids.length === 0) return null;
+
+  const token = await auth.currentUser.getIdToken(true);
+
+  let res: Response;
+  try {
+    res = await fetch("/api/admin-delete-dreams", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ids }),
+    });
+  } catch {
+    return null;
+  }
+
+  if (shouldFallbackToClientApi(res)) return null;
+
+  const text = await res.text();
+  if (res.status === 403) {
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      detail = parsed.error ?? text;
+    } catch {
+      /* raw */
+    }
+    throw new Error(
+      `${detail || "Admin API 인증 실패"} — yoonwhan0@gmail.com 또는 users.role=admin 계정으로 로그인하세요.`,
+    );
+  }
+
+  if (!res.ok) {
+    let message = text;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      message = parsed.error ?? text;
+    } catch {
+      /* raw */
+    }
+    throw new Error(message || "삭제 실패");
+  }
+
+  const data = JSON.parse(text) as { deleted?: number };
+  return data.deleted ?? ids.length;
+}
+
+async function deleteViaClient(ids: string[]): Promise<number> {
   if (!db || ids.length === 0) return 0;
+
   let deleted = 0;
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    const batch = writeBatch(db);
     const chunk = ids.slice(i, i + BATCH_SIZE);
-    for (const id of chunk) {
-      batch.delete(doc(db, "dreams", id));
-      deleted += 1;
+    try {
+      const batch = writeBatch(db);
+      for (const id of chunk) {
+        batch.delete(doc(db, "dreams", id));
+      }
+      await batch.commit();
+      deleted += chunk.length;
+    } catch {
+      for (const id of chunk) {
+        await deleteDoc(doc(db, "dreams", id));
+        deleted += 1;
+      }
     }
-    await batch.commit();
   }
   return deleted;
+}
+
+export async function deleteSpreadsheetRows(ids: string[]): Promise<number> {
+  const apiDeleted = await deleteViaServerApi(ids);
+  if (apiDeleted != null) return apiDeleted;
+
+  return deleteViaClient(ids);
 }
 
 export function countRowsBySource(rows: DreamSpreadsheetRow[]): {

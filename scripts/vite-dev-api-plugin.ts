@@ -21,5 +21,9 @@ export function attachDevApi() {
       const mod = await import("../netlify/functions/admin-import-dreams");
       return mod.handler;
     },
+    "/api/admin-delete-dreams": async () => {
+      const mod = await import("../netlify/functions/admin-delete-dreams");
+      return mod.handler;
+    },
   });
 }

@@ -107,7 +107,7 @@ export async function verifyBearerAdmin(
     const uid = decoded.uid;
     if (!uid) return null;
 
-    const email = tokenEmail(decoded);
+    const email = await resolveAdminEmail(auth, decoded);
     if (isMasterAccountEmail(email)) {
       return { uid, email };
     }
@@ -121,4 +121,26 @@ export async function verifyBearerAdmin(
   } catch {
     return null;
   }
+}
+
+async function resolveAdminEmail(
+  auth: NonNullable<ReturnType<typeof getAdminAuth>>,
+  decoded: { uid?: string; email?: string; firebase?: { identities?: Record<string, string[]> } },
+): Promise<string | null> {
+  const fromToken = tokenEmail(decoded);
+  if (fromToken) return fromToken;
+
+  const uid = decoded.uid;
+  if (!uid) return null;
+
+  try {
+    const userRecord = await auth.getUser(uid);
+    if (userRecord.email?.trim()) {
+      return userRecord.email.trim().toLowerCase();
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return null;
 }

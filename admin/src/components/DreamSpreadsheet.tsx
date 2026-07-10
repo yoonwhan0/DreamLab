@@ -162,8 +162,13 @@ export function DreamSpreadsheet() {
       await deleteSpreadsheetRows(ids);
       setMessage(`${ids.length}건 삭제`);
       await load();
-    } catch {
-      setError("삭제 실패");
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : "삭제 실패";
+      const hint =
+        raw.includes("insufficient permissions") || raw.includes("permission")
+          ? " — yoonwhan0@gmail.com으로 로그인했는지, Firestore rules·Netlify 재배포(admin-delete-dreams)를 확인하세요."
+          : "";
+      setError(raw + hint);
     } finally {
       setBusy(false);
     }
