@@ -299,7 +299,7 @@ export function estimateToStats(estimate: CommunityEstimate): DreamStats {
 export function previewCommunityForKeyword(keyword: string) {
   const anchor = keyword.trim() || "꿈";
   const pack = resolveNarrativePack(anchor);
-  const content = `"${anchor}" 꿈을 기록해 두고 한 달 뒤에 다시 읽었습니다. 장면은 제각각이어도 남는 감정이 비슷한 경우가 있더라고요.`;
+  const content = `${anchor} 꿈을 기록해 두고 한 달 뒤에 다시 읽었습니다. 장면은 제각각이어도 남는 감정이 비슷한 경우가 있더라고요.`;
   const interpretation: DreamInterpretation = {
     usualTake: "",
     symbol: "",

@@ -1185,9 +1185,9 @@ export function defaultPackForKeyword(keyword: string): KeywordNarrativePack {
     countRange: [base, base + seededInt(rand, 800, 2400)],
     followUpRate: 0.41 + rand() * 0.14,
     relatedKeywords: [k, "밤", "불안"].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4),
-    titles: [`${k} 앞에서 멈춰 있던 꿈`],
+    titles: [`${k} 기록이 남은 꿈`],
     dreamSnippets: [
-      `꿈에서 저는 "${k}" 앞에 서 있었습니다. 장소는 낯설었는데 그 주변만 이상하게 또렷했어요. 깨고 나서도 그 장면이 먼저 떠올라서 바로 메모했습니다.`,
+      `꿈에서 ${k}와 이어지는 장면이 유난히 또렷했습니다. 장소는 낯설었지만 그때의 공기와 몸의 긴장은 오래 남았어요. 깨고 나서 바로 메모했습니다.`,
     ],
     afterByOutcome: {},
   };
