@@ -1,9 +1,8 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
-import { localApiPlugin } from "./scripts/vite-local-api-plugin";
 
 const SERVER_ENV_KEYS = [
   "OPENAI_API_KEY",
@@ -13,20 +12,21 @@ const SERVER_ENV_KEYS = [
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   for (const key of SERVER_ENV_KEYS) {
     if (env[key]) process.env[key] = env[key];
   }
 
-  return {
-  plugins: [
-    react(),
-    tailwindcss(),
-    localApiPlugin(async () => {
-      const mod = await import("./netlify/functions/interpret-dream");
-      return mod.handler;
-    }),
+  const plugins: Plugin[] = [react(), tailwindcss()];
+
+  if (mode === "development") {
+    const devApiUrl = new URL("./scripts/vite-dev-api-plugin.ts", import.meta.url).href;
+    const { attachDevApi } = await import(devApiUrl);
+    plugins.push(attachDevApi());
+  }
+
+  plugins.push(
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
@@ -71,7 +71,10 @@ export default defineConfig(({ mode }) => {
         importScripts: ["/firebase-messaging-sw.js"],
       },
     }),
-  ],
+  );
+
+  return {
+  plugins,
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
