@@ -71,7 +71,6 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
             totalCount={summary.totalCount}
             withFollowUpCount={summary.withFollowUpCount}
             stats={stats}
-            showCuriosityTease={!access.isPremium}
             lockOutcomes={!access.isPremium}
             isEstimated
           />

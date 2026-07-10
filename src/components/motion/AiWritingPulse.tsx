@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_LINES = [
-  "비슷한 꿈을 꾼 사람들 후기를 모으는 중",
-  "한 달 뒤 결말 패턴을 정리하는 중",
-  "생생한 후기 문장을 작성하는 중",
-  "재물·연애·직장운 흐름을 계산하는 중",
-  "관측 기록과 겹치는 장면을 찾는 중",
+  "비슷한 꿈 데이터를 검색하는 중",
+  "한 달 뒤 후기 통계를 정리하는 중",
+  "공개된 후기 목록을 모으는 중",
+  "결말 비율을 계산하는 중",
+  "키워드에 맞는 기록을 분류하는 중",
 ];
 
 interface AiWritingPulseProps {
@@ -20,8 +20,8 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
     if (!keyword?.trim()) return DEFAULT_LINES;
     const q = keyword.trim();
     return [
-      `"${q}" — 비슷한 꿈 검색 중`,
-      `"${q}" 꿈 30일 뒤 후기 작성 중`,
+      `"${q}" 관련 꿈 데이터 검색 중`,
+      `"${q}" 후기·통계 정리 중`,
       ...DEFAULT_LINES.slice(2),
     ];
   }, [keyword]);
@@ -62,7 +62,7 @@ export function AiWritingPulse({ keyword, variant = "card" }: AiWritingPulseProp
         <span />
         <span />
       </div>
-      <p className="text-sm font-semibold text-text motion-shimmer">AI 관측 · 작성 중</p>
+      <p className="text-sm font-semibold text-text motion-shimmer">데이터 검색 · 결과 정리 중</p>
       <p className="ai-writing-type text-xs text-text-secondary min-h-[1.25rem]" aria-live="polite">
         {typed}
         <span className="ai-writing-cursor" aria-hidden>

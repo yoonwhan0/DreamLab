@@ -120,18 +120,18 @@ export function MyPage() {
 
       {access.isMember && !access.isPremium && dreams.length === 0 && (
         <CuriosityTease
-          title="다른 사람들은 한 달 뒤, 어떻게 됐을까요?"
-          body="꿈을 기록하면 내 아카이브 운세 그래프가 쌓입니다. 탐색에서 비슷한 꿈 후기도 볼 수 있어요."
-          cta="탐색에서 후기 엿보기"
+          title="탐색에서 비슷한 꿈 후기 보기"
+          body="꿈을 기록하면 내 아카이브 운세 그래프가 쌓입니다. 탐색에서 같은 꿈 후기도 볼 수 있어요."
+          cta="탐색으로 가기"
           to="/explore"
         />
       )}
 
       {access.isGuest && (
         <CuriosityTease
-          title="30일 뒤, 그들에게는 무슨 일이?"
-          body="가입하면 내 꿈 저장·알림·같은 꿈 후기 열람이 열립니다."
-          cta="가입하고 결말 보기"
+          title="무료 가입 · 꿈 저장"
+          body="가입하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
+          cta="무료로 가입하기"
           to="/my"
         />
       )}

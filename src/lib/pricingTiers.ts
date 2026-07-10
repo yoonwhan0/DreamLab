@@ -3,7 +3,7 @@ export const PRICING_TIERS = [
     tier: "guest" as const,
     name: "비회원",
     price: "무료",
-    features: ["자극 패턴 맛보기", "AI 해몽 미리보기"],
+    features: ["키워드 탐색 미리보기", "꿈 기록 · 해몽 일부"],
     locked: ["30일 후 운세 그래프", "후기·통계 전체"],
   },
   {
@@ -14,7 +14,7 @@ export const PRICING_TIERS = [
       "꿈 저장 · 30일 알림",
       "유사 꿈 · 키워드 탐색",
       "후기 작성",
-      "아카이브 운세 3축 맛보기",
+      "아카이브 운세 3축 요약",
     ],
     locked: ["8주 운세 그래프 전체", "재물·연애·직장·건강 전 축"],
   },

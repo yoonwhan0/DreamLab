@@ -16,7 +16,6 @@ export const FOLLOWUP_EMOTIONS = [
 ] as const;
 
 export const OUTCOME_CATEGORIES = {
-  nothing: "별일 없었음",
   good: "좋은 일",
   bad: "나쁜 일",
   love: "연애",
@@ -26,6 +25,24 @@ export const OUTCOME_CATEGORIES = {
   money: "돈",
   other: "기타",
 } as const;
+
+/** @deprecated DB에 남아 있을 수 있음 — 신규 입력·표시에서 제외 */
+export const LEGACY_OUTCOME_NOTHING = "nothing" as const;
+
+export function normalizeOutcomeCategory(raw: string | undefined): OutcomeCategory {
+  if (
+    !raw ||
+    raw === LEGACY_OUTCOME_NOTHING ||
+    raw === "별일없었음" ||
+    raw === "별일 없었음"
+  ) {
+    return "other";
+  }
+  if (raw in OUTCOME_CATEGORIES) {
+    return raw as OutcomeCategory;
+  }
+  return "other";
+}
 
 export const LEGAL_DISCLAIMER =
   "유사한 꿈을 기록한 사용자들의 후기에서\n이런 경향이 보고되었습니다.\n개인의 미래를 예측하거나 보장하지 않습니다.";

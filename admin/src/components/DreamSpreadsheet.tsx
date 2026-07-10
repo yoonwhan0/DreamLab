@@ -103,7 +103,7 @@ export function DreamSpreadsheet() {
     setError(null);
     const beforeCount = rows.length;
     try {
-      const result = await importSpreadsheetRows(stripIdsForImport(pendingImport), user.uid);
+      const result = await importSpreadsheetRows(stripIdsForImport(pendingImport));
       setPendingImport(null);
       setMessage(
         `${result.imported}건 추가 저장 완료 · DB ${beforeCount} → ${beforeCount + result.imported}건${
@@ -129,7 +129,7 @@ export function DreamSpreadsheet() {
     setError(null);
     const beforeCount = rows.filter((r) => isPersistedRow(r)).length;
     try {
-      const result = await importSpreadsheetRows(stripIdsForImport(newRows), user.uid);
+      const result = await importSpreadsheetRows(stripIdsForImport(newRows));
       setMessage(`${result.imported}건 추가 저장 · DB ${beforeCount} → ${beforeCount + result.imported}건`);
       await load();
     } catch (e) {

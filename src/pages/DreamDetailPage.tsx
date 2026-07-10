@@ -275,7 +275,6 @@ export function DreamDetailPage() {
                 totalCount={summary.totalCount}
                 withFollowUpCount={summary.withFollowUpCount}
                 stats={stats}
-                showCuriosityTease={!access.isPremium}
                 lockOutcomes={!access.isPremium}
                 isEstimated={isEstimated}
               />
@@ -315,7 +314,6 @@ export function DreamDetailPage() {
             totalCount={summary.totalCount}
             withFollowUpCount={summary.withFollowUpCount}
             stats={stats}
-            showCuriosityTease={!access.isPremium}
             isEstimated={isEstimated}
           />
           <DreamFortuneTrendPanel

@@ -78,7 +78,7 @@ export function MyPricingSection() {
         <p className="text-xs text-center text-text-muted">
           가입은 무료입니다.{" "}
           <Link to="/explore" className="text-primary font-medium">
-            탐색에서 맛보기 →
+            탐색에서 보기 →
           </Link>
         </p>
       )}

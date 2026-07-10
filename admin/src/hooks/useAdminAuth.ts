@@ -10,6 +10,7 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
+import { upsertUserProfile } from "@/services/dreamService";
 
 export interface AdminAuthState {
   user: User | null;
@@ -47,10 +48,17 @@ export function useAdminAuth(): AdminAuthState & {
 
       try {
         const snap = await getDoc(doc(db, "users", nextUser.uid));
-        setIsAdmin(
-          isMasterAccountEmail(nextUser.email) ||
-            (snap.exists() && snap.data()?.role === "admin"),
-        );
+        const master = isMasterAccountEmail(nextUser.email);
+        const roleAdmin = snap.exists() && snap.data()?.role === "admin";
+        setIsAdmin(master || roleAdmin);
+
+        if (master && !roleAdmin) {
+          await upsertUserProfile(nextUser.uid, {
+            email: nextUser.email,
+            displayName: nextUser.displayName,
+            role: "admin",
+          });
+        }
       } catch {
         setIsAdmin(false);
       } finally {

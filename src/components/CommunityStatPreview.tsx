@@ -4,14 +4,12 @@ import { ObservatoryMeta } from "@/components/ObservatoryMeta";
 import { formatAnswerRatePercent } from "@/lib/observatoryCredibility";
 import { getOutcomePercentages } from "@/services/dreamService";
 import type { DreamStats } from "@/types";
-import { OUTCOME_CATEGORIES } from "@/types";
 
 interface CommunityStatPreviewProps {
   keyword: string;
   totalCount: number;
   withFollowUpCount: number;
   stats: DreamStats;
-  showCuriosityTease?: boolean;
   lockOutcomes?: boolean;
   isEstimated?: boolean;
 }
@@ -21,7 +19,6 @@ export function CommunityStatPreview({
   totalCount,
   withFollowUpCount,
   stats,
-  showCuriosityTease = false,
   lockOutcomes = false,
   isEstimated: _isEstimated = false,
 }: CommunityStatPreviewProps) {
@@ -29,11 +26,7 @@ export function CommunityStatPreview({
   const answerRate = formatAnswerRatePercent(withFollowUpCount, totalCount);
 
   const outcomes = getOutcomePercentages(stats);
-  const topNothing = outcomes.find((o) => o.category === "nothing");
-  const topBad = outcomes.find((o) => o.category === "bad");
-  const topGood = outcomes.find((o) => o.category === "good");
-  const knownPercent = outcomes.reduce((s, o) => s + o.percent, 0);
-  const mysteryPercent = Math.max(0, 100 - knownPercent);
+  const topOutcomes = outcomes.slice(0, 3);
 
   const keywordPlain = useMemo(
     () => keyword.replace(/ 꿈$/, "").trim(),
@@ -80,46 +73,24 @@ export function CommunityStatPreview({
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-3 space-y-2 text-sm relative overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface p-3 space-y-2 text-sm">
         {lockOutcomes ? (
-          <div className="relative min-h-[7rem]">
-            <div
-              className="space-y-2 blur-[6px] opacity-50 pointer-events-none select-none"
-              aria-hidden
-            >
-              {topNothing && (
-                <GhostOutcomeRow
-                  label={OUTCOME_CATEGORIES.nothing}
-                  percent={topNothing.percent}
-                />
-              )}
-              {topGood && (
-                <GhostOutcomeRow label={OUTCOME_CATEGORIES.good} percent={topGood.percent} />
-              )}
-              {topBad && (
-                <GhostOutcomeRow label={OUTCOME_CATEGORIES.bad} percent={topBad.percent} />
-              )}
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center bg-surface/80">
-              <p className="text-xs text-accent font-semibold">프리미엄 전용</p>
-              <p className="text-xs text-text-secondary copy-lines leading-relaxed">
-                {showCuriosityTease && mysteryPercent > 0
-                  ? `나머지 ${mysteryPercent}% 결말 + 8주 운세 그래프 — 프리미엄에서 열림`
-                  : "재물·연애·직장운 8주 추이 — 프리미엄에서 전체"}
-              </p>
-            </div>
+          <div className="py-6 px-2 text-center space-y-1.5">
+            <p className="text-xs text-text-muted font-medium">프리미엄에서 전체</p>
+            <p className="text-xs text-text-secondary copy-lines leading-relaxed">
+              결말 비율 · 재물·연애·직장운 8주 추이는 프리미엄 구독에서 볼 수 있어요.
+            </p>
           </div>
         ) : (
           <>
-            {topNothing && topNothing.percent > 0 && (
-              <OutcomeRow label={OUTCOME_CATEGORIES.nothing} percent={topNothing.percent} delay={200} />
-            )}
-            {topGood && topGood.percent > 0 && (
-              <OutcomeRow label={OUTCOME_CATEGORIES.good} percent={topGood.percent} delay={320} />
-            )}
-            {topBad && topBad.percent > 0 && (
-              <OutcomeRow label={OUTCOME_CATEGORIES.bad} percent={topBad.percent} delay={440} />
-            )}
+            {topOutcomes.map((item, index) => (
+              <OutcomeRow
+                key={item.category}
+                label={item.label}
+                percent={item.percent}
+                delay={200 + index * 120}
+              />
+            ))}
           </>
         )}
       </div>
@@ -127,10 +98,6 @@ export function CommunityStatPreview({
       <ObservatoryMeta keyword={keywordPlain} />
     </div>
   );
-}
-
-function GhostOutcomeRow({ label, percent }: { label: string; percent: number }) {
-  return <OutcomeRow label={label} percent={percent} muted />;
 }
 
 function OutcomeRow({

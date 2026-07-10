@@ -29,7 +29,6 @@ import { getKeywordIcon } from "@/lib/keywordIcons";
 import { getOutcomePercentages } from "@/services/dreamService";
 import {
   MEMBER_FREE_STORY_VIEWS,
-  formatStoryUnlockPrice,
   storyLoadChunk,
 } from "@/lib/storyAccessPricing";
 import {
@@ -37,7 +36,6 @@ import {
   fetchStoryAccess,
   registerStoryViews,
 } from "@/services/storyUnlockService";
-import { payForStoryUnlock } from "@/services/storyPaymentService";
 import type { DreamStats, SimilarDreamSummary, StoryKeywordAccess } from "@/types";
 import {
   POPULAR_SEARCHES,
@@ -68,7 +66,7 @@ function applyInstantEstimate(keyword: string) {
 export function ExplorePage() {
   const access = useAccessPolicy();
   const { openPremiumSheet } = usePremiumSheet();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [placeholder] = useState(provocativeSearchPlaceholder);
 
   const [query, setQuery] = useState("");
@@ -82,10 +80,8 @@ export function ExplorePage() {
   const [isEstimated, setIsEstimated] = useState(true);
   const [visibleStoryCount, setVisibleStoryCount] = useState(2);
   const [storyAccess, setStoryAccess] = useState<StoryKeywordAccess | null>(null);
-  const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState("");
+  const [limitMessage, setLimitMessage] = useState("");
   const searchGenRef = useRef(0);
-  const paidHandledRef = useRef(false);
 
   const displayKeyword = previewKeywordLabel(pendingKeyword || activeQuery);
   const isSearchBusy = isFetching || isSyncing;
@@ -106,7 +102,7 @@ export function ExplorePage() {
     setIsSyncing(false);
     setSummary(null);
     setStats(null);
-    setPayError("");
+    setLimitMessage("");
 
     let accessState = accessOverride ?? null;
     if (access.isMember && !access.isPremium) {
@@ -181,23 +177,8 @@ export function ExplorePage() {
 
   useEffect(() => {
     const q = searchParams.get("q")?.trim();
-    const paid = searchParams.get("paid") === "1";
     if (!q) return;
-
-    void (async () => {
-      await runSearch(q);
-      if (paid && !paidHandledRef.current && access.isMember && !access.isPremium) {
-        paidHandledRef.current = true;
-        setSearchParams({}, { replace: true });
-        try {
-          const nextAccess = await fetchStoryAccess(q);
-          setStoryAccess(nextAccess);
-          setVisibleStoryCount((prev) => Math.min(prev + 1, nextAccess.maxSlots));
-        } catch {
-          /* ignore */
-        }
-      }
-    })();
+    void runSearch(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link once
   }, []);
 
@@ -211,7 +192,7 @@ export function ExplorePage() {
     const ids = slice.map((s) => s.id);
     const reg = await registerStoryViews(activeQuery, ids);
     if (!reg.ok) {
-      setPayError("무료 4건 이후는 건당 200원 결제가 필요합니다.");
+      setLimitMessage("무료 4건을 모두 봤습니다. 프리미엄 또는 앱에서 구독해 주세요.");
       return false;
     }
     setStoryAccess(reg.access);
@@ -226,25 +207,12 @@ export function ExplorePage() {
     const next = Math.min(visibleStoryCount + chunk, summary.stories.length);
 
     if (next > maxSlots) {
-      setPayError("무료 4건을 모두 봤습니다. 1건 더 보려면 결제해 주세요.");
+      setLimitMessage("무료 4건을 모두 봤습니다. 프리미엄으로 전체를 열 수 있어요.");
       return;
     }
 
     const ok = await syncVisibleStories(next);
-    if (!ok) setPayError("열람 한도를 초과했습니다. 결제 후 이어서 볼 수 있어요.");
-  };
-
-  const handlePayForOneStory = async () => {
-    if (!activeQuery) return;
-    setPaying(true);
-    setPayError("");
-    try {
-      await payForStoryUnlock(activeQuery);
-    } catch (err) {
-      setPayError(err instanceof Error ? err.message : "결제를 시작하지 못했습니다.");
-    } finally {
-      setPaying(false);
-    }
+    if (!ok) setLimitMessage("열람 한도를 초과했습니다. 프리미엄 또는 앱 구독이 필요합니다.");
   };
 
   const visibleStories =
@@ -313,7 +281,7 @@ export function ExplorePage() {
       {access.isMember && !access.isPremium && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">
           회원 — 키워드당 후기 <strong className="text-text">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>
-          , 이후 1건씩 <strong className="text-primary">{formatStoryUnlockPrice()}</strong>
+          . 더 보려면 <strong className="text-primary">프리미엄 구독</strong> (앱스토어·Play)
         </p>
       )}
 
@@ -347,7 +315,6 @@ export function ExplorePage() {
                 totalCount={summary.totalCount}
                 withFollowUpCount={summary.withFollowUpCount}
                 stats={stats}
-                showCuriosityTease={!access.isPremium}
                 lockOutcomes={!access.isPremium}
                 isEstimated={isEstimated}
               />
@@ -439,30 +406,25 @@ export function ExplorePage() {
                     무료 {MEMBER_FREE_STORY_VIEWS}건을 다 봤습니다
                   </p>
                   <p className="text-xs text-text-secondary copy-lines">
-                    같은 꿈·30일 뒤 후기를 1건 더 보려면 {formatStoryUnlockPrice()} 결제
+                    후기·통계 전체는 프리미엄 구독으로 열립니다. iOS·Android 앱에서는 App Store /
+                    Google Play 결제를 사용합니다.
                   </p>
                   <button
                     type="button"
-                    disabled={paying}
-                    onClick={() => void handlePayForOneStory()}
-                    className="btn-primary text-sm disabled:opacity-60"
-                  >
-                    {paying ? "결제창 여는 중…" : `후기 1건 더 보기 · ${formatStoryUnlockPrice()}`}
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs text-text-muted underline"
+                    className="btn-primary text-sm"
                     onClick={() =>
-                      openPremiumSheet("프리미엄이면 후기·통계를 전부 볼 수 있어요.")
+                      openPremiumSheet(
+                        "프리미엄이면 후기·통계를 전부 볼 수 있어요. 앱 출시 후 스토어 구독으로 연결됩니다.",
+                      )
                     }
                   >
-                    또는 프리미엄으로 전체 보기
+                    프리미엄 구독 안내
                   </button>
                 </div>
               )}
 
-              {payError && (
-                <p className="text-xs text-center text-red-400 copy-lines">{payError}</p>
+              {limitMessage && (
+                <p className="text-xs text-center text-text-secondary copy-lines">{limitMessage}</p>
               )}
             </>
           )}

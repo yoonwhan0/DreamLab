@@ -5,19 +5,15 @@ import {
   limit,
   orderBy,
   query,
-  Timestamp,
   writeBatch,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { rowToAdminImportPayload, rowToFirestorePayload } from "@/lib/dreamSeedImport";
 import type { UserProfile } from "@/types";
 import {
   ADMIN_SEED_USER_ID,
-  buildSeedInterpretation,
   type DreamSpreadsheetRow,
   outcomeLabel,
-  parseEmotions,
-  parseIsPublic,
-  parseOutcome,
 } from "@admin/lib/dreamSpreadsheetSchema";
 
 const QUERY_LIMIT = 500;
@@ -124,12 +120,6 @@ function dreamDocToRow(
     ),
     followUpEmotions: joinList(followUp.emotions),
     profile: profileFromUser(user, seedProfile),
-    seedProfile,
-    likes: String(data.likes ?? 0),
-    isPublic: data.isPublic === false ? "N" : "Y",
-    seedSource: typeof data.seedSource === "string" ? data.seedSource : "",
-    importedBy: typeof data.importedBy === "string" ? data.importedBy : "",
-    importedAt: formatDate(tsToDate(data.importedAt as { toDate?: () => Date })),
   };
 }
 
@@ -167,65 +157,61 @@ export async function fetchDreamSpreadsheetRows(): Promise<DreamSpreadsheetRow[]
   return snap.docs.map((d) => dreamDocToRow(d.id, d.data(), users.get(String(d.data().userId ?? ""))));
 }
 
-function rowToFirestorePayload(row: DreamSpreadsheetRow, adminUid: string) {
-  const now = new Date();
-  const hasFollowUp = row.afterStory.trim().length > 0;
-  const emotions = parseEmotions(row.emotions);
-  const interpretation = buildSeedInterpretation(row);
-  const outcome = parseOutcome(row.outcomeCategory);
-
-  return {
-    userId: ADMIN_SEED_USER_ID,
-    title: row.title.trim() || row.content.slice(0, 40),
-    content: row.content.trim(),
-    emotions,
-    interpretation,
-    keywords: interpretation.keywords,
-    category: interpretation.category,
-    createdAt: Timestamp.fromDate(now),
-    followUpDueAt: Timestamp.fromDate(
-      hasFollowUp ? new Date(now.getTime() - 86_400_000) : new Date(now.getTime() + 30 * 86_400_000),
-    ),
-    followUpReminderSent: row.followUpReminderSent === "Y" || hasFollowUp,
-    isPublic: parseIsPublic(row.isPublic),
-    likes: Number.parseInt(row.likes, 10) || 0,
-    seedProfile: row.seedProfile.trim() || row.profile.trim() || null,
-    seedSource: row.seedSource.trim() || "admin-import",
-    importedBy: adminUid,
-    importedAt: Timestamp.now(),
-    ...(hasFollowUp
-      ? {
-          followUp: {
-            outcomeCategory: outcome,
-            note: row.afterStory.trim(),
-            emotions: ["calm" as const],
-            answeredAt: Timestamp.now(),
-          },
-        }
-      : {}),
-  };
+function rowWithErrors(row: DreamSpreadsheetRow): boolean {
+  return Boolean(row._errors?.length);
 }
 
-export interface ImportResult {
-  imported: number;
-  failed: number;
-  errors: string[];
+async function importViaServerApi(rows: DreamSpreadsheetRow[]): Promise<ImportResult | null> {
+  if (!auth?.currentUser) return null;
+
+  const ready = rows.filter((r) => r.content.trim().length >= 8 && !rowWithErrors(r));
+  if (ready.length === 0) return null;
+
+  const token = await auth.currentUser.getIdToken();
+  const payloads = ready.map((row) => rowToAdminImportPayload(row));
+
+  let res: Response;
+  try {
+    res = await fetch("/api/admin-import-dreams", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ payloads }),
+    });
+  } catch {
+    return null;
+  }
+
+  if (res.status === 503) return null;
+
+  const text = await res.text();
+  if (!res.ok) {
+    let message = text;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      message = parsed.error ?? text;
+    } catch {
+      /* raw body */
+    }
+    throw new Error(message || "저장 실패");
+  }
+
+  return JSON.parse(text) as ImportResult;
 }
 
-export async function importSpreadsheetRows(
-  rows: DreamSpreadsheetRow[],
-  adminUid: string,
-): Promise<ImportResult> {
+async function importViaClientBatch(rows: DreamSpreadsheetRow[]): Promise<ImportResult> {
   if (!db) throw new Error("Firebase 미설정");
 
-  const valid = rows.filter((r) => r.content.trim().length >= 8);
   const errors: string[] = [];
   let imported = 0;
   let failed = 0;
 
-  for (let i = 0; i < valid.length; i += BATCH_SIZE) {
-    const chunk = valid.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const chunk = rows.slice(i, i + BATCH_SIZE);
     const batch = writeBatch(db);
+    let chunkCount = 0;
 
     for (const row of chunk) {
       if (row._errors?.length) {
@@ -235,18 +221,46 @@ export async function importSpreadsheetRows(
       }
       try {
         const ref = doc(collection(db, "dreams"));
-        batch.set(ref, rowToFirestorePayload(row, adminUid));
-        imported += 1;
+        batch.set(ref, rowToFirestorePayload(row));
+        chunkCount += 1;
       } catch (e) {
         failed += 1;
         errors.push(e instanceof Error ? e.message : "저장 실패");
       }
     }
 
-    await batch.commit();
+    if (chunkCount > 0) {
+      await batch.commit();
+      imported += chunkCount;
+    }
   }
 
   return { imported, failed, errors };
+}
+
+export interface ImportResult {
+  imported: number;
+  failed: number;
+  errors: string[];
+}
+
+export async function importSpreadsheetRows(rows: DreamSpreadsheetRow[]): Promise<ImportResult> {
+  const valid = rows.filter((r) => r.content.trim().length >= 8);
+  const invalidCount = rows.length - valid.length;
+
+  const apiResult = await importViaServerApi(valid);
+  if (apiResult) {
+    return {
+      ...apiResult,
+      failed: apiResult.failed + invalidCount,
+    };
+  }
+
+  const clientResult = await importViaClientBatch(valid);
+  return {
+    ...clientResult,
+    failed: clientResult.failed + invalidCount,
+  };
 }
 
 export async function deleteSpreadsheetRows(ids: string[]): Promise<number> {

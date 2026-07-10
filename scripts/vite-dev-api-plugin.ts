@@ -17,12 +17,8 @@ export function attachDevApi() {
       const mod = await import("../netlify/functions/register-story-views");
       return mod.handler;
     },
-    "/api/create-story-unlock-order": async () => {
-      const mod = await import("../netlify/functions/create-story-unlock-order");
-      return mod.handler;
-    },
-    "/api/confirm-story-unlock-payment": async () => {
-      const mod = await import("../netlify/functions/confirm-story-unlock-payment");
+    "/api/admin-import-dreams": async () => {
+      const mod = await import("../netlify/functions/admin-import-dreams");
       return mod.handler;
     },
   });

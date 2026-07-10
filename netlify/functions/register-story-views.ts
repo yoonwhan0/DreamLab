@@ -1,9 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { getAdminDb, verifyBearerUid } from "./lib/firebaseAdmin";
-import {
-  STORY_UNLOCK_UNIT_PRICE_KRW,
-  registerStoryViews,
-} from "./lib/storyUnlockStore";
+import { registerStoryViews } from "./lib/storyUnlockStore";
 
 interface Body {
   keyword?: string;
@@ -38,7 +35,6 @@ const handler: Handler = async (event) => {
       ok: result.ok,
       reason: result.reason,
       access: result.access,
-      unitPrice: STORY_UNLOCK_UNIT_PRICE_KRW,
     }),
   };
 };

@@ -40,12 +40,6 @@ export const SPREADSHEET_COLUMNS = [
   { key: "followUpAnsweredAt", header: "후기작성일", width: 110 },
   { key: "followUpEmotions", header: "후기감정", width: 88 },
   { key: "profile", header: "프로필", width: 120 },
-  { key: "seedProfile", header: "시드프로필", width: 120 },
-  { key: "likes", header: "좋아요", width: 56 },
-  { key: "isPublic", header: "공개", width: 56 },
-  { key: "seedSource", header: "시드출처", width: 88 },
-  { key: "importedBy", header: "업로드UID", width: 100 },
-  { key: "importedAt", header: "업로드일", width: 110 },
 ] as const;
 
 export type SpreadsheetColumnKey = (typeof SPREADSHEET_COLUMNS)[number]["key"];
@@ -85,12 +79,6 @@ export interface DreamSpreadsheetRow {
   followUpAnsweredAt: string;
   followUpEmotions: string;
   profile: string;
-  seedProfile: string;
-  likes: string;
-  isPublic: string;
-  seedSource: string;
-  importedBy: string;
-  importedAt: string;
   _errors?: string[];
 }
 
@@ -163,19 +151,6 @@ const HEADER_ALIASES: Record<string, SpreadsheetColumnKey> = {
   followUpEmotions: "followUpEmotions",
   프로필: "profile",
   profile: "profile",
-  시드프로필: "seedProfile",
-  seedProfile: "seedProfile",
-  좋아요: "likes",
-  likes: "likes",
-  공개: "isPublic",
-  isPublic: "isPublic",
-  public: "isPublic",
-  시드출처: "seedSource",
-  seedSource: "seedSource",
-  업로드uid: "importedBy",
-  importedBy: "importedBy",
-  업로드일: "importedAt",
-  importedAt: "importedAt",
 };
 
 const EMOTION_ALIASES: Record<string, DreamEmotionId> = {
@@ -195,9 +170,9 @@ const EMOTION_ALIASES: Record<string, DreamEmotionId> = {
 };
 
 const OUTCOME_ALIASES: Record<string, OutcomeCategory> = {
-  nothing: "nothing",
-  별일없었음: "nothing",
-  "별일 없었음": "nothing",
+  nothing: "other",
+  별일없었음: "other",
+  "별일 없었음": "other",
   good: "good",
   "좋은 일": "good",
   좋은일: "good",
@@ -231,19 +206,13 @@ export function parseEmotions(raw: string): DreamEmotionId[] {
 
 export function parseOutcome(raw: string): OutcomeCategory {
   const key = raw.trim();
-  if (!key) return "nothing";
+  if (!key) return "other";
   const direct = OUTCOME_ALIASES[key] ?? OUTCOME_ALIASES[key.replace(/\s/g, "")];
   if (direct) return direct;
   const fromLabel = (Object.entries(OUTCOME_CATEGORIES) as [OutcomeCategory, string][]).find(
     ([, label]) => label === key,
   );
-  return fromLabel?.[0] ?? "nothing";
-}
-
-export function parseIsPublic(raw: string): boolean {
-  const v = raw.trim().toLowerCase();
-  if (!v || v === "y" || v === "yes" || v === "true" || v === "1" || v === "공개") return true;
-  return false;
+  return fromLabel?.[0] ?? "other";
 }
 
 function cellStr(value: unknown): string {
@@ -269,8 +238,6 @@ export function emptyRow(): DreamSpreadsheetRow {
     source: "seed",
     emotions: "weird",
     profile: "익명 · 29 · 서울",
-    likes: "0",
-    isPublic: "Y",
   };
 }
 
@@ -293,8 +260,6 @@ function rowFromRecord(get: (key: SpreadsheetColumnKey) => string): DreamSpreads
   }
   if (!base.source) base.source = "seed";
   if (!base.emotions) base.emotions = "weird";
-  if (!base.likes) base.likes = "0";
-  if (!base.isPublic) base.isPublic = "Y";
   return base;
 }
 
@@ -356,7 +321,7 @@ export function downloadTemplate(filename = "dreamlab-DB-양식.xlsx"): void {
       keywords: "집,현관,새벽",
       anchor: "집",
       emotions: "scared,weird",
-      outcomeCategory: "별일 없었음",
+      outcomeCategory: "기타",
       afterStory: "30일 지나도 큰 사건은 없었어요. 그런데 꿈 장면만큼은 자주 떠올랐습니다.",
       followUpEmotions: "calm",
       profile: "익명 · 28 · 수원",

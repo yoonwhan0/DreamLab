@@ -1,10 +1,6 @@
 import { auth } from "@/lib/firebase";
 import type { StoryKeywordAccess } from "@/types";
-import {
-  MEMBER_FREE_STORY_VIEWS,
-  STORY_UNLOCK_UNIT_PRICE_KRW,
-  maxStorySlots,
-} from "@/lib/storyAccessPricing";
+import { MEMBER_FREE_STORY_VIEWS, maxStorySlots } from "@/lib/storyAccessPricing";
 
 const API = "/api";
 
@@ -77,66 +73,6 @@ export async function registerStoryViews(
       freeCap: MEMBER_FREE_STORY_VIEWS,
     },
   };
-}
-
-export interface StoryUnlockOrder {
-  orderId: string;
-  amount: number;
-  orderName: string;
-  customerKey: string;
-}
-
-export async function createStoryUnlockOrder(keyword: string): Promise<StoryUnlockOrder> {
-  const headers = await authHeaders();
-  const res = await fetch(`${API}/create-story-unlock-order`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ keyword: keyword.trim() }),
-  });
-
-  if (!res.ok) {
-    throw new Error("결제 주문을 만들지 못했습니다.");
-  }
-
-  return (await res.json()) as StoryUnlockOrder;
-}
-
-export async function confirmStoryUnlockPayment(opts: {
-  paymentKey: string;
-  orderId: string;
-  amount: number;
-}): Promise<{
-  ok: boolean;
-  keyword: string;
-  paidUnlockCount: number;
-  maxSlots: number;
-}> {
-  const headers = await authHeaders();
-  const res = await fetch(`${API}/confirm-story-unlock-payment`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(opts),
-  });
-
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? "결제 승인에 실패했습니다.");
-  }
-
-  return (await res.json()) as {
-    ok: boolean;
-    keyword: string;
-    paidUnlockCount: number;
-    maxSlots: number;
-  };
-}
-
-export function isTossPaymentsConfigured(): boolean {
-  return Boolean(import.meta.env.VITE_TOSS_CLIENT_KEY);
-}
-
-export function storyUnlockUnitPrice(): number {
-  return STORY_UNLOCK_UNIT_PRICE_KRW;
 }
 
 export function computeMaxVisible(access: StoryKeywordAccess | null): number {

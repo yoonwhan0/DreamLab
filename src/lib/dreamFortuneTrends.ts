@@ -2,7 +2,7 @@ import { hashSeed, createSeededRandom, seededInt } from "@/lib/seededRandom";
 import { inferCategoryFromKeyword } from "@/lib/keywordNarratives";
 import { resolveResearchAnchor } from "@/lib/dreamAnchor";
 import type { Dream, DreamStats, OutcomeCategory } from "@/types";
-import { OUTCOME_CATEGORIES } from "@/types";
+import { normalizeOutcomeCategory, OUTCOME_CATEGORIES } from "@/types";
 
 export type FortuneAxisId =
   | "overall"
@@ -38,11 +38,11 @@ export interface DreamFortuneSnapshot {
 }
 
 const AXIS_META: { id: FortuneAxisId; label: string; outcomeKeys: OutcomeCategory[] }[] = [
-  { id: "overall", label: "종합운", outcomeKeys: ["good", "nothing"] },
+  { id: "overall", label: "종합운", outcomeKeys: ["good", "bad"] },
   { id: "money", label: "재물운", outcomeKeys: ["money", "good"] },
   { id: "love", label: "연애운", outcomeKeys: ["love", "good"] },
   { id: "career", label: "직장·학업운", outcomeKeys: ["job", "good"] },
-  { id: "health", label: "건강·멘탈", outcomeKeys: ["health", "nothing"] },
+  { id: "health", label: "건강·멘탈", outcomeKeys: ["health", "good"] },
   { id: "family", label: "가족·대인운", outcomeKeys: ["family", "love"] },
   { id: "social", label: "대외·평판운", outcomeKeys: ["other", "good"] },
 ];
@@ -105,20 +105,12 @@ export function buildArchiveDreamStats(dreams: Dream[]): DreamStats {
       emotionMap.set(emotion, (emotionMap.get(emotion) ?? 0) + 1);
     }
     if (dream.followUp) {
-      outcomes[dream.followUp.outcomeCategory] += 1;
+      outcomes[normalizeOutcomeCategory(dream.followUp.outcomeCategory)] += 1;
     }
   }
 
   const total = dreams.length;
   const withFollowUp = dreams.filter((d) => d.followUp).length;
-  const pending = total - withFollowUp;
-
-  if (pending > 0) {
-    outcomes.nothing += pending;
-  }
-  if (withFollowUp === 0 && total > 0) {
-    outcomes.nothing = Math.max(outcomes.nothing, total);
-  }
 
   return {
     totalDreams: total,

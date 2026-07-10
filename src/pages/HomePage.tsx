@@ -81,9 +81,9 @@ export function HomePage() {
       {access.isGuest && (
         <Reveal delay={170}>
           <CuriosityTease
-            title="30일 뒤 결말, 지금 한 건만 보입니다"
-            body="가입하면 탐색에서 같은 꿈 후기를 더 열어볼 수 있어요."
-            cta="가입하고 더 보기"
+            title="무료 가입 · 꿈 저장"
+            body="가입하면 탐색에서 같은 꿈 후기를 더 볼 수 있어요."
+            cta="무료로 가입하기"
             to="/explore"
           />
         </Reveal>

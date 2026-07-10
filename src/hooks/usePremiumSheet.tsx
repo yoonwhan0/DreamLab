@@ -42,7 +42,7 @@ export function PremiumSheetProvider({ children }: { children: ReactNode }) {
 
   const handleCheckout = () => {
     setCheckoutMsg(
-      "결제 연동이 곧 오픈됩니다. 오픈 즉시 이 화면에서 구독이 완료됩니다.",
+      "프리미엄 구독은 App Store(iOS) · Google Play(Android) 인앱결제로 연결됩니다. 앱 출시 후 이 화면에서 바로 구독할 수 있어요.",
     );
   };
 

@@ -438,19 +438,12 @@ function normalizeStories(
   const profiles = [...VIVID_STORY_PROFILES];
 
   const outcomes = [
-
-    "nothing",
-
     "good",
-
     "bad",
-
     "love",
-
     "job",
-
     "health",
-
+    "other",
   ] as const;
 
 
@@ -480,10 +473,8 @@ function normalizeStories(
 
       emotions: (Array.isArray(s.emotions) ? s.emotions : ["weird"]) as string[],
 
-      outcomeCategory: String(
-
-        s.outcomeCategory ?? outcomes[i % outcomes.length],
-
+      outcomeCategory: normalizeStoryOutcome(
+        String(s.outcomeCategory ?? outcomes[i % outcomes.length]),
       ),
 
       afterStory:
@@ -511,9 +502,13 @@ function normalizeStories(
 
 
 
+function normalizeStoryOutcome(raw: string): string {
+  if (raw === "nothing" || raw === "별일 없었음" || raw === "별일없었음") return "other";
+  return raw;
+}
+
 function buildFallbackStories(count = 10) {
   const outcomes = [
-    "nothing",
     "good",
     "bad",
     "love",
@@ -522,7 +517,8 @@ function buildFallbackStories(count = 10) {
     "family",
     "money",
     "other",
-    "nothing",
+    "good",
+    "bad",
   ] as const;
 
   return Array.from({ length: count }, (_, i) => {
@@ -637,25 +633,14 @@ function fallbackInterpret(title: string, content: string): ParsedInterpretation
       stories: fallbackStories,
 
       outcomes: {
-
-        nothing: Math.round(withFollowUpCount * 0.4),
-
-        good: Math.round(withFollowUpCount * 0.14),
-
-        bad: Math.round(withFollowUpCount * 0.2),
-
-        love: Math.round(withFollowUpCount * 0.1),
-
-        job: Math.round(withFollowUpCount * 0.08),
-
-        health: Math.round(withFollowUpCount * 0.06),
-
-        family: Math.round(withFollowUpCount * 0.05),
-
-        money: Math.round(withFollowUpCount * 0.03),
-
-        other: Math.round(withFollowUpCount * 0.02),
-
+        good: Math.round(withFollowUpCount * 0.22),
+        bad: Math.round(withFollowUpCount * 0.28),
+        love: Math.round(withFollowUpCount * 0.12),
+        job: Math.round(withFollowUpCount * 0.1),
+        health: Math.round(withFollowUpCount * 0.08),
+        family: Math.round(withFollowUpCount * 0.07),
+        money: Math.round(withFollowUpCount * 0.05),
+        other: Math.round(withFollowUpCount * 0.08),
       },
 
     },

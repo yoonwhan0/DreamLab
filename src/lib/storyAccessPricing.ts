@@ -1,9 +1,6 @@
 /** 회원 — 키워드당 무료 후기 열람 */
 export const MEMBER_FREE_STORY_VIEWS = 4;
 
-/** 무료 4건 이후 추가 1건당 (원) */
-export const STORY_UNLOCK_UNIT_PRICE_KRW = 200;
-
 /** 무료 구간 — 2건씩 / 유료 구간 — 1건씩 */
 export const STORY_LOAD_CHUNK_FREE = 2;
 export const STORY_LOAD_CHUNK_PAID = 1;
@@ -22,8 +19,4 @@ export function storyLoadChunk(visibleCount: number): number {
   return visibleCount >= MEMBER_FREE_STORY_VIEWS
     ? STORY_LOAD_CHUNK_PAID
     : STORY_LOAD_CHUNK_FREE;
-}
-
-export function formatStoryUnlockPrice(amount = STORY_UNLOCK_UNIT_PRICE_KRW): string {
-  return `₩${amount.toLocaleString("ko-KR")}`;
 }

@@ -30,14 +30,8 @@
   force = true
 
 [[redirects]]
-  from = "/api/create-story-unlock-order"
-  to = "/.netlify/functions/create-story-unlock-order"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/confirm-story-unlock-payment"
-  to = "/.netlify/functions/confirm-story-unlock-payment"
+  from = "/api/admin-import-dreams"
+  to = "/.netlify/functions/admin-import-dreams"
   status = 200
   force = true
 

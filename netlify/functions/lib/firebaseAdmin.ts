@@ -29,19 +29,43 @@ export function getAdminAuth() {
   return app ? getAuth(app) : null;
 }
 
+const MASTER_ADMIN_EMAIL = "yoonwhan0@gmail.com";
+
 export async function verifyBearerUid(
   authorization: string | undefined,
 ): Promise<string | null> {
+  const admin = await verifyBearerAdmin(authorization);
+  return admin?.uid ?? null;
+}
+
+export async function verifyBearerAdmin(
+  authorization: string | undefined,
+): Promise<{ uid: string; email: string | null } | null> {
   if (!authorization?.startsWith("Bearer ")) return null;
   const token = authorization.slice("Bearer ".length).trim();
   if (!token) return null;
 
   const auth = getAdminAuth();
-  if (!auth) return null;
+  const db = getAdminDb();
+  if (!auth || !db) return null;
 
   try {
     const decoded = await auth.verifyIdToken(token);
-    return decoded.uid ?? null;
+    const uid = decoded.uid;
+    if (!uid) return null;
+
+    const email =
+      typeof decoded.email === "string" ? decoded.email.trim().toLowerCase() : null;
+    if (email === MASTER_ADMIN_EMAIL) {
+      return { uid, email };
+    }
+
+    const snap = await db.doc(`users/${uid}`).get();
+    if (snap.exists && snap.data()?.role === "admin") {
+      return { uid, email };
+    }
+
+    return null;
   } catch {
     return null;
   }

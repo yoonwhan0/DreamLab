@@ -2,7 +2,7 @@ import type { CommunityStory } from "@/types";
 import { OUTCOME_CATEGORIES } from "@/types";
 import { EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedBlocks, FormattedText } from "@/components/ui/FormattedText";
-import { BRAND_FORBIDDEN_TEASE, CTA_PREMIUM_SEE_ALL, CTA_SIGNUP_SEE_MORE } from "@/lib/branding";
+import { CTA_PREMIUM_SEE_ALL, CTA_SIGNUP_SEE_MORE } from "@/lib/branding";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
@@ -29,9 +29,9 @@ export function CommunityStoriesPanel({
   compact = false,
   blurLocked = false,
   lockedCount,
-  blurPreviewStory,
+  blurPreviewStory: _blurPreviewStory,
   isEstimated: _isEstimated = false,
-  keyword,
+  keyword: _keyword,
   centered = false,
 }: CommunityStoriesPanelProps) {
   const access = useAccessPolicy();
@@ -47,7 +47,6 @@ export function CommunityStoriesPanel({
   const rest = isMinimal ? [] : stories.slice(1);
   const extraLocked = lockedCount ?? Math.max(stories.length - 1, 0);
   const showBlur = blurLocked && extraLocked > 0;
-  const previewStory = blurPreviewStory ?? stories[1] ?? stories[0];
 
   const sectionLabel = blurLocked
     ? access.isGuest
@@ -99,45 +98,26 @@ export function CommunityStoriesPanel({
       )}
 
       {showBlur && (
-        <div className="relative rounded-xl overflow-hidden min-h-[8rem] border border-border bg-surface-2">
-          {previewStory && (
-            <div className="p-4 story-blurred pointer-events-none select-none max-h-[9rem] overflow-hidden" aria-hidden>
-              <StoryContent
-                story={previewStory}
-                centered={centered}
-                variant={resolvedVariant}
-              />
-            </div>
-          )}
-          <div className="story-blur-overlay absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center motion-pulse-soft">
-            <p className="text-sm font-semibold text-text">
-              +{extraLocked.toLocaleString()}건 더
-            </p>
-            <p className="text-xs text-text-secondary copy-lines max-w-[16rem]">
-              {access.isGuest
-                ? "같은 꿈을 꾼 이들의 한 달 뒤 — 가입하면 더 열립니다."
-                : "나머지 결말·통계는 프리미엄에서 전부 볼 수 있어요."}
-            </p>
-            <button
-              type="button"
-              className="btn-primary mt-1 text-sm"
-              onClick={() =>
-                access.isGuest
-                  ? openSignupSheet(
-                      keyword
-                        ? `“${keyword}” 한 달 뒤 결말 ${extraLocked}건 — 가입 후 열림`
-                        : "가입 후 더 많은 후기를 볼 수 있어요",
-                    )
-                  : openPremiumSheet(
-                      keyword
-                        ? `“${keyword}” 후기 ${extraLocked}건 — 프리미엄에서 전체`
-                        : BRAND_FORBIDDEN_TEASE,
-                    )
-              }
-            >
-              {access.isGuest ? CTA_SIGNUP_SEE_MORE : CTA_PREMIUM_SEE_ALL}
-            </button>
-          </div>
+        <div className="rounded-xl border border-dashed border-border bg-surface-2 p-4 text-center space-y-2">
+          <p className="text-sm font-medium text-text">
+            {access.isGuest ? "회원은 후기를 더 볼 수 있어요" : "프리미엄에서 전체 공개"}
+          </p>
+          <p className="text-xs text-text-secondary copy-lines max-w-[16rem] mx-auto">
+            {access.isGuest
+              ? "무료 가입 후 같은 꿈 후기·탐색 한도가 열립니다."
+              : "결말·통계·8주 운세 그래프는 프리미엄 구독에서 볼 수 있어요."}
+          </p>
+          <button
+            type="button"
+            className="btn-primary mt-1 text-sm"
+            onClick={() =>
+              access.isGuest
+                ? openSignupSheet("가입하면 같은 꿈 후기를 더 볼 수 있어요.")
+                : openPremiumSheet("후기·통계 전체는 프리미엄 구독에서 볼 수 있어요.")
+            }
+          >
+            {access.isGuest ? CTA_SIGNUP_SEE_MORE : CTA_PREMIUM_SEE_ALL}
+          </button>
         </div>
       )}
     </div>

@@ -60,14 +60,14 @@ function pickOutcome(rand: () => number, pack: KeywordNarrativePack): OutcomeCat
   const hasCustom = Object.keys(pack.afterByOutcome).length > 0;
   const weights = hasCustom
     ? keys.map((k) => (pack.afterByOutcome[k]?.length ? 22 : 8))
-    : [26, 10, 20, 10, 8, 7, 6, 4, 9];
+    : [12, 22, 12, 10, 9, 8, 7, 20];
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rand() * total;
   for (let i = 0; i < keys.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return keys[i];
+    r -= weights[i]!;
+    if (r <= 0) return keys[i]!;
   }
-  return "nothing";
+  return "other";
 }
 
 function pickAfterStory(

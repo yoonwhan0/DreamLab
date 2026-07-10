@@ -98,7 +98,7 @@ export function WriteDreamPage() {
         </div>
 
         {submitting ? (
-          <LoadingPulse label="AI 관측 메모 작성 중..." />
+          <LoadingPulse label="꿈 내용 분석 중..." />
         ) : (
           <>
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -117,7 +117,7 @@ export function WriteDreamPage() {
       {!submitting && (
         <CuriosityTease
           title="같은 꿈을 꾼 사람들, 30일 뒤는?"
-          body="기록 전에도 탐색에서 비슷한 꿈·한 달 뒤 후기를 미리 엿볼 수 있어요."
+          body="기록 전에도 탐색에서 비슷한 꿈·한 달 뒤 후기를 미리 볼 수 있어요."
           cta="탐색으로 가기"
           to="/explore"
         />

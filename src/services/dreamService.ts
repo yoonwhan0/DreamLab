@@ -25,7 +25,7 @@ import type {
   OutcomeCategory,
   UserProfile,
 } from "@/types";
-import { getFollowUpDueDate, MIN_REAL_COMMUNITY_COUNT, OUTCOME_CATEGORIES } from "@/types";
+import { getFollowUpDueDate, MIN_REAL_COMMUNITY_COUNT, normalizeOutcomeCategory, OUTCOME_CATEGORIES } from "@/types";
 
 const DREAMS = "dreams";
 const USERS = "users";
@@ -47,6 +47,7 @@ function dreamFromDoc(id: string, data: DocumentData): Dream {
     followUp: data.followUp
       ? {
           ...data.followUp,
+          outcomeCategory: normalizeOutcomeCategory(data.followUp.outcomeCategory),
           answeredAt: data.followUp.answeredAt?.toDate() ?? new Date(),
         }
       : undefined,
@@ -369,7 +370,7 @@ export function computeStats(dreams: Dream[]): DreamStats {
 
   for (const dream of withFollowUp) {
     if (!dream.followUp) continue;
-    outcomes[dream.followUp.outcomeCategory]++;
+    outcomes[normalizeOutcomeCategory(dream.followUp.outcomeCategory)]++;
     for (const emotion of dream.followUp.emotions) {
       emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
     }

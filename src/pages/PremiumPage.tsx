@@ -6,7 +6,7 @@ import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
-import { getRandomProvocativeKeywords } from "@/lib/previewKeywords";
+import { EXPLORE_DISCOVER_KEYWORDS } from "@/lib/previewKeywords";
 import { PRICING_TIERS } from "@/lib/pricingTiers";
 import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
 import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
@@ -26,7 +26,7 @@ export function PremiumPageContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { openPremiumSheet } = usePremiumSheet();
-  const previewKeyword = useState(() => getRandomProvocativeKeywords(1)[0] ?? "로또")[0];
+  const previewKeyword = EXPLORE_DISCOVER_KEYWORDS[0] ?? "시험";
   const previewStories = previewCommunityForKeyword(previewKeyword).stories;
   const fortunePreview = buildDreamFortuneSnapshot(
     previewKeyword,
@@ -56,9 +56,8 @@ export function PremiumPageContent() {
 
       <CommunityStoriesPanel
         stories={previewStories}
-        title={`“${previewKeyword}” — 프리미엄에서 열리는 후기`}
+        title={`"${previewKeyword}" — 프리미엄에서 보는 후기·통계`}
         blurLocked={!access.isPremium}
-        lockedCount={45}
         keyword={previewKeyword}
       />
 
