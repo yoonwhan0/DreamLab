@@ -23,7 +23,7 @@ import {
   isInAppBrowser,
   startGoogleRedirect,
 } from "@/lib/authPlatform";
-import { getAuthRedirectResult } from "@/lib/authRedirectBootstrap";
+import { getAuthRedirectResult, resetAuthRedirectResult } from "@/lib/authRedirectBootstrap";
 import { isLinkedAuthUser } from "@/lib/authUser";
 import { isMasterAccountEmail } from "@/lib/masterAccounts";
 import { getUserProfile, upsertUserProfile } from "@/services/dreamService";
@@ -95,8 +95,10 @@ async function handleRedirectSignIn(
       return { user: await finalizeGoogleUser(current, syncProfile), error: null };
     }
 
-    // redirect 복귀 직후엔 익명 세션 정리하지 않음 — 세션 확정 전 signOut 방지
+    // redirect 시도했는데 세션 없음 — stale pending 정리 (PC·모바일 공통)
     if (hadPendingRedirect) {
+      clearAuthRedirectPending();
+      resetAuthRedirectResult();
       return { user: null, error: null };
     }
 
@@ -219,16 +221,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
         if (!mounted) return;
 
-        // redirect 복귀 직후 — pending이어도 이미 Google 세션이면 막지 않음
-        if (isAuthRedirectPending()) {
-          if (firebaseUser && isLinkedAuthUser(firebaseUser)) {
-            clearAuthRedirectPending();
-          } else {
-            setLoading(true);
-            return;
-          }
-        }
-
         if (firebaseUser?.isAnonymous) {
           await clearLegacyAnonymousSession();
           if (!mounted) return;
@@ -239,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser && isLinkedAuthUser(firebaseUser)) {
+          clearAuthRedirectPending();
           const refreshed = await reloadAuthUser(firebaseUser);
           setUser(refreshed);
           await syncProfile(refreshed);
@@ -260,6 +253,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInGoogle = useCallback(async () => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+    clearAuthRedirectPending();
+    resetAuthRedirectResult();
     setAuthError(null);
 
     const provider = new GoogleAuthProvider();

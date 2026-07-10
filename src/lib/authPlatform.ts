@@ -22,8 +22,6 @@ export function markAuthRedirectPending(): void {
   try {
     sessionStorage.setItem(AUTH_REDIRECT_PENDING_KEY, "1");
     sessionStorage.setItem(AUTH_REDIRECT_PENDING_AT_KEY, at);
-    localStorage.setItem(AUTH_REDIRECT_PENDING_KEY, "1");
-    localStorage.setItem(AUTH_REDIRECT_PENDING_AT_KEY, at);
   } catch {
     /* ignore */
   }
@@ -42,14 +40,18 @@ export function clearAuthRedirectPending(): void {
 
 export function isAuthRedirectPending(): boolean {
   try {
+    // 예전 redirect 시도에서 남은 localStorage 플래그 정리
+    const legacyPending = localStorage.getItem(AUTH_REDIRECT_PENDING_KEY) === "1";
+    if (legacyPending) {
+      clearAuthRedirectPending();
+      return false;
+    }
+
     if (isAuthRedirectTimedOut()) {
       clearAuthRedirectPending();
       return false;
     }
-    return (
-      sessionStorage.getItem(AUTH_REDIRECT_PENDING_KEY) === "1" ||
-      localStorage.getItem(AUTH_REDIRECT_PENDING_KEY) === "1"
-    );
+    return sessionStorage.getItem(AUTH_REDIRECT_PENDING_KEY) === "1";
   } catch {
     return false;
   }
@@ -57,10 +59,7 @@ export function isAuthRedirectPending(): boolean {
 
 function isAuthRedirectTimedOut(): boolean {
   try {
-    const at = Number(
-      sessionStorage.getItem(AUTH_REDIRECT_PENDING_AT_KEY) ??
-        localStorage.getItem(AUTH_REDIRECT_PENDING_AT_KEY),
-    );
+    const at = Number(sessionStorage.getItem(AUTH_REDIRECT_PENDING_AT_KEY));
     if (!at || Number.isNaN(at)) return false;
     return Date.now() - at > AUTH_REDIRECT_TIMEOUT_MS;
   } catch {

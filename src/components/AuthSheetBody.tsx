@@ -16,7 +16,7 @@ export function AuthSheetBody({ message, onAuthenticated }: AuthSheetBodyProps) 
   const access = useAccessPolicy();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [redirecting, setRedirecting] = useState(() => isAuthRedirectPending());
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (access.isMember || isLinkedAuthUser(user)) {
