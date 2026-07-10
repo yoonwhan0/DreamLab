@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { DreamJourneyStepper } from "@/components/DreamJourneyStepper";
 import { JourneyOnboardingCard } from "@/components/JourneyOnboardingCard";
+import { MyDreamFollowUpSection } from "@/components/MyDreamFollowUpSection";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { UpgradeGate } from "@/components/AccessGate";
 import { InterpretationCard } from "@/components/InterpretationCard";
@@ -22,16 +23,19 @@ import { resolveCommunityData } from "@/services/communityDataService";
 import { resolveAnchorKeyword } from "@/services/syntheticCommunityService";
 import { DEMO_DREAM } from "@/demo/demoData";
 import type { CommunityEstimate, Dream, DreamStats, SimilarDreamSummary } from "@/types";
-import { isFollowUpDue } from "@/types";
 import { LoadingSpinner, EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedBlocks } from "@/components/ui/FormattedText";
+
+function isOwnDreamRecord(dream: Dream, userId: string | undefined): boolean {
+  return Boolean(userId && dream.userId === userId);
+}
 
 export function DreamDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const isNew = searchParams.get("new") === "1";
   const navigate = useNavigate();
-  const { signInGoogle } = useAuth();
+  const { signInGoogle, user } = useAuth();
   const access = useAccessPolicy();
   const [dream, setDream] = useState<Dream | null>(null);
   const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
@@ -41,9 +45,30 @@ export function DreamDetailPage() {
   const [saving, setSaving] = useState(false);
 
   const isPreview = id === "preview";
+  const isOwnDream = useMemo(
+    () => (dream ? isOwnDreamRecord(dream, user?.uid) : false),
+    [dream, user?.uid],
+  );
+  const showCommunity = !isOwnDream && (isPreview || access.canViewSimilarTypes);
 
   useEffect(() => {
     let cancelled = false;
+
+    async function loadCommunity(
+      interpretation: Dream["interpretation"],
+      options: {
+        embedding?: number[];
+        title?: string;
+        content?: string;
+        estimate?: CommunityEstimate;
+      },
+    ) {
+      const community = await resolveCommunityData(interpretation, options);
+      if (cancelled) return;
+      setSummary(community.summary);
+      setStats(community.stats);
+      setIsEstimated(community.isEstimated);
+    }
 
     async function load() {
       if (!id) return;
@@ -112,36 +137,24 @@ export function DreamDetailPage() {
       setDream(d);
       setLoading(false);
 
-      if (d && access.canViewSimilarTypes) {
+      const own = d ? isOwnDreamRecord(d, user?.uid) : false;
+      if (d && !own && access.canViewSimilarTypes) {
         void loadCommunity(d.interpretation, {
           embedding: d.embedding,
           title: d.title,
           content: d.content,
         });
+      } else if (own) {
+        setSummary(null);
+        setStats(null);
       }
-    }
-
-    async function loadCommunity(
-      interpretation: Dream["interpretation"],
-      options: {
-        embedding?: number[];
-        title?: string;
-        content?: string;
-        estimate?: CommunityEstimate;
-      },
-    ) {
-      const community = await resolveCommunityData(interpretation, options);
-      if (cancelled) return;
-      setSummary(community.summary);
-      setStats(community.stats);
-      setIsEstimated(community.isEstimated);
     }
 
     load();
     return () => {
       cancelled = true;
     };
-  }, [id, isPreview, access.canViewSimilarTypes]);
+  }, [id, isPreview, access.canViewSimilarTypes, user?.uid]);
 
   useEffect(() => {
     async function saveAfterSignup() {
@@ -169,27 +182,35 @@ export function DreamDetailPage() {
   }, [access.isMember, isPreview, navigate]);
 
   if (loading || saving) {
-    return <LoadingSpinner label={saving ? "저장 중..." : "관측 메모 불러오는 중..."} />;
+    return <LoadingSpinner label={saving ? "저장 중..." : "불러오는 중..."} />;
   }
 
   if (!dream) {
     return (
       <div className="text-center py-20">
         <p className="text-text-secondary">꿈을 찾을 수 없어요</p>
-        <Link to="/" className="mt-4 inline-block text-primary font-medium">
-          홈으로
+        <Link to="/my" className="mt-4 inline-block text-primary font-medium">
+          내 아카이브로
         </Link>
       </div>
     );
   }
 
-  const due = isFollowUpDue(dream.followUpDueAt);
   const anchor = resolveAnchorKeyword(dream.title, dream.interpretation, dream.content);
   const keyword =
     dream.interpretation.researchAnchor?.clusterLabel?.trim() || anchor;
 
   return (
     <div className="space-y-5">
+      {isOwnDream && (
+        <Link
+          to="/my"
+          className="inline-flex items-center text-sm text-text-muted hover:text-primary transition-colors"
+        >
+          ← 내 아카이브
+        </Link>
+      )}
+
       {isPreview && (
         <p className="text-xs font-medium text-warning text-right">미저장 미리보기</p>
       )}
@@ -232,9 +253,23 @@ export function DreamDetailPage() {
         interpretation={dream.interpretation}
         dreamContent={dream.content}
         dreamTitle={dream.title}
+        mode={isOwnDream ? "personal" : "default"}
       />
 
-      {summary && stats && summary.totalCount > 0 && (
+      {isOwnDream && id && !isPreview && (
+        <>
+          <MyDreamFollowUpSection dream={dream} dreamId={id} />
+          <p className="text-center text-xs text-text-muted leading-relaxed px-2">
+            다른 사람들의 비슷한 꿈·한 달 뒤 통계는{" "}
+            <Link to="/explore" className="text-primary font-medium hover:underline">
+              탐색
+            </Link>
+            탭에서 볼 수 있어요.
+          </p>
+        </>
+      )}
+
+      {showCommunity && summary && stats && summary.totalCount > 0 && (
         <CommunityStatPreview
           keyword={keyword}
           totalCount={summary.totalCount}
@@ -263,64 +298,47 @@ export function DreamDetailPage() {
           />
         </>
       ) : (
-        <>
-          {access.isGuest && (
-            <UpgradeGate
-              title="회원가입하면 더 열립니다"
-              description="유사 꿈 패턴 · 30일 푸시 알림 · 한 달 뒤 후기 작성"
-              ctaLabel="Google로 가입"
-              onCta={signInGoogle}
-            />
-          )}
-
-          {access.canWriteFollowUp && (
-            <div className="card p-5">
-              {dream.followUp ? (
-                <div className="space-y-2 text-sm text-text-secondary">
-                  <p className="font-medium text-success">답변 완료</p>
-                  <p>{dream.followUp.note}</p>
-                </div>
-              ) : due ? (
-                <Link to={`/follow-up/${id}`} className="btn-primary">
-                  그 꿈 이후, 어떤 일이 있었나요?
-                </Link>
-              ) : (
-                <p className="text-sm text-text-secondary">
-                  알림이 예약되어 있습니다. 한 달 뒤 답이 통계에 더해집니다.
-                </p>
-              )}
-            </div>
-          )}
-
-          {access.canViewSimilarTypes && summary && summary.totalCount > 0 && (
-            <SimilarDreamsPanel summary={summary} />
-          )}
-
-          {summary && summary.stories.length > 0 && (
-            <CommunityStoriesPanel
-              stories={summary.stories}
-              blurLocked={!access.isPremium}
-              lockedCount={Math.max(summary.stories.length - 1, 20)}
-              isEstimated={isEstimated}
-            />
-          )}
-
-          {access.canViewOutcomeStats && stats && stats.totalDreams > 0 && (
-            <div className="space-y-4">
-              <SurvivalRate
-                totalDreams={stats.totalDreams}
-                totalWithFollowUp={stats.totalWithFollowUp}
+        !isOwnDream && (
+          <>
+            {access.isGuest && (
+              <UpgradeGate
+                title="회원가입하면 더 열립니다"
+                description="유사 꿈 패턴 · 30일 푸시 알림 · 한 달 뒤 후기 작성"
+                ctaLabel="Google로 가입"
+                onCta={signInGoogle}
               />
-              <div className="card p-5">
-                <h3 className="font-semibold text-text mb-4">한 달 뒤, 그들의 답</h3>
-                <StatsBar
-                  items={getOutcomePercentages(stats)}
-                  totalCount={stats.totalWithFollowUp}
+            )}
+
+            {summary && summary.totalCount > 0 && (
+              <SimilarDreamsPanel summary={summary} />
+            )}
+
+            {summary && summary.stories.length > 0 && (
+              <CommunityStoriesPanel
+                stories={summary.stories}
+                blurLocked={!access.isPremium}
+                lockedCount={Math.max(summary.stories.length - 1, 20)}
+                isEstimated={isEstimated}
+              />
+            )}
+
+            {access.canViewOutcomeStats && stats && stats.totalDreams > 0 && (
+              <div className="space-y-4">
+                <SurvivalRate
+                  totalDreams={stats.totalDreams}
+                  totalWithFollowUp={stats.totalWithFollowUp}
                 />
+                <div className="card p-5">
+                  <h3 className="font-semibold text-text mb-4">한 달 뒤, 그들의 답</h3>
+                  <StatsBar
+                    items={getOutcomePercentages(stats)}
+                    totalCount={stats.totalWithFollowUp}
+                  />
+                </div>
               </div>
-            </div>
-          )}
-        </>
+            )}
+          </>
+        )
       )}
     </div>
   );

@@ -11,10 +11,13 @@ export function InterpretationCard({
   interpretation,
   dreamContent = "",
   dreamTitle = "",
+  mode = "default",
 }: {
   interpretation: DreamInterpretation;
   dreamContent?: string;
   dreamTitle?: string;
+  /** 내 아카이브 — 커뮤니티·탐색 티저 없이 해몽만 */
+  mode?: "default" | "personal";
 }) {
   const keywords = mergeAiKeywords(
     interpretation.keywords,
@@ -23,20 +26,31 @@ export function InterpretationCard({
     6,
   ).filter((k) => !ANCHOR_STOP_WORDS.has(k) && k.length >= 2);
 
+  const personal = mode === "personal";
+
   return (
     <div className="card card-bezel card-glow p-5 space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="section-label">관측 메모</p>
-          <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-            일반 해몽
-            <span className="mx-1.5 text-border-strong">→</span>
-            다른 관점
-            <span className="mx-1.5 text-border-strong">→</span>
-            30일 데이터
-          </p>
+          <p className="section-label">{personal ? "AI 해몽" : "관측 메모"}</p>
+          {!personal && (
+            <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
+              일반 해몽
+              <span className="mx-1.5 text-border-strong">→</span>
+              다른 관점
+              <span className="mx-1.5 text-border-strong">→</span>
+              30일 데이터
+            </p>
+          )}
+          {personal && (
+            <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
+              기록 직후 받은 해석입니다. 한 달 뒤 내 후기와 함께 아카이브에 남아요.
+            </p>
+          )}
         </div>
-        <span className="badge badge-member shrink-0">연구소 관점</span>
+        <span className="badge badge-member shrink-0">
+          {personal ? "내 기록" : "연구소 관점"}
+        </span>
       </div>
 
       <LensBlock
@@ -78,7 +92,7 @@ export function InterpretationCard({
         <Section title="한 달 뒤 · 갈릴 지점" content={interpretation.reflection} />
       </div>
 
-      {interpretation.labObservations && (
+      {interpretation.labObservations && !personal && (
         <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-3">
           <div>
             <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-primary">
@@ -123,6 +137,7 @@ export function InterpretationCard({
         </div>
       )}
 
+      {!personal && (
       <div className="rounded-lg border border-border/60 bg-surface-2/60 p-3.5 space-y-2.5">
         <FormattedText className="text-[0.6875rem] text-text-muted leading-relaxed" maxLines={4}>
           {DISTINCT_INTERPRETATION_NOTE}
@@ -132,6 +147,7 @@ export function InterpretationCard({
           {LEGAL_DISCLAIMER}
         </FormattedText>
       </div>
+      )}
     </div>
   );
 }

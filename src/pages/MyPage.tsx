@@ -71,6 +71,9 @@ export function MyPage() {
             + 새 꿈
           </Link>
         </div>
+        <p className="text-xs text-text-muted -mt-1">
+          카드를 누르면 내 해몽과 30일 여정만 봅니다. 남의 후기는 탐색에서.
+        </p>
 
         {authLoading || dreamsLoading ? (
           <LoadingSpinner label="아카이브 불러오는 중" />
