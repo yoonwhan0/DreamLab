@@ -433,7 +433,11 @@ function normalizeStories(
 ): ParsedInterpretation["communityEstimate"]["stories"] {
   if (!Array.isArray(raw) || raw.length === 0) return fallback;
 
-  const anchor = extractHeuristicKeywords(`${title} ${content}`, 1)[0] ?? "꿈";
+  const anchor =
+    researchAnchor?.primary?.trim() ||
+    extractHeuristicKeywords(`${title} ${content}`, 1)[0] ||
+    title.trim() ||
+    "꿈";
 
   const outcomes = [
     "good",
@@ -452,7 +456,7 @@ function normalizeStories(
 
     const dreamTitleRaw = String(s.dreamTitle ?? s.title ?? `${anchor} 관련 꿈`);
     const dreamSnippetRaw = String(s.dreamSnippet ?? s.snippet ?? "");
-    const dreamSnippet = repairStorySnippet(dreamSnippetRaw, i);
+    const dreamSnippet = repairStorySnippet(dreamSnippetRaw, i, anchor);
     const dreamTitle = isTemplateStorySnippet(dreamTitleRaw)
       ? excerptToStoryTitle(dreamSnippet)
       : dreamTitleRaw;
@@ -492,7 +496,7 @@ function normalizeStories(
 
 
   const valid = stories
-    .map((s, i) => sanitizeAiCommunityStory(s, i, content, title))
+    .map((s, i) => sanitizeAiCommunityStory(s, i, content, title, anchor))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
   return valid.length >= 1 ? valid : fallback;
@@ -530,7 +534,7 @@ function buildFallbackStories(count = 10) {
       outcomeCategory: outcome,
       afterStory: pickVividAfter(outcome, i),
       recordedDaysAgo: 5 + i * 4,
-      profile: VIVID_STORY_PROFILES[i % VIVID_STORY_PROFILES.length]!,
+      profile: "익명 기록",
     };
   });
 }

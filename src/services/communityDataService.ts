@@ -3,6 +3,7 @@ import {
   estimateToSummary,
   generateSyntheticCommunity,
 } from "@/services/syntheticCommunityService";
+import { buildCoherentStoryForKeyword } from "@/lib/coherentCommunityStory";
 import {
   buildSimilarDreamSummary,
   computeStats,
@@ -58,12 +59,20 @@ function mergeEstimate(
 
   const clusterTitle = interpretation.researchAnchor?.clusterLabel?.trim();
 
+  const anchor =
+    interpretation.researchAnchor?.primary?.trim() ||
+    title.trim() ||
+    interpretation.keywords[0]?.trim() ||
+    "";
+
   const aiStories = (estimate.stories ?? [])
-    .map((story, i) => sanitizeAiCommunityStory(story, i, content, title))
+    .map((story, i) => sanitizeAiCommunityStory(story, i, content, title, anchor))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
   const stories =
-    aiStories.length > 0 ? aiStories : synthetic.stories.slice(0, 1);
+    aiStories.length > 0
+      ? aiStories
+      : [buildCoherentStoryForKeyword(anchor || "꿈", 0)];
 
   const rawSamples =
     estimate.samples?.length >= 1
@@ -109,11 +118,13 @@ function mergeEstimate(
 function ensureStories(
   summary: SimilarDreamSummary,
   fallback: CommunityEstimate,
+  anchor = "",
 ): SimilarDreamSummary {
   if (summary.stories.length > 0) return summary;
+  const coherent = buildCoherentStoryForKeyword(anchor || "꿈", 0);
   return {
     ...summary,
-    stories: fallback.stories.slice(0, 1),
+    stories: fallback.stories[0] ? [fallback.stories[0]] : [coherent],
     samples: summary.samples.length > 0 ? summary.samples : fallback.samples.slice(0, 1),
   };
 }
@@ -147,9 +158,15 @@ export async function resolveCommunityData(
   );
 
   if (similar.length >= minReal) {
+    const anchor =
+      interpretation.researchAnchor?.primary?.trim() ||
+      title.trim() ||
+      interpretation.keywords[0]?.trim() ||
+      "";
     const summary = ensureStories(
       buildSimilarDreamSummary(similar, interpretation.category),
       merged,
+      anchor,
     );
     const stats = computeStats(similar);
     return { summary, stats, isEstimated: false };

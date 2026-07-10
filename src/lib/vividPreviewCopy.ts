@@ -20,20 +20,10 @@ export const VIVID_DREAM_SCENES = [
   "지하철에서 문이 닫히는데 발이 끼었어요. 사람들 표정은 평범한데 알람만 유난히 컸습니다. 그날 실제로 지하철 지연 알림이 왔어요. (우연)",
 ] as const;
 
-export const VIVID_STORY_PROFILES = [
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-  "익명 기록",
-] as const;
+export const ANONYMOUS_STORY_PROFILE = "익명 기록" as const;
+
+/** @deprecated use ANONYMOUS_STORY_PROFILE */
+export const VIVID_STORY_PROFILES = [ANONYMOUS_STORY_PROFILE] as const;
 
 export const VIVID_AFTER_BY_OUTCOME: Record<OutcomeCategory, string[]> = {
   good: [

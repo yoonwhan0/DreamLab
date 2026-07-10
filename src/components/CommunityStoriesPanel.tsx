@@ -6,6 +6,7 @@ import { CTA_PREMIUM_SEE_ALL, CTA_SIGNUP_SEE_MORE } from "@/lib/branding";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { usePremiumSheet } from "@/hooks/usePremiumSheet";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
+import { ANONYMOUS_STORY_PROFILE } from "@/lib/coherentCommunityStory";
 
 interface CommunityStoriesPanelProps {
   stories: CommunityStory[];
@@ -216,8 +217,6 @@ function StoryContent({
   );
 }
 
-function formatStoryProfile(profile: string): string {
-  const trimmed = profile.trim();
-  if (!trimmed) return "익명 기록";
-  return "익명 기록";
+function formatStoryProfile(_profile: string): string {
+  return ANONYMOUS_STORY_PROFILE;
 }

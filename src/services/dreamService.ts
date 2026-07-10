@@ -14,6 +14,7 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { ANONYMOUS_STORY_PROFILE } from "@/lib/coherentCommunityStory";
 import { normalizePercents } from "@/lib/formatText";
 import type { CommunityStory, SimilarDreamSummary } from "@/types";
 import type {
@@ -388,7 +389,7 @@ function dreamToStory(dream: Dream): CommunityStory {
     outcomeCategory: followUp.outcomeCategory,
     afterStory: followUp.note,
     recordedDaysAgo: daysAgo,
-    profile: "익명 기록",
+    profile: ANONYMOUS_STORY_PROFILE,
   };
 }
 

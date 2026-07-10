@@ -38,7 +38,7 @@ import { KEYWORD_RAIL_COUNT, provocativeSearchPlaceholder, previewKeywordLabel }
 function buildExploreDreamContent(query: string): string {
   const q = query.trim();
   if (q.length >= 40) return q;
-  return `"${q}"이(가) 떠오르는 꿈을 여러 번 꾼 것 같아요. 장면은 사람마다 다르지만 비슷한 분위기로 기록해 두었어요.`;
+  return `"${q}"이(가) 꿈의 중심이었어요. 장면은 사람마다 다르지만 비슷한 키워드로 기록해 두었어요.`;
 }
 
 const AI_WRITING_MIN_MS = 2200;
