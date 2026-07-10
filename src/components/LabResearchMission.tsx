@@ -1,77 +1,74 @@
 import { useEffect, useState } from "react";
-import { BRAND_CLOSING, BRAND_MANIFESTO, BRAND_TAGLINE } from "@/lib/branding";
+import {
+  BRAND_CLOSING,
+  BRAND_TAGLINE,
+  RESEARCH_MISSION_BEATS,
+  RESEARCH_MISSION_PILLARS,
+} from "@/lib/branding";
 import { ContributionGrid } from "@/components/ContributionGrid";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
 
 export const RESEARCH_MISSION_HASH = "research";
 
-const RESEARCH_TOPICS = [
-  {
-    title: "같은 꿈 → 30일 뒤",
-    body: "해몽이 끝나는 지점에서, 실제로 한 달 뒤 어떤 일이 있었는지를 모읍니다.",
-  },
-  {
-    title: "누적된 꿈 패턴",
-    body: "기록이 쌓일수록 키워드·감정·운세 경향이 아카이브 그래프로 드러납니다.",
-  },
-  {
-    title: "해몽 vs 현실",
-    body: "인터넷 해몽과 실제 후기가 얼마나 다른지 — 겹쳐 비교합니다.",
-  },
-  {
-    title: "익명 후기 네트워크",
-    body: "비슷한 꿈을 꾼 사람들의 30일 답변이 다음 관측의 통계가 됩니다.",
-  },
-] as const;
-
 interface LabResearchMissionBodyProps {
   /** 홈 히어로 아래 — 태그라인은 이미 노출됨 */
   hideTagline?: boolean;
+  /** 홈 메인에 관측 밀도가 이미 있음 */
+  hideDensity?: boolean;
 }
 
-export function LabResearchMissionBody({ hideTagline = false }: LabResearchMissionBodyProps) {
+export function LabResearchMissionBody({
+  hideTagline = false,
+  hideDensity = false,
+}: LabResearchMissionBodyProps) {
   const { stats } = useLiveLabMetrics();
+  const lastBeatIndex = RESEARCH_MISSION_BEATS.length - 1;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {!hideTagline && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
-          <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
-            {BRAND_MANIFESTO}
-          </p>
-        </div>
+        <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
       )}
 
-      {hideTagline && (
-        <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
-          {BRAND_MANIFESTO}
-        </p>
-      )}
-
-      <ul className="space-y-2">
-        {RESEARCH_TOPICS.map((item) => (
-          <li
-            key={item.title}
-            className="rounded-lg border border-border bg-surface-2/80 px-3 py-2.5"
+      <div className="space-y-2">
+        {RESEARCH_MISSION_BEATS.map((beat, index) => (
+          <p
+            key={beat}
+            className={`text-xs leading-relaxed copy-lines text-center ${
+              index === lastBeatIndex
+                ? "font-medium text-primary"
+                : "text-text-secondary"
+            }`}
           >
-            <p className="text-xs font-semibold text-primary">{item.title}</p>
-            <p className="mt-0.5 text-[0.6875rem] text-text-secondary leading-relaxed">
-              {item.body}
-            </p>
+            {beat}
+          </p>
+        ))}
+      </div>
+
+      <ul className="research-mission-pillars space-y-1.5 border-l-2 border-primary/25 pl-3">
+        {RESEARCH_MISSION_PILLARS.map((pillar) => (
+          <li key={pillar.label} className="text-[0.6875rem] leading-relaxed">
+            <span className="font-semibold text-primary">{pillar.label}</span>
+            <span className="text-text-secondary"> — {pillar.text}</span>
           </li>
         ))}
       </ul>
 
-      <div className="rounded-xl border border-primary/20 bg-primary-soft/15 p-3 space-y-2">
-        <p className="text-[0.625rem] font-semibold text-text-muted uppercase tracking-wider text-center">
-          전체 관측 밀도
-        </p>
-        <ContributionGrid grid={stats.contributionGrid} />
-        <p className="text-[0.6875rem] text-text-muted text-center">
-          {stats.totalDreams.toLocaleString()}건 기록 · {BRAND_CLOSING}
-        </p>
-      </div>
+      {!hideDensity && (
+        <div className="rounded-xl border border-primary/20 bg-primary-soft/15 p-3 space-y-2">
+          <p className="text-[0.625rem] font-semibold text-text-muted uppercase tracking-wider text-center">
+            전체 관측 밀도
+          </p>
+          <ContributionGrid grid={stats.contributionGrid} />
+          <p className="text-[0.6875rem] text-text-muted text-center">
+            {stats.totalDreams.toLocaleString()}건 기록 · {BRAND_CLOSING}
+          </p>
+        </div>
+      )}
+
+      {hideDensity && (
+        <p className="text-[0.6875rem] text-text-muted text-center copy-lines">{BRAND_CLOSING}</p>
+      )}
     </div>
   );
 }
@@ -130,7 +127,7 @@ export function LabResearchMission({
         {open && (
           <div className="motion-accordion-open mt-3 text-left">
             <div className="card card-bezel p-4">
-              <LabResearchMissionBody hideTagline />
+              <LabResearchMissionBody hideTagline hideDensity />
             </div>
           </div>
         )}

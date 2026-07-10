@@ -30,6 +30,20 @@ export const BRAND_MANIFESTO =
 
 export const BRAND_CLOSING = "오늘도, 누군가의 한 달 뒤가 잠금 해제됩니다.";
 
+/** 「우리는 어떤 것을 연구하나」 — 짧은 내러티브 비트 */
+export const RESEARCH_MISSION_BEATS = [
+  "AI가 꿈 해몽을 해주는 건, 이제 일반적입니다.",
+  "그 기록은 쌓입니다. 웃고 넘기기엔, 너무 많이 모이고 있습니다.",
+  "우리는 생각했습니다. 해몽이 끝난 뒤, 그다음은 무엇일까?",
+] as const;
+
+/** 연구 축 — 아코디언 안 짧은 라벨 */
+export const RESEARCH_MISSION_PILLARS = [
+  { label: "30일 뒤", text: "같은 꿈을 꾼 이들에게 실제로 무슨 일이 있었는지" },
+  { label: "쌓인 패턴", text: "키워드·감정·결말이 아카이브로 드러나는지" },
+  { label: "해몽 vs 현실", text: "인터넷 해석과 실제 후기가 얼마나 다른지" },
+] as const;
+
 /** 프리미엄·잠금 CTA 톤 */
 export const BRAND_FORBIDDEN_TEASE =
   "일부만 공개됩니다. 나머지는 프리미엄 구독에서 볼 수 있어요.";
