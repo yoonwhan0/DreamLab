@@ -50,19 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
             </AppLink>
-            <div className="flex items-center gap-2 shrink-0">
-              <AppLink
-                to="/about"
-                className={`rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide transition-colors ${
-                  location.pathname === "/about"
-                    ? "bg-primary-soft text-primary"
-                    : "text-text-muted hover:text-primary hover:bg-surface-2"
-                }`}
-              >
-                연구
-              </AppLink>
-              <TierBadge tier={access.tier} />
-            </div>
+            <TierBadge tier={access.tier} />
           </div>
         </header>
 

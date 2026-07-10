@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AppLink } from "@/components/ui/AppLink";
 import { CuriosityTease } from "@/components/CuriosityTease";
+import { LabResearchMission } from "@/components/LabResearchMission";
 import { HomeFeaturedStoryPanel } from "@/components/HomeFeaturedStoryPanel";
 import { HomeObservatorySignal } from "@/components/HomeObservatorySignal";
 import { Reveal } from "@/components/motion/Reveal";
@@ -30,14 +31,17 @@ export function HomePage() {
   return (
     <div className="home-page space-y-5 pb-4">
       <Reveal delay={0}>
-        <PageHero
-          label={hero.label}
-          title={hero.title}
-          descLead={hero.descLead}
-          descMid={hero.descMid}
-          descAccent={hero.descAccent}
-          centered
-        />
+        <div className="space-y-3">
+          <PageHero
+            label={hero.label}
+            title={hero.title}
+            descLead={hero.descLead}
+            descMid={hero.descMid}
+            descAccent={hero.descAccent}
+            centered
+          />
+          <LabResearchMission variant="hero" openOnHash />
+        </div>
       </Reveal>
 
       <Reveal delay={50}>

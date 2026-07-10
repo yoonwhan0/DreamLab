@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { BRAND_CLOSING, BRAND_MANIFESTO, BRAND_TAGLINE } from "@/lib/branding";
 import { ContributionGrid } from "@/components/ContributionGrid";
 import { useLiveLabMetrics } from "@/hooks/useLiveLabMetrics";
+
+export const RESEARCH_MISSION_HASH = "research";
 
 const RESEARCH_TOPICS = [
   {
@@ -21,18 +24,30 @@ const RESEARCH_TOPICS = [
   },
 ] as const;
 
-/** 연구소 소개 본문 — /about 전용 페이지 */
-export function LabResearchMissionBody() {
+interface LabResearchMissionBodyProps {
+  /** 홈 히어로 아래 — 태그라인은 이미 노출됨 */
+  hideTagline?: boolean;
+}
+
+export function LabResearchMissionBody({ hideTagline = false }: LabResearchMissionBodyProps) {
   const { stats } = useLiveLabMetrics();
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
+      {!hideTagline && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-text text-center">{BRAND_TAGLINE}</p>
+          <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
+            {BRAND_MANIFESTO}
+          </p>
+        </div>
+      )}
+
+      {hideTagline && (
         <p className="text-xs text-text-secondary text-center copy-lines leading-relaxed">
           {BRAND_MANIFESTO}
         </p>
-      </div>
+      )}
 
       <ul className="space-y-2">
         {RESEARCH_TOPICS.map((item) => (
@@ -57,6 +72,91 @@ export function LabResearchMissionBody() {
           {stats.totalDreams.toLocaleString()}건 기록 · {BRAND_CLOSING}
         </p>
       </div>
+    </div>
+  );
+}
+
+interface LabResearchMissionProps {
+  variant?: "hero" | "card";
+  defaultOpen?: boolean;
+  openOnHash?: boolean;
+}
+
+/** 홈 히어로 아래 · 마이 — 「우리는 어떤 것을 연구하나」 아코디언 */
+export function LabResearchMission({
+  variant = "card",
+  defaultOpen = false,
+  openOnHash = false,
+}: LabResearchMissionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    if (!openOnHash) return;
+
+    const syncFromHash = () => {
+      if (window.location.hash !== `#${RESEARCH_MISSION_HASH}`) return;
+
+      setOpen(true);
+      requestAnimationFrame(() => {
+        document.getElementById(RESEARCH_MISSION_HASH)?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      });
+    };
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, [openOnHash]);
+
+  const toggle = () => setOpen((value) => !value);
+
+  if (variant === "hero") {
+    return (
+      <div id={RESEARCH_MISSION_HASH} className="mx-auto max-w-[21rem] text-center">
+        <button
+          type="button"
+          onClick={toggle}
+          className="research-mission-trigger w-full text-sm font-medium text-primary py-1.5 transition-colors hover:text-primary/80"
+          aria-expanded={open}
+        >
+          우리는 어떤 것을 연구하나
+          <span className="ml-1 text-text-muted text-xs" aria-hidden>
+            {open ? "▲" : "▼"}
+          </span>
+        </button>
+
+        {open && (
+          <div className="motion-accordion-open mt-3 text-left">
+            <div className="card card-bezel p-4">
+              <LabResearchMissionBody hideTagline />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="card card-bezel overflow-hidden">
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full px-4 py-3.5 text-left flex items-center justify-between gap-2 hover:bg-surface-2/50 transition-colors"
+        aria-expanded={open}
+      >
+        <span className="text-sm font-semibold text-text">우리는 어떤 것을 연구하나</span>
+        <span className="text-xs text-text-muted shrink-0">{open ? "접기 ▲" : "펼치기 ▼"}</span>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-4 border-t border-border/60 motion-accordion-open">
+          <div className="pt-3">
+            <LabResearchMissionBody />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -494,6 +494,17 @@ body {
   text-shadow: 0 0 20px rgba(212, 160, 74, 0.2);
 }
 
+.research-mission-trigger {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  text-underline-offset: 0.3rem;
+  text-decoration-thickness: 1px;
+}
+
+.research-mission-trigger:hover {
+  text-decoration-color: var(--color-primary);
+}
+
 .page-desc-block .space-y-1 > * + * {
   margin-top: 0.25rem;
 }
