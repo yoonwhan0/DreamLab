@@ -55,6 +55,15 @@ export const PREVIEW_KEYWORD_POOL = [
   "군대",
   "화장실",
   "집",
+  "밥먹는꿈",
+  "금니",
+  "물에빠지는꿈",
+  "치아",
+  "죽음",
+  "전여친",
+  "상사",
+  "수능",
+  "태몽",
 ] as const;
 
 function daySeed(): number {
@@ -66,11 +75,26 @@ function daySeed(): number {
   return hashSeed(`${y}-${m}-${d}-preview`);
 }
 
-/** 홈 키워드 칩 개수 */
-export const HOME_KEYWORD_BADGE_COUNT = 12;
+/** 홈·탐색 키워드 캐러셀 — DB 인기 키워드와 합쳐져 자연스럽게 늘어남 */
+export const KEYWORD_RAIL_COUNT = 12;
 
-/** 탐색 검색 칩 개수 */
-export const EXPLORE_KEYWORD_CHIP_COUNT = 20;
+/** @deprecated use KEYWORD_RAIL_COUNT */
+export const HOME_KEYWORD_POOL_SIZE = KEYWORD_RAIL_COUNT;
+
+/** @deprecated */
+export const HOME_KEYWORD_VISIBLE_COUNT = KEYWORD_RAIL_COUNT;
+
+/** @deprecated use KEYWORD_RAIL_COUNT */
+export const EXPLORE_KEYWORD_POOL_SIZE = KEYWORD_RAIL_COUNT;
+
+/** @deprecated */
+export const EXPLORE_KEYWORD_VISIBLE_COUNT = KEYWORD_RAIL_COUNT;
+
+/** @deprecated use HOME_KEYWORD_POOL_SIZE */
+export const HOME_KEYWORD_BADGE_COUNT = HOME_KEYWORD_POOL_SIZE;
+
+/** @deprecated use EXPLORE_KEYWORD_POOL_SIZE */
+export const EXPLORE_KEYWORD_CHIP_COUNT = EXPLORE_KEYWORD_POOL_SIZE;
 
 /** 탐색 미리보기(후기 카드) 개수 */
 export const EXPLORE_DISCOVER_PREVIEW_COUNT = 6;

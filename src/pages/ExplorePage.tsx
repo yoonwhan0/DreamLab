@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ConversionGate } from "@/components/ConversionGate";
+import { KeywordChipRail } from "@/components/KeywordChipRail";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
 import { AiWritingPulse } from "@/components/motion/AiWritingPulse";
 import { withMinimumDelay } from "@/lib/minimumDelay";
@@ -20,8 +21,6 @@ import { useSignupSheet } from "@/hooks/useSignupSheet";
 import { CTA_SIGNUP } from "@/lib/branding";
 import { resolveCommunityData } from "@/services/communityDataService";
 import { interpretDream } from "@/services/interpretService";
-import { inferCategoryFromKeyword } from "@/lib/keywordNarratives";
-import { getKeywordIcon } from "@/lib/keywordIcons";
 import { getOutcomePercentages } from "@/services/dreamService";
 import {
   MEMBER_FREE_STORY_VIEWS,
@@ -34,11 +33,7 @@ import {
   registerStoryViews,
 } from "@/services/storyUnlockService";
 import type { DreamStats, SimilarDreamSummary, StoryKeywordAccess } from "@/types";
-import {
-  EXPLORE_KEYWORD_CHIP_COUNT,
-  provocativeSearchPlaceholder,
-  previewKeywordLabel,
-} from "@/lib/previewKeywords";
+import { KEYWORD_RAIL_COUNT, provocativeSearchPlaceholder, previewKeywordLabel } from "@/lib/previewKeywords";
 
 function buildExploreDreamContent(query: string): string {
   const q = query.trim();
@@ -52,7 +47,7 @@ export function ExplorePage() {
   const access = useAccessPolicy();
   const { openPremiumSheet } = usePremiumSheet();
   const { openSignupSheet } = useSignupSheet();
-  const exploreKeywords = useFeaturedKeywords(EXPLORE_KEYWORD_CHIP_COUNT);
+  const exploreKeywords = useFeaturedKeywords(KEYWORD_RAIL_COUNT);
   const [searchParams] = useSearchParams();
   const [placeholder] = useState(provocativeSearchPlaceholder);
 
@@ -284,21 +279,13 @@ export function ExplorePage() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {exploreKeywords.map((term, index) => (
-          <button
-            key={`${term}-${index}`}
-            type="button"
-            onClick={() => void runSearch(term)}
-            className="chip hover:bg-surface-3"
-          >
-            <span className="mr-1" aria-hidden>
-              {getKeywordIcon(term)}
-            </span>
-            {term}
-          </button>
-        ))}
-      </div>
+      <KeywordChipRail
+        label="이런 꿈, 한 달 뒤는?"
+        keywords={exploreKeywords}
+        activeKeyword={activeQuery || pendingKeyword}
+        variant="explore"
+        onSelect={(term) => void runSearch(term)}
+      />
 
       {access.isGuest && (
         <p className="text-xs text-text-muted text-center px-2 copy-lines">

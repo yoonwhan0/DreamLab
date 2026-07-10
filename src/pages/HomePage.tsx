@@ -10,8 +10,8 @@ import { CTA_SIGNUP, CTA_WRITE_DREAM } from "@/lib/branding";
 import { PAGE_COPY } from "@/lib/productIdeas";
 import { useAccessPolicy } from "@/hooks/useAccessPolicy";
 import { useSignupSheet } from "@/hooks/useSignupSheet";
+import { KeywordChipRail } from "@/components/KeywordChipRail";
 import { useHomeFeaturedKeywords } from "@/hooks/useHomeFeaturedKeywords";
-import { getKeywordIcon } from "@/lib/keywordIcons";
 import { previewKeywordLabel } from "@/lib/previewKeywords";
 import { previewCommunityForKeyword } from "@/services/syntheticCommunityService";
 
@@ -57,24 +57,16 @@ export function HomePage() {
       </Reveal>
 
       <Reveal delay={110}>
-        <div className="space-y-2.5">
-          <p className="text-xs text-text-muted px-1">이런 꿈, 한 달 뒤는?</p>
-          <div className="flex flex-wrap gap-2">
-            {keywords.map((keyword, i) => (
-              <button
-                key={`${keyword}-${i}`}
-                type="button"
-                onClick={() => setActiveIdx(i)}
-                className={`chip ${i === activeIdx ? "chip-primary" : ""}`}
-              >
-                <span className="mr-1" aria-hidden>
-                  {getKeywordIcon(keyword)}
-                </span>
-                {keyword}
-              </button>
-            ))}
-          </div>
-        </div>
+        <KeywordChipRail
+          label="이런 꿈, 한 달 뒤는?"
+          keywords={keywords}
+          activeKeyword={activeKeyword}
+          variant="home"
+          onSelect={(term) => {
+            const idx = keywords.indexOf(term);
+            if (idx >= 0) setActiveIdx(idx);
+          }}
+        />
       </Reveal>
 
       {activePreview?.data.stories[0] && (
