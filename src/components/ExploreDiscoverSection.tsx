@@ -81,6 +81,7 @@ export function ExploreDiscoverSection({ onSelectKeyword }: ExploreDiscoverSecti
             stories={[estimate.stories[0]!]}
             title={`"${label}" — 한 달 뒤는?`}
             variant="compact"
+            dreamTeaseBlur={access.isGuest}
             blurLocked={access.isGuest}
             lockedCount={Math.max(
               estimate.withFollowUpCount - 1,

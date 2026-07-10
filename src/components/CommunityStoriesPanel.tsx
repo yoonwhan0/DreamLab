@@ -15,6 +15,8 @@ interface CommunityStoriesPanelProps {
   variant?: "full" | "compact" | "minimal";
   compact?: boolean;
   blurLocked?: boolean;
+  /** 비회원 미리보기 — 꿈 본문만 희미하게 (회원은 선명) */
+  dreamTeaseBlur?: boolean;
   lockedCount?: number;
   /** 블러 뒤에 희미히 보여줄 다음 후기 */
   blurPreviewStory?: CommunityStory;
@@ -29,6 +31,7 @@ export function CommunityStoriesPanel({
   variant,
   compact = false,
   blurLocked = false,
+  dreamTeaseBlur = false,
   lockedCount,
   blurPreviewStory: _blurPreviewStory,
   isEstimated: _isEstimated = false,
@@ -49,11 +52,13 @@ export function CommunityStoriesPanel({
   const extraLocked = lockedCount ?? Math.max(stories.length - 1, 0);
   const showBlur = blurLocked && extraLocked > 0;
 
-  const sectionLabel = blurLocked
-    ? access.isGuest
-      ? "후기 한 건만 공개"
-      : "일부만 공개 · 프리미엄"
-    : "30일 뒤 후기";
+  const sectionLabel = dreamTeaseBlur
+    ? "후기 맛보기 · 꿈 내용은 가입 후"
+    : blurLocked
+      ? access.isGuest
+        ? "후기 한 건만 공개"
+        : "일부만 공개 · 프리미엄"
+      : "30일 뒤 후기";
 
   return (
     <div className={`card card-bezel ${isMinimal ? "p-4 space-y-3" : "p-5 space-y-4"}`}>
@@ -81,7 +86,12 @@ export function CommunityStoriesPanel({
             story={first}
             centered={centered}
             variant={resolvedVariant}
-            dreamTeaseBlur={blurLocked}
+            dreamTeaseBlur={dreamTeaseBlur}
+            onDreamTeaseSignup={
+              dreamTeaseBlur
+                ? () => openSignupSheet("회원가입하면 꿈 내용을 볼 수 있어요.")
+                : undefined
+            }
           />
         </article>
       )}
@@ -131,12 +141,14 @@ function StoryContent({
   centered = false,
   variant = "full",
   dreamTeaseBlur = false,
+  onDreamTeaseSignup,
 }: {
   story: CommunityStory;
   centered?: boolean;
   variant?: "full" | "compact" | "minimal";
-  /** 잠금 미리보기 — 꿈 본문만 하단 블러, 30일 후는 선명 */
+  /** 비회원 미리보기 — 꿈 본문만 하단 블러, 30일 후는 선명 */
   dreamTeaseBlur?: boolean;
+  onDreamTeaseSignup?: () => void;
 }) {
   if (variant === "minimal") {
     return (
@@ -146,6 +158,7 @@ function StoryContent({
           <DreamSnippetBlock
             snippet={story.dreamSnippet}
             teaseBlur={dreamTeaseBlur}
+            onTeaseSignup={onDreamTeaseSignup}
             className="text-text-secondary leading-relaxed"
             maxLines={5}
           />
@@ -195,6 +208,7 @@ function StoryContent({
           <DreamSnippetBlock
             snippet={story.dreamSnippet}
             teaseBlur={dreamTeaseBlur}
+            onTeaseSignup={onDreamTeaseSignup}
             className="text-text-secondary"
             maxLines={5}
           />
@@ -227,11 +241,13 @@ function StoryContent({
 function DreamSnippetBlock({
   snippet,
   teaseBlur,
+  onTeaseSignup,
   className,
   maxLines,
 }: {
   snippet: string;
   teaseBlur: boolean;
+  onTeaseSignup?: () => void;
   className?: string;
   maxLines: number;
 }) {
@@ -241,6 +257,14 @@ function DreamSnippetBlock({
         <FormattedBlocks className={`dream-snippet-tease__body ${className ?? ""}`} maxLines={maxLines}>
           {snippet}
         </FormattedBlocks>
+        <div className="dream-snippet-tease__hint">
+          <p className="dream-snippet-tease__hint-text">회원가입하면 꿈 내용이 보여요</p>
+          {onTeaseSignup && (
+            <button type="button" className="dream-snippet-tease__hint-btn" onClick={onTeaseSignup}>
+              {CTA_SIGNUP_SEE_MORE}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

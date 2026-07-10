@@ -34,6 +34,7 @@ export function HomeFeaturedStoryPanel({
         stories={visibleStories}
         title={`"${keyword}" 꿈 — 한 달 뒤는?`}
         variant="compact"
+        dreamTeaseBlur={access.isGuest}
         blurLocked={!access.isPremium}
         lockedCount={lockedCount}
         keyword={keyword}
