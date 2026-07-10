@@ -10,6 +10,13 @@
   port = 8888
   autoLaunch = false
 
+# SPA catch-all보다 위에 — /api/* 는 Netlify Function으로
+[[redirects]]
+  from = "/api/interpret-dream"
+  to = "/.netlify/functions/interpret-dream"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
