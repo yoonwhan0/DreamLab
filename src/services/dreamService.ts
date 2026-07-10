@@ -134,14 +134,39 @@ export async function getDream(dreamId: string): Promise<Dream | null> {
 
 export async function getUserDreams(userId: string): Promise<Dream[]> {
   if (!db) return [];
-  const q = query(
-    collection(db, DREAMS),
-    where("userId", "==", userId),
-    orderBy("createdAt", "desc"),
-    limit(50),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => dreamFromDoc(d.id, d.data()));
+
+  const mapDocs = (docs: { id: string; data: () => DocumentData }[]) =>
+    docs.map((d) => dreamFromDoc(d.id, d.data()));
+
+  try {
+    const q = query(
+      collection(db, DREAMS),
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc"),
+      limit(50),
+    );
+    const snap = await getDocs(q);
+    return mapDocs(snap.docs);
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code: string }).code)
+        : "";
+    if (code !== "failed-precondition") throw err;
+
+    console.warn(
+      "[dreams] 복합 인덱스 대기 중 — userId만 조회 후 클라이언트 정렬 (firebase deploy --only firestore:indexes)",
+    );
+    const fallback = query(
+      collection(db, DREAMS),
+      where("userId", "==", userId),
+      limit(50),
+    );
+    const snap = await getDocs(fallback);
+    return mapDocs(snap.docs).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
 }
 
 export async function submitFollowUp(

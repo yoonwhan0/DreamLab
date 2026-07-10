@@ -6,7 +6,7 @@ import { useAdminAuth } from "@admin/hooks/useAdminAuth";
 import { StatusBanner } from "@admin/components/AdminUi";
 
 export function LoginPage() {
-  const { root } = useAdminRoutes();
+  const { root, embedded } = useAdminRoutes();
   const { signInGoogle, signInEmail, error, loading, user, isAdmin } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +24,7 @@ export function LoginPage() {
   }
 
   if (!loading && user && isAdmin) {
-    return <Navigate to={root} replace />;
+    return <Navigate to={embedded ? ".." : root} replace />;
   }
 
   const handleEmail = async (e: React.FormEvent) => {

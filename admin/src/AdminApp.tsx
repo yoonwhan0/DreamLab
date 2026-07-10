@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ADMIN_ENTRY_PATH } from "@/lib/adminPath";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { useAdminRoutes } from "@admin/lib/adminRoutes";
 import { AdminLayout } from "@admin/layout/AdminLayout";
@@ -18,7 +19,7 @@ import { SystemSettingsPage } from "@admin/pages/SystemSettingsPage";
 import { StatusBanner } from "@admin/components/AdminUi";
 
 function AdminGate({ children }: { children: ReactNode }) {
-  const { login } = useAdminRoutes();
+  const { embedded, login } = useAdminRoutes();
   const { user, isAdmin, loading } = useAdminAuth();
 
   if (loading) {
@@ -29,14 +30,17 @@ function AdminGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user || user.isAnonymous) return <Navigate to={login} replace />;
+  if (!user || user.isAnonymous) {
+    return <Navigate to={embedded ? "login" : login} replace />;
+  }
   if (!isAdmin) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-6 bg-bg">
         <div className="max-w-md space-y-4">
           <StatusBanner type="warn">
             admin 권한이 없습니다. Firestore{" "}
-            <code>users/{user.uid}.role = &quot;admin&quot;</code> 을 설정하세요.
+            <code>users/{user.uid}.role = &quot;admin&quot;</code> 을 설정하거나 마스터
+            계정으로 로그인하세요.
           </StatusBanner>
           <p className="text-xs text-text-muted text-center">{user.email}</p>
         </div>
@@ -47,14 +51,66 @@ function AdminGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminShellRoutes() {
+  const { embedded, root } = useAdminRoutes();
+
+  const protectedLayout = (
+    <Route
+      element={
+        <AdminGate>
+          <AdminLayout />
+        </AdminGate>
+      }
+    >
+      <Route index element={<DashboardPage />} />
+      <Route path="monitoring" element={<MonitoringPage />} />
+      <Route path="members" element={<MembersPage />} />
+      <Route path="dreams" element={<DreamsPage />} />
+      <Route path="follow-up" element={<FollowUpPage />} />
+      <Route path="data-exposure" element={<DataExposurePage />} />
+      <Route path="ai-usage" element={<AiUsagePage />} />
+      <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
+      <Route path="settings/push" element={<PushSettingsPage />} />
+      <Route path="settings/system" element={<SystemSettingsPage />} />
+    </Route>
+  );
+
+  if (embedded) {
+    return (
+      <Routes>
+        <Route path="login" element={<LoginPage />} />
+        {protectedLayout}
+        <Route path="*" element={<Navigate to={ADMIN_ENTRY_PATH} replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<AdminGate><AdminLayout /></AdminGate>}>
+        <Route index element={<DashboardPage />} />
+        <Route path="monitoring" element={<MonitoringPage />} />
+        <Route path="members" element={<MembersPage />} />
+        <Route path="dreams" element={<DreamsPage />} />
+        <Route path="follow-up" element={<FollowUpPage />} />
+        <Route path="data-exposure" element={<DataExposurePage />} />
+        <Route path="ai-usage" element={<AiUsagePage />} />
+        <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
+        <Route path="settings/push" element={<PushSettingsPage />} />
+        <Route path="settings/system" element={<SystemSettingsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to={root} replace />} />
+    </Routes>
+  );
+}
+
 /** 사용자 PWA `/superadmin/*` 또는 standalone Admin에서 공용 */
 export function AdminApp() {
-  const { root, login } = useAdminRoutes();
-
   if (!isFirebaseConfigured) {
     const isProd = import.meta.env.PROD;
     return (
-      <div className="min-h-dvh flex items-center justify-center p-6 bg-bg">
+      <div className="admin-shell min-h-dvh flex items-center justify-center p-6 bg-bg">
         <div className="max-w-md space-y-3 text-sm text-text-secondary">
           <StatusBanner type="warn">
             Firebase 미설정 — <code>VITE_FIREBASE_*</code> 환경변수가 빌드에 없습니다.
@@ -77,28 +133,8 @@ export function AdminApp() {
   }
 
   return (
-    <Routes>
-      <Route path={login} element={<LoginPage />} />
-      <Route
-        path={root}
-        element={
-          <AdminGate>
-            <AdminLayout />
-          </AdminGate>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="monitoring" element={<MonitoringPage />} />
-        <Route path="members" element={<MembersPage />} />
-        <Route path="dreams" element={<DreamsPage />} />
-        <Route path="follow-up" element={<FollowUpPage />} />
-        <Route path="data-exposure" element={<DataExposurePage />} />
-        <Route path="ai-usage" element={<AiUsagePage />} />
-        <Route path="settings/lab-metrics" element={<LabMetricsPage />} />
-        <Route path="settings/push" element={<PushSettingsPage />} />
-        <Route path="settings/system" element={<SystemSettingsPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to={root} replace />} />
-    </Routes>
+    <div className="admin-shell min-h-dvh w-full bg-bg text-text">
+      <AdminShellRoutes />
+    </div>
   );
 }

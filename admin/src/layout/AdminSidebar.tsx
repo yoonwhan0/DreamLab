@@ -33,18 +33,18 @@ const NAV_SETTINGS = [
 
 export function AdminSidebar() {
   const { user, logout } = useAdminAuth();
-  const { root, to } = useAdminRoutes();
+  const { embedded, root, to } = useAdminRoutes();
 
   return (
-    <aside className="admin-sidebar flex flex-col w-56 shrink-0 border-r border-border bg-surface/60 min-h-dvh">
+    <aside className="admin-sidebar flex flex-col w-full lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface/80 lg:min-h-dvh">
       <div className="p-4 border-b border-border">
         <p className="section-label brand-wordmark !mb-0">DreamLab · ERP</p>
         <p className="text-[0.6875rem] text-text-muted mt-1 leading-snug">{BRAND_TAGLINE}</p>
       </div>
 
       <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
-        <NavGroup title="운영" items={NAV_MAIN} root={root} to={to} />
-        <NavGroup title="설정" items={NAV_SETTINGS} root={root} to={to} />
+        <NavGroup title="운영" items={NAV_MAIN} embedded={embedded} root={root} to={to} />
+        <NavGroup title="설정" items={NAV_SETTINGS} embedded={embedded} root={root} to={to} />
       </nav>
 
       <div className="p-3 border-t border-border space-y-2">
@@ -69,14 +69,21 @@ export function AdminSidebar() {
 function NavGroup({
   title,
   items,
+  embedded,
   root,
   to,
 }: {
   title: string;
   items: readonly { segment: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[];
+  embedded: boolean;
   root: string;
   to: (segment?: string) => string;
 }) {
+  const linkTo = (segment: string) => {
+    if (embedded) return segment || ".";
+    return segment ? to(segment) : root;
+  };
+
   return (
     <div>
       <p className="px-2 mb-1.5 text-[0.5625rem] uppercase tracking-widest text-text-muted">
@@ -86,7 +93,7 @@ function NavGroup({
         {items.map((item) => (
           <li key={item.segment || "root"}>
             <NavLink
-              to={item.segment ? to(item.segment) : root}
+              to={linkTo(item.segment)}
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-colors ${

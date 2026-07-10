@@ -1474,3 +1474,27 @@ textarea.input {
     animation: none !important;
   }
 }
+
+/* ── Admin ERP (/superadmin) ── */
+.admin-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+}
+
+.admin-layout {
+  width: 100%;
+}
+
+.admin-sidebar nav {
+  scrollbar-width: thin;
+}
+
+@media (min-width: 1024px) {
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100dvh;
+  }
+}
