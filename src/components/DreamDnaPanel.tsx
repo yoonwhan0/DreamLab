@@ -9,6 +9,14 @@ import { hashSeed } from "@/lib/seededRandom";
 const MEDALS = ["🥇", "🥈", "🥉"];
 const RANK_MARKS = ["①", "②", "③"];
 
+/** 의미 없는 필러 키워드 — 메달 노출에서 제외 */
+const GENERIC_KEYWORDS = new Set(["기록", "감정", "꿈", "마음", "변화", "생각", "사람"]);
+
+/** "face-animal-symbol" 같은 영문 슬러그(내부 키)는 사용자에게 숨김 */
+function isSlugKeyword(value: string): boolean {
+  return !/[가-힣]/.test(value) && /^[a-z0-9][a-z0-9\s._-]*$/i.test(value);
+}
+
 /**
  * 탐색·커뮤니티 재미 — Dream DNA 유사도, 가장 많이 함께 등장한 키워드,
  * 이 꿈 이후 가장 많이 적힌 후기(결말) 분포.
@@ -35,6 +43,7 @@ export function DreamDnaPanel({
     .filter((k) => {
       const key = k.keyword.trim();
       if (!key || seenKeywords.has(key)) return false;
+      if (GENERIC_KEYWORDS.has(key) || isSlugKeyword(key)) return false;
       seenKeywords.add(key);
       return true;
     })

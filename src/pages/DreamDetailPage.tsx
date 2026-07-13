@@ -27,6 +27,7 @@ import {
 } from "@/services/dreamService";
 import { flushPendingDream } from "@/services/pendingDreamService";
 import { resolveCommunityData } from "@/services/communityDataService";
+import { generateExploreStorySlot } from "@/services/interpretService";
 import { resolveAnchorKeyword } from "@/services/syntheticCommunityService";
 import { DEMO_DREAM } from "@/demo/demoData";
 import type { CommunityEstimate, Dream, DreamStats, SimilarDreamSummary } from "@/types";
@@ -35,6 +36,13 @@ import { FormattedBlocks } from "@/components/ui/FormattedText";
 
 function isOwnDreamRecord(dream: Dream, userId: string | undefined): boolean {
   return Boolean(userId && dream.userId === userId);
+}
+
+/** "animal-faces-intimacy" 같은 영문 슬러그(내부 키)를 사용자에게 노출하지 않기 위한 판별 */
+function isAsciiSlug(value: string): boolean {
+  const s = value.trim();
+  if (!s) return true;
+  return !/[가-힣]/.test(s) && /^[a-z0-9][a-z0-9\s._-]*$/i.test(s);
 }
 
 export function DreamDetailPage() {
@@ -53,6 +61,7 @@ export function DreamDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCohort, setShowCohort] = useState(false);
+  const [cohortLoading, setCohortLoading] = useState(false);
 
   const isPreview = id === "preview";
   const isOwnDream = useMemo(
@@ -144,14 +153,15 @@ export function DreamDetailPage() {
       setLoading(false);
 
       const own = d ? isOwnDreamRecord(d, user?.uid) : false;
-      if (d && (access.canViewSimilarTypes || access.isGuest)) {
+      // 내 꿈: '한 달 뒤 후기 보기' 버튼을 눌렀을 때 그 시점에 생성/조회 (지연 로딩)
+      if (d && !own && (access.canViewSimilarTypes || access.isGuest)) {
         void loadCommunity(d.interpretation, {
           embedding: d.embedding,
           title: d.title,
           content: d.content,
           estimate: d.communityEstimate,
         });
-      } else if (own) {
+      } else {
         setSummary(null);
         setStats(null);
       }
@@ -197,8 +207,57 @@ export function DreamDetailPage() {
   }
 
   const anchor = resolveAnchorKeyword(dream.title, dream.interpretation, dream.content);
-  const keyword =
-    dream.interpretation.researchAnchor?.clusterLabel?.trim() || anchor;
+  const rawCluster = dream.interpretation.researchAnchor?.clusterLabel?.trim() ?? "";
+  const keyword = rawCluster && !isAsciiSlug(rawCluster) ? rawCluster : anchor;
+
+  async function handleLoadCohort() {
+    if (!dream || cohortLoading) return;
+    setCohortLoading(true);
+    try {
+      const community = await resolveCommunityData(dream.interpretation, {
+        embedding: dream.embedding,
+        title: dream.title,
+        content: dream.content,
+        estimate: dream.communityEstimate,
+      });
+
+      let stories = community.summary.stories;
+      let estimated = community.isEstimated;
+
+      // 저장된 실제/AI 후기가 없으면(합성) → 지금 이 시점에 AI로 후기 생성
+      if (community.isEstimated) {
+        try {
+          const wanted = access.isPremium ? 3 : 2;
+          const generated = await Promise.all(
+            Array.from({ length: wanted }, (_, i) =>
+              generateExploreStorySlot(dream.title, dream.content, i),
+            ),
+          );
+          const seen = new Set<string>();
+          const unique = generated.filter((s) => {
+            const key = s.dreamTitle.trim();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          // AI 생성 성공 → 하드코딩 템플릿 대신 실제 생성 후기 사용
+          stories = unique;
+          estimated = false;
+        } catch {
+          // 생성 실패 시 하드코딩 후기를 보여주지 않고 후기 영역만 생략
+          stories = [];
+        }
+      }
+
+      setSummary({ ...community.summary, stories });
+      setStats(community.stats);
+      setIsEstimated(estimated);
+      setTopMatchPercent(community.topMatchPercent);
+    } finally {
+      setCohortLoading(false);
+      setShowCohort(true);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -265,20 +324,33 @@ export function DreamDetailPage() {
         <>
           <MyDreamFollowUpSection dream={dream} dreamId={id} />
 
-          {access.isMember && summary && stats && summary.totalCount > 0 && !showCohort && (
+          {access.isMember && !showCohort && (
             <button
               type="button"
-              onClick={() => setShowCohort(true)}
-              className="btn-primary w-full !min-h-[4rem] flex-col gap-0.5 py-3"
+              onClick={() => void handleLoadCohort()}
+              disabled={cohortLoading}
+              className="btn-primary w-full !min-h-[4rem] flex-col gap-0.5 py-3 disabled:opacity-60"
             >
-              <span className="text-base font-bold">“{keyword}” 한 달 뒤 후기 보기</span>
+              <span className="text-base font-bold">
+                {cohortLoading ? "후기 불러오는 중..." : `“${keyword}” 한 달 뒤 후기 보기`}
+              </span>
               <span className="text-xs font-normal opacity-85">
-                같은 키워드로 기록한 사람들의 30일 뒤 결과 →
+                {cohortLoading
+                  ? "AI가 비슷한 꿈의 30일 뒤 후기를 정리하고 있어요"
+                  : "누르면 같은 키워드로 기록한 사람들의 30일 뒤 결과를 불러와요 →"}
               </span>
             </button>
           )}
 
-          {access.isMember && summary && stats && summary.totalCount > 0 && showCohort && (
+          {access.isMember &&
+            showCohort &&
+            (!summary || !stats || summary.totalCount === 0) && (
+              <p className="text-center text-xs text-text-muted copy-lines px-2 py-4">
+                아직 비슷한 꿈 데이터가 충분하지 않아요. 한 달 뒤 후기가 쌓이면 다시 보여드릴게요.
+              </p>
+            )}
+
+          {access.isMember && showCohort && summary && stats && summary.totalCount > 0 && (
             <section className="space-y-4">
               <div className="text-center space-y-1">
                 <p className="section-label">비슷한 꿈을 꾼 사람들</p>
