@@ -12,6 +12,7 @@ import { UpgradeGate } from "@/components/AccessGate";
 import { InterpretationCard } from "@/components/InterpretationCard";
 import { DreamSignalsPanel } from "@/components/DreamSignalsPanel";
 import { DreamDnaPanel } from "@/components/DreamDnaPanel";
+import { LabHandoffDivider } from "@/components/LabHandoffDivider";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
 import { StatsBar } from "@/components/StatsBar";
 import { SurvivalRate } from "@/components/SurvivalRate";
@@ -30,7 +31,17 @@ import { resolveCommunityData } from "@/services/communityDataService";
 import { generateExploreStorySlot } from "@/services/interpretService";
 import { resolveAnchorKeyword } from "@/services/syntheticCommunityService";
 import { DEMO_DREAM } from "@/demo/demoData";
-import type { CommunityEstimate, Dream, DreamStats, SimilarDreamSummary } from "@/types";
+import {
+  MEMBER_FREE_STORY_VIEWS,
+  PREMIUM_MAX_STORY_VIEWS,
+} from "@/lib/storyAccessPricing";
+import type {
+  CommunityEstimate,
+  CommunityStory,
+  Dream,
+  DreamStats,
+  SimilarDreamSummary,
+} from "@/types";
 import { LoadingSpinner, EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedBlocks } from "@/components/ui/FormattedText";
 
@@ -225,28 +236,31 @@ export function DreamDetailPage() {
       let estimated = community.isEstimated;
 
       // 저장된 실제/AI 후기가 없으면(합성) → 지금 이 시점에 AI로 후기 생성
+      // 순차 생성 + 앞 제목 회피(avoidTitles)로 서로 다른 후기가 나오게 함
       if (community.isEstimated) {
-        try {
-          const wanted = access.isPremium ? 3 : 2;
-          const generated = await Promise.all(
-            Array.from({ length: wanted }, (_, i) =>
-              generateExploreStorySlot(dream.title, dream.content, i),
-            ),
-          );
-          const seen = new Set<string>();
-          const unique = generated.filter((s) => {
+        const wanted = access.isPremium
+          ? PREMIUM_MAX_STORY_VIEWS
+          : MEMBER_FREE_STORY_VIEWS;
+        const generated: CommunityStory[] = [];
+        for (let i = 0; i < wanted; i++) {
+          try {
+            const s = await generateExploreStorySlot(
+              dream.title,
+              dream.content,
+              i,
+              generated.map((g) => g.dreamTitle),
+            );
             const key = s.dreamTitle.trim();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          // AI 생성 성공 → 하드코딩 템플릿 대신 실제 생성 후기 사용
-          stories = unique;
-          estimated = false;
-        } catch {
-          // 생성 실패 시 하드코딩 후기를 보여주지 않고 후기 영역만 생략
-          stories = [];
+            if (key && !generated.some((g) => g.dreamTitle.trim() === key)) {
+              generated.push(s);
+            }
+          } catch {
+            break; // 일부라도 생성됐으면 그것만 사용
+          }
         }
+        // AI 생성분이 있으면 하드코딩 템플릿 대신 사용, 없으면 후기 영역 생략
+        stories = generated;
+        estimated = generated.length === 0 ? estimated : false;
       }
 
       setSummary({ ...community.summary, stories });
@@ -315,14 +329,9 @@ export function DreamDetailPage() {
         mode={isOwnDream ? "personal" : "default"}
       />
 
-      <DreamSignalsPanel
-        interpretation={dream.interpretation}
-        cohortSize={summary?.totalCount}
-      />
-
       {isOwnDream && id && !isPreview && (
         <>
-          <MyDreamFollowUpSection dream={dream} dreamId={id} />
+          <LabHandoffDivider />
 
           {access.isMember && !showCohort && (
             <button
@@ -371,25 +380,35 @@ export function DreamDetailPage() {
                 stats={stats}
                 anchor={anchor}
                 topMatchPercent={topMatchPercent}
+                interpretation={dream.interpretation}
               />
               {summary.stories.length > 0 && (
                 <CommunityStoriesPanel
-                  stories={summary.stories.slice(0, access.isPremium ? 2 : 1)}
+                  stories={summary.stories.slice(
+                    0,
+                    access.isPremium ? PREMIUM_MAX_STORY_VIEWS : MEMBER_FREE_STORY_VIEWS,
+                  )}
                   title={`"${keyword}" — 다른 사람들은?`}
                   variant="compact"
                   blurLocked={!access.isPremium}
-                  lockedCount={Math.max(
-                    summary.withFollowUpCount - 1,
-                    summary.stories.length - 1 + 10,
-                    12,
-                  )}
-                  blurPreviewStory={summary.stories[1]}
+                  lockedCount={
+                    access.isPremium
+                      ? 0
+                      : PREMIUM_MAX_STORY_VIEWS - MEMBER_FREE_STORY_VIEWS
+                  }
+                  blurPreviewStory={summary.stories[MEMBER_FREE_STORY_VIEWS]}
                   keyword={anchor}
                   isEstimated={isEstimated}
                 />
               )}
             </section>
           )}
+
+          <MyDreamFollowUpSection dream={dream} dreamId={id} />
+
+          <p className="text-center text-xs text-text-muted copy-lines px-4 pt-1">
+            당신의 답이 다음 사람의 통계가 됩니다. 오늘 남긴 후기가, 언젠가 누군가의 불안을 조금 덜어줄 수도 있어요.
+          </p>
         </>
       )}
 
@@ -412,6 +431,7 @@ export function DreamDetailPage() {
             stats={stats}
             anchor={anchor}
             topMatchPercent={topMatchPercent}
+            interpretation={dream.interpretation}
           />
           {summary.stories.length > 0 && (
             <CommunityStoriesPanel
@@ -469,6 +489,33 @@ export function DreamDetailPage() {
             )}
           </>
         )
+      )}
+
+      {!isPreview && (
+        <details className="group rounded-2xl">
+          <summary className="card card-bezel flex cursor-pointer list-none items-center justify-between gap-2 p-4 [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0">
+              <span className="block text-[0.9375rem] font-semibold text-text">
+                연구 신호 더보기
+              </span>
+              <span className="mt-0.5 block text-[0.6875rem] text-text-muted">
+                희귀도 · 감정온도 · 꿈 MBTI · 영화 · 한줄평
+              </span>
+            </span>
+            <span
+              className="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              aria-hidden
+            >
+              ▾
+            </span>
+          </summary>
+          <div className="mt-3">
+            <DreamSignalsPanel
+              interpretation={dream.interpretation}
+              cohortSize={summary?.totalCount}
+            />
+          </div>
+        </details>
       )}
     </div>
   );

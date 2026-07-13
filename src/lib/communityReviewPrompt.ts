@@ -53,19 +53,24 @@ export function buildExploreCommunityReviewUserHint(): string {
 }
 
 /** 추가 후기 1건 생성 전용 */
-export const SINGLE_COMMUNITY_STORY_SYSTEM = `당신은 꿈연구소 후기 1건 생성 AI입니다.
-JSON만 출력. communityEstimate.stories 배열에 **1건**만.
+export const SINGLE_COMMUNITY_STORY_SYSTEM = `당신은 꿈연구소 「한 달 뒤 후기」 1건 생성 AI입니다. JSON만 출력.
 
-각 story:
-- dreamSnippet: 3~4문장, 카톡 후기처럼 생생하게
-- afterStory: 30일 후 2~4문장, 담백하게
-- dreamTitle: 한 줄
-- profile: "익명 기록"
-- outcomeCategory: good|bad|love|job|health|family|money|other
+## 가장 중요한 규칙 (어기면 실패)
+- 입력된 사용자 꿈을 **절대 다시 쓰거나 요약하지 말 것.** 전혀 다른 사람의, 전혀 다른 장면 꿈이어야 함.
+- 공유하는 것은 **주제와 감정뿐** (예: 성취감·인정 욕구·자유). 구체 소재(장소·사물·행동·등장물)는 **전부 바꿀 것.**
+  - 예: 경기장·골프·홀인원·새 → 발표장·면접·무대·등산·낯선 골목 등 완전히 다른 소재.
+- 사용자 원문의 명사·고유표현(콜로세움, 골프채 등)을 **그대로 쓰지 말 것.**
+
+## story 형식
+- dreamTitle: 그 사람만의 한 줄 (사용자 꿈과 안 겹치게)
+- dreamSnippet: 3~4문장, 카톡/일기 후기처럼 생생하게 — **새로운 장면**
+- afterStory: 30일 후 2~4문장, 담백하게. "그대로 맞았다"보다 "그 시기와 겹쳤다"
+- outcomeCategory: good|bad|love|job|health|family|money|other (번호마다 다르게)
 - emotions: scared|weird|calm|sad|happy 중 1~2개
+- profile: "익명 기록"
 
-금지: 예언 단정, "대박·손재", 사용자 원문 복붙, 템플릿 문장
-이전에 생성된 후기와 **장면·결말이 겹치지 않게**`;
+금지: 예언 단정, "대박·손재", 사용자 원문 복붙/재서술, 템플릿 문장, AI 티 문구
+이전에 생성된 후기와 **장면·결말·감정이 겹치지 않게.**`;
 
 export function buildSingleStoryUserMessage(
   title: string,
@@ -75,12 +80,13 @@ export function buildSingleStoryUserMessage(
 ): string {
   const avoid =
     avoidTitles.length > 0
-      ? `\n이미 본 후기 제목(겹치지 말 것): ${avoidTitles.join(", ")}`
+      ? `\n이미 나온 후기 제목(겹치지 말 것): ${avoidTitles.join(", ")}`
       : "";
   return [
-    `꿈 제목: ${title}`,
-    `꿈 내용: ${content}`,
-    `후기 번호: ${storyIndex + 1}번째 (0부터)`,
+    "아래 꿈은 **주제·감정만 참고**하세요. 이 장면·소재를 다시 쓰지 말고, 전혀 다른 사람의 다른 꿈을 만드세요.",
+    `참고 꿈 제목: ${title}`,
+    `참고 꿈 내용: ${content}`,
+    `후기 번호: ${storyIndex + 1}번째 — 앞 후기와 장면·결말·감정을 반드시 다르게`,
     avoid,
     "JSON: { \"story\": { dreamTitle, dreamSnippet, afterStory, outcomeCategory, emotions, recordedDaysAgo } }",
   ].join("\n");

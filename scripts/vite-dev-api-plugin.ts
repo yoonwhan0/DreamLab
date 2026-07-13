@@ -9,6 +9,10 @@ export function attachDevApi() {
       const mod = await import("../netlify/functions/interpret-dream");
       return mod.handler;
     },
+    "/api/generate-community-story": async () => {
+      const mod = await import("../netlify/functions/generate-community-story");
+      return mod.handler;
+    },
     "/api/story-access": async () => {
       const mod = await import("../netlify/functions/story-access");
       return mod.handler;
