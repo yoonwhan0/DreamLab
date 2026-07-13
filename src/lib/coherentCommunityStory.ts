@@ -541,6 +541,17 @@ export function isGenericVividPoolSnippet(snippet: string): boolean {
   );
 }
 
+/** VIVID 풀 + GENERIC 폴백 풀 — 두 종류의 "재사용 슬롭" 스니펫을 모두 판별 */
+export function isGenericDreamPoolSnippet(snippet: string): boolean {
+  if (isGenericVividPoolSnippet(snippet)) return true;
+  const head = snippet.trim().slice(0, 24);
+  if (!head) return false;
+  return GENERIC_DREAM_SNIPPETS.some((fn) => {
+    const s = fn();
+    return s.startsWith(head) || head.startsWith(s.slice(0, 24));
+  });
+}
+
 export function genericDreamTitle(anchor: string, index: number): string {
   const k = anchor.trim() || "꿈";
   const variant = Math.abs(hashSeed(`generic-title-${k}-${index}`));
@@ -656,21 +667,21 @@ export function buildCoherentStoryForKeyword(keyword: string, index = 0): Commun
   };
 }
 
-/** 제목·꿈·후기가 서로 다른 소스에서 섞이지 않도록 정렬 */
+/**
+ * AI 후기 정렬 — 후기는 사용자 꿈과 "다른 장면"이어야 하므로 앵커 키워드 포함은 요구하지 않는다.
+ * generic 풀/템플릿/빈 값처럼 실제로 못 쓰는 경우에만 키워드 맞춤 후기로 대체한다.
+ */
 export function alignStoryToKeyword(
   story: CommunityStory,
   anchor: string,
   index: number,
 ): CommunityStory {
   const k = anchor.trim() || "꿈";
-  const coherent = buildCoherentStoryForKeyword(k, index);
   const snippetOk =
-    !isGenericVividPoolSnippet(story.dreamSnippet) &&
-    storyRelatesToAnchor(story.dreamSnippet, k);
-  const titleOk =
-    story.dreamTitle.trim().length > 0 &&
-    (storyRelatesToAnchor(story.dreamTitle, k) || storyRelatesToAnchor(story.dreamTitle, story.dreamSnippet));
-  const afterOk = storyRelatesToAnchor(story.afterStory, k) || story.afterStory.length >= 40;
+    story.dreamSnippet.trim().length >= 20 &&
+    !isGenericDreamPoolSnippet(story.dreamSnippet);
+  const titleOk = story.dreamTitle.trim().length > 0;
+  const afterOk = story.afterStory.trim().length >= 20;
 
   if (snippetOk && titleOk && afterOk) {
     return {
@@ -681,6 +692,7 @@ export function alignStoryToKeyword(
     };
   }
 
+  const coherent = buildCoherentStoryForKeyword(k, index);
   return {
     ...coherent,
     afterStory: afterOk

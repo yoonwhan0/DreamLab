@@ -3,11 +3,8 @@ import { excerptToStoryTitle } from "@/lib/dreamAnchor";
 import {
   alignStoryToKeyword,
   buildCoherentStoryForKeyword,
-  isGenericVividPoolSnippet,
+  isGenericDreamPoolSnippet,
 } from "@/lib/coherentCommunityStory";
-import {
-  storyRelatesToAnchorStrict,
-} from "@/lib/similarDreamMatch";
 
 /** 옛 템플릿·AI 티 — 이 패턴이면 키워드 맞춤 풀에서 교체 */
 export const TEMPLATE_STORY_SNIPPET_RE =
@@ -62,11 +59,13 @@ export function repairStorySnippet(
   anchorKeyword = "",
 ): string {
   const anchor = anchorKeyword.trim();
+  // 후기는 사용자 꿈과 "완전히 다른 장면"이어야 한다(같은 건 주제·감정뿐).
+  // 따라서 앵커 키워드 포함 여부로 스니펫을 버리지 않는다.
+  // 사용자 꿈 원문과의 겹침은 sanitizeAiCommunityStory에서 별도로 차단한다.
   const usable =
     snippet.length >= 24 &&
     !isTemplateStorySnippet(snippet) &&
-    !isGenericVividPoolSnippet(snippet) &&
-    (!anchor || storyRelatesToAnchorStrict(snippet, anchor));
+    !isGenericDreamPoolSnippet(snippet);
 
   if (usable) return snippet;
   return buildCoherentStoryForKeyword(anchor || "시험", index).dreamSnippet;
@@ -117,24 +116,18 @@ export function sanitizeAiCommunityStory(
 
 export function isQualityCommunityStory(
   story: CommunityStory,
-  anchorKeyword = "",
+  _anchorKeyword = "",
 ): boolean {
-  const base =
+  // 품질 기준: 충분한 길이 · 템플릿/슬롭 아님 · 스키마 누수("제목") 없음.
+  // 앵커 키워드 포함 여부는 검사하지 않는다(후기는 주제만 공유, 장면은 달라야 함).
+  return (
     story.dreamSnippet.length >= 20 &&
+    story.afterStory.trim().length >= 20 &&
     !isTemplateStorySnippet(story.dreamSnippet) &&
     !isTemplateStorySnippet(story.dreamTitle) &&
-    !isGenericVividPoolSnippet(story.dreamSnippet) &&
+    !isGenericDreamPoolSnippet(story.dreamSnippet) &&
     !story.dreamTitle.includes("제목") &&
-    !story.dreamSnippet.includes("제목");
-
-  if (!base) return false;
-
-  const anchor = anchorKeyword.trim();
-  if (!anchor) return true;
-
-  return (
-    storyRelatesToAnchorStrict(story.dreamSnippet, anchor) &&
-    (storyRelatesToAnchorStrict(story.afterStory, anchor) || story.afterStory.length >= 40)
+    !story.dreamSnippet.includes("제목")
   );
 }
 

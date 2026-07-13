@@ -88,7 +88,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <main
           key={location.pathname}
-          className={`app-main page-enter relative z-10 mx-auto w-full max-w-lg flex-1 px-4 py-5 ${
+          className={`app-main page-enter relative z-10 mx-auto w-full max-w-lg flex-1 px-4 pt-5 pb-10 ${
             showDemoUi ? "pt-12" : ""
           }`}
         >

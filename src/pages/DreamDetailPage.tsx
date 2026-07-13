@@ -496,7 +496,8 @@ export function DreamDetailPage() {
           <summary className="card card-bezel flex cursor-pointer list-none items-center justify-between gap-2 p-4 [&::-webkit-details-marker]:hidden">
             <span className="min-w-0">
               <span className="block text-[0.9375rem] font-semibold text-text">
-                연구 신호 더보기
+                <span className="group-open:hidden">연구 신호 더보기</span>
+                <span className="hidden group-open:inline">연구 신호 접기</span>
               </span>
               <span className="mt-0.5 block text-[0.6875rem] text-text-muted">
                 희귀도 · 감정온도 · 꿈 MBTI · 영화 · 한줄평

@@ -3,7 +3,12 @@ import type { CSSProperties } from "react";
 import { ObservatoryMeta } from "@/components/ObservatoryMeta";
 import { formatAnswerRatePercent } from "@/lib/observatoryCredibility";
 import { getOutcomePercentages } from "@/services/dreamService";
+import { DREAM_EMOTIONS } from "@/types";
 import type { DreamStats } from "@/types";
+
+const EMOTION_LABEL = new Map<string, string>(
+  DREAM_EMOTIONS.map((e) => [e.id, e.label]),
+);
 
 interface CommunityStatPreviewProps {
   keyword: string;
@@ -27,6 +32,12 @@ export function CommunityStatPreview({
 
   const outcomes = getOutcomePercentages(stats);
   const topOutcomes = outcomes.slice(0, 3);
+
+  // 해몽의 감정 수치와 통계를 잇는 서사: "이 감정으로 꾼 사람들의 N%가 …" 한 줄
+  const topEmotionLabel = stats.topEmotions[0]
+    ? EMOTION_LABEL.get(stats.topEmotions[0].emotion) ?? null
+    : null;
+  const leadOutcome = topOutcomes[0];
 
   const keywordPlain = useMemo(
     () => keyword.replace(/ 꿈$/, "").trim(),
@@ -72,6 +83,15 @@ export function CommunityStatPreview({
           {withFollowUpCount.toLocaleString()}건 공개
         </p>
       </div>
+
+      {!lockOutcomes && topEmotionLabel && leadOutcome && (
+        <p className="text-xs text-text-muted text-center copy-lines leading-relaxed px-1">
+          꿈에서 <span className="text-text-secondary font-medium">‘{topEmotionLabel}’</span>
+          을 가장 많이 느낀 사람들 가운데, 한 달 뒤 가장 많이 남긴 변화는{" "}
+          <span className="text-text-secondary font-medium">‘{leadOutcome.label}’</span>
+          <span className="tabular-nums"> {leadOutcome.percent}%</span>였어요.
+        </p>
+      )}
 
       <div className="rounded-xl border border-border bg-surface p-3 space-y-2 text-sm">
         {lockOutcomes ? (

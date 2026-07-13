@@ -25,16 +25,19 @@ export function MyDreamFollowUpSection({ dream, dreamId }: MyDreamFollowUpSectio
       <div>
         <p className="section-label">내 30일 여정</p>
         <h3 className="mt-1 text-base font-semibold text-text">
-          {answered ? "한 달 뒤, 내가 남긴 후기" : "지금 후기를 남길 수 있어요"}
+          {answered
+            ? "한 달 뒤, 내가 남긴 후기"
+            : due
+              ? "이제 한 달 뒤 후기를 남길 때예요"
+              : "지금부터 기록해 두면 변화가 보여요"}
         </h3>
         {canWrite && (
           <p className="mt-1 text-sm text-text-secondary leading-relaxed">
-            미리 적어도 됩니다. 아직 안 적었다면{" "}
-            <span className="text-text font-medium">
-              {due ? "알림이 왔거나 곧 옵니다" : `${formatDaysUntil(dream.followUpDueAt)} 알림`}
-            </span>
-            이 옵니다. 이 기록은 <strong className="text-text font-medium">내 아카이브</strong>
-            에만 남습니다.
+            {due
+              ? "꿈을 꾼 지 한 달이 지났어요. 그동안 실제로 어떤 일이 있었는지 남겨 주세요. "
+              : `한 달 뒤 정식 알림(${formatDaysUntil(dream.followUpDueAt)})이 오지만, 지금부터 적어두면 그 사이 마음이 어떻게 달라졌는지 비교할 수 있어요. 언제든 이어서 고칠 수 있습니다. `}
+            이 기록은 <strong className="text-text font-medium">내 아카이브</strong>에만 남고,
+            결말을 남기면 같은 꿈을 꾼 다음 사람의 통계가 됩니다.
           </p>
         )}
       </div>

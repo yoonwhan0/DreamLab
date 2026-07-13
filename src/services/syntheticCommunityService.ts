@@ -116,6 +116,53 @@ function buildCounts(
   return { keywords, emotionCounts };
 }
 
+/**
+ * 후기 결말 분포 — 표시되는 후기 1~4건이 아니라 코호트 전체(withFollowUpCount) 기준으로
+ * 여러 카테고리에 현실적으로 분산한다. (예전엔 후기 수만큼만 집계해 "건강 100%"처럼 나옴)
+ */
+function distributeOutcomes(
+  pack: KeywordNarrativePack,
+  rand: () => number,
+  withFollowUpCount: number,
+): Record<OutcomeCategory, number> {
+  const keys = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
+  const outcomes = keys.reduce((acc, key) => {
+    acc[key] = 0;
+    return acc;
+  }, {} as Record<OutcomeCategory, number>);
+
+  if (withFollowUpCount <= 0) return outcomes;
+
+  // 팩이 해당 결말에 맞춤 후기를 가지고 있으면 그 방향이 더 자주 나오도록 가중
+  const weights = keys.map((key) => {
+    const hasCustom = (pack.afterByOutcome[key]?.length ?? 0) > 0;
+    const base = hasCustom ? 18 : 6;
+    return base * (0.7 + rand() * 0.6);
+  });
+  const totalW = weights.reduce((a, b) => a + b, 0) || 1;
+
+  let assigned = 0;
+  keys.forEach((key, i) => {
+    const n = Math.floor((weights[i]! / totalW) * withFollowUpCount);
+    outcomes[key] = n;
+    assigned += n;
+  });
+
+  // 반올림으로 남은 표는 가중치 큰 결말부터 1개씩 채운다
+  const order = keys
+    .map((key, i) => ({ key, weight: weights[i]! }))
+    .sort((a, b) => b.weight - a.weight);
+  let leftover = withFollowUpCount - assigned;
+  let oi = 0;
+  while (leftover > 0) {
+    outcomes[order[oi % order.length]!.key] += 1;
+    leftover -= 1;
+    oi += 1;
+  }
+
+  return outcomes;
+}
+
 export function generateSyntheticCommunity(
   interpretation: DreamInterpretation,
   title = "",
@@ -153,32 +200,7 @@ export function generateSyntheticCommunity(
     emotions: s.emotions,
   }));
 
-  const outcomes = Object.keys(OUTCOME_CATEGORIES).reduce(
-    (acc, key) => {
-      acc[key as OutcomeCategory] = 0;
-      return acc;
-    },
-    {} as Record<OutcomeCategory, number>,
-  );
-
-  for (const story of stories) {
-    outcomes[story.outcomeCategory]++;
-  }
-
-  const keys = Object.keys(outcomes) as OutcomeCategory[];
-  const storyTotal = keys.reduce((sum, key) => sum + outcomes[key], 0);
-  if (storyTotal > 0 && withFollowUpCount > 0) {
-    let assigned = 0;
-    keys.forEach((key, i) => {
-      if (i === keys.length - 1) {
-        outcomes[key] = Math.max(0, withFollowUpCount - assigned);
-      } else {
-        const n = Math.round((outcomes[key] / storyTotal) * withFollowUpCount);
-        outcomes[key] = n;
-        assigned += n;
-      }
-    });
-  }
+  const outcomes = distributeOutcomes(pack, rand, withFollowUpCount);
 
   return {
     totalCount,
