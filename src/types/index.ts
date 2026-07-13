@@ -178,6 +178,8 @@ export interface Dream {
   emotions: DreamEmotionId[];
   interpretation: DreamInterpretation;
   embedding?: number[];
+  /** 기록 시점에 생성된 커뮤니티 추정치(AI 후기 포함) — 상세에서 재사용 */
+  communityEstimate?: CommunityEstimate;
   createdAt: Date;
   followUpDueAt: Date;
   followUp?: DreamFollowUp;

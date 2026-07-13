@@ -30,7 +30,15 @@ export function DreamDnaPanel({
       ? topMatchPercent
       : 78 + (hashSeed(`dna-${anchor}`) % 17);
 
-  const topKeywords = summary.keywords.slice(0, 3);
+  const seenKeywords = new Set<string>();
+  const topKeywords = summary.keywords
+    .filter((k) => {
+      const key = k.keyword.trim();
+      if (!key || seenKeywords.has(key)) return false;
+      seenKeywords.add(key);
+      return true;
+    })
+    .slice(0, 3);
 
   const outcomeEntries = (
     Object.entries(stats.outcomes) as [OutcomeCategory, number][]
@@ -49,7 +57,7 @@ export function DreamDnaPanel({
             같은 꿈을 꾼 사람들과의 유사도
           </p>
         </div>
-        <span className="badge badge-member shrink-0">탐색</span>
+        <span className="badge badge-member shrink-0">관측</span>
       </div>
 
       {/* Dream DNA 유사도 */}

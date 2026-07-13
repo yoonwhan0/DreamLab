@@ -23,7 +23,7 @@ import {
   scoreDreamMatch,
   type DreamMatchScore,
 } from "@/lib/dreamMatch";
-import type { CommunityStory, SimilarDreamSummary } from "@/types";
+import type { CommunityEstimate, CommunityStory, SimilarDreamSummary } from "@/types";
 import type {
   Dream,
   DreamEmotionId,
@@ -52,6 +52,7 @@ function dreamFromDoc(id: string, data: DocumentData): Dream {
     emotions: data.emotions ?? [],
     interpretation: data.interpretation,
     embedding: data.embedding,
+    communityEstimate: data.communityEstimate,
     createdAt: data.createdAt?.toDate() ?? new Date(),
     followUpDueAt: data.followUpDueAt?.toDate() ?? new Date(),
     followUp: data.followUp
@@ -112,6 +113,7 @@ export async function saveDream(
   emotions: DreamEmotionId[],
   interpretation: DreamInterpretation,
   embedding: number[] = [],
+  communityEstimate?: CommunityEstimate,
 ): Promise<string> {
   if (!db) throw new Error("Firebase가 설정되지 않았습니다.");
 
@@ -126,6 +128,10 @@ export async function saveDream(
     interpretation,
     // 256d 축소 임베딩만 저장 — 유사 꿈 코사인 재정렬용 (문서 크기 ~2KB)
     ...(embedding.length > 0 ? { embedding } : {}),
+    // 기록 시점 커뮤니티 추정치 재사용 — JSON 정제로 undefined 제거(Firestore 안전)
+    ...(communityEstimate
+      ? { communityEstimate: JSON.parse(JSON.stringify(communityEstimate)) as CommunityEstimate }
+      : {}),
     createdAt: Timestamp.fromDate(now),
     followUpDueAt: Timestamp.fromDate(getFollowUpDueDate(now)),
     followUpReminderSent: false,

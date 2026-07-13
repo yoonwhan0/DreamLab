@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
-import { CuriosityTease } from "@/components/CuriosityTease";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
 import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
@@ -150,6 +149,7 @@ export function DreamDetailPage() {
           embedding: d.embedding,
           title: d.title,
           content: d.content,
+          estimate: d.communityEstimate,
         });
       } else if (own) {
         setSummary(null);
@@ -266,12 +266,16 @@ export function DreamDetailPage() {
           <MyDreamFollowUpSection dream={dream} dreamId={id} />
 
           {access.isMember && summary && stats && summary.totalCount > 0 && !showCohort && (
-            <CuriosityTease
-              title={`"${keyword}" 꿈, 한 달 뒤엔?`}
-              body="같은 키워드로 기록한 사람들의 30일 뒤 후기와 통계를 확인하세요."
-              cta="한 달 뒤 후기 보기"
-              onAction={() => setShowCohort(true)}
-            />
+            <button
+              type="button"
+              onClick={() => setShowCohort(true)}
+              className="btn-primary w-full !min-h-[4rem] flex-col gap-0.5 py-3"
+            >
+              <span className="text-base font-bold">“{keyword}” 한 달 뒤 후기 보기</span>
+              <span className="text-xs font-normal opacity-85">
+                같은 키워드로 기록한 사람들의 30일 뒤 결과 →
+              </span>
+            </button>
           )}
 
           {access.isMember && summary && stats && summary.totalCount > 0 && showCohort && (

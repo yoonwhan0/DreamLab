@@ -75,9 +75,12 @@ export function cohortSizeForKeyword(
   const seed = hashSeed(`cohort-size-${anchor}`);
   const rand = createSeededRandom(seed);
   const [min, max] = range;
-  const base = seededInt(rand, min, max);
+  // 초기 서비스 — 팩 countRange(수천 단위)를 수십~수백 단위로 압축해 과장 방지
+  const lo = Math.max(15, Math.round(min / 40));
+  const hi = Math.max(lo + 25, Math.round(max / 40));
+  const base = seededInt(rand, lo, hi);
   const growth = Math.floor(
-    daysSinceLaunch("2022-11-01") * (0.4 + (seed % 5) * 0.08),
+    daysSinceLaunch("2026-07-01") * (0.3 + (seed % 5) * 0.05),
   );
   const jittered = humanizeCount(
     Math.round((base + growth) * visitorJitterRatio(seed)),

@@ -202,6 +202,6 @@ export async function resolveCommunityData(
   return {
     summary: estimateToSummary(merged, interpretation.category),
     stats: estimateToStats(merged),
-    isEstimated: true,
+    isEstimated: merged.isEstimated,
   };
 }

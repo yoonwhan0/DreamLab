@@ -38,6 +38,7 @@ export function WriteDreamPage() {
         dreamData.emotions,
         dreamData.interpretation,
         dreamData.embedding,
+        dreamData.communityEstimate,
       );
       navigate(`/dream/${dreamId}?new=1`);
       return;
