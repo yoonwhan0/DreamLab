@@ -17,6 +17,12 @@ import { db, isFirebaseConfigured } from "@/lib/firebase";
 import { ANONYMOUS_STORY_PROFILE } from "@/lib/coherentCommunityStory";
 import { normalizePercents } from "@/lib/formatText";
 import { isStrictlySimilarDream } from "@/lib/similarDreamMatch";
+import {
+  MATCH_THRESHOLD,
+  collectDreamTags,
+  scoreDreamMatch,
+  type DreamMatchScore,
+} from "@/lib/dreamMatch";
 import type { CommunityStory, SimilarDreamSummary } from "@/types";
 import type {
   Dream,
@@ -105,7 +111,7 @@ export async function saveDream(
   content: string,
   emotions: DreamEmotionId[],
   interpretation: DreamInterpretation,
-  _embedding: number[] = [],
+  embedding: number[] = [],
 ): Promise<string> {
   if (!db) throw new Error("Firebase가 설정되지 않았습니다.");
 
@@ -118,7 +124,8 @@ export async function saveDream(
     content,
     emotions,
     interpretation,
-    // embedding은 문서 크기·읽기 비용을 키우므로 저장하지 않음 (검색은 keywords/category)
+    // 256d 축소 임베딩만 저장 — 유사 꿈 코사인 재정렬용 (문서 크기 ~2KB)
+    ...(embedding.length > 0 ? { embedding } : {}),
     createdAt: Timestamp.fromDate(now),
     followUpDueAt: Timestamp.fromDate(getFollowUpDueDate(now)),
     followUpReminderSent: false,
@@ -238,11 +245,39 @@ export async function fetchPopularDreamKeywords(topPool = 48): Promise<string[]>
   }
 }
 
+export interface ScoredDream {
+  dream: Dream;
+  score: DreamMatchScore;
+}
+
 export async function findSimilarDreams(
-  _embedding: number[] | undefined,
+  queryEmbedding: number[] | undefined,
   keywords: string[],
   category: string,
+  queryTags?: string[],
+  queryEmotions?: DreamEmotionId[],
 ): Promise<Dream[]> {
+  const scored = await findScoredSimilarDreams(
+    queryEmbedding,
+    keywords,
+    category,
+    queryTags,
+    queryEmotions,
+  );
+  return scored.map((s) => s.dream);
+}
+
+/**
+ * 후보(키워드·카테고리)로 좁힌 뒤 벡터+태그+감정 점수로 재정렬.
+ * MATCH_THRESHOLD(70점) 미만은 제외한다. 각 결과에 매칭 점수를 함께 반환.
+ */
+export async function findScoredSimilarDreams(
+  queryEmbedding: number[] | undefined,
+  keywords: string[],
+  category: string,
+  queryTags?: string[],
+  queryEmotions?: DreamEmotionId[],
+): Promise<ScoredDream[]> {
   if (!db) return [];
   const firestore = db;
 
@@ -299,6 +334,13 @@ export async function findSimilarDreams(
 
   if (dreams.length === 0 && keywords.length === 0) return [];
 
+  const tags = queryTags && queryTags.length > 0 ? queryTags : keywords;
+  const queryInput = {
+    embedding: queryEmbedding,
+    tags,
+    emotions: queryEmotions ?? [],
+  };
+
   return dreams
     .filter((dream) =>
       isStrictlySimilarDream(
@@ -308,6 +350,16 @@ export async function findSimilarDreams(
         category,
       ),
     )
+    .map((dream) => ({
+      dream,
+      score: scoreDreamMatch(queryInput, {
+        embedding: dream.embedding,
+        tags: collectDreamTags(dream.interpretation),
+        emotions: dream.emotions,
+      }),
+    }))
+    .filter((s) => s.score.total >= MATCH_THRESHOLD)
+    .sort((a, b) => b.score.total - a.score.total)
     .slice(0, SIMILAR_DREAM_QUERY_LIMIT);
 }
 

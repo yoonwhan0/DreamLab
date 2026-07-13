@@ -1189,6 +1189,56 @@ textarea.input {
   background: linear-gradient(135deg, var(--color-primary-soft), var(--color-accent-soft));
 }
 
+/* DreamLab Signals — 재미 요소 타일 */
+.dream-signal-tile {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+  padding: 0.75rem 0.875rem;
+}
+
+.dream-signal-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+.dream-signal-node {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--brand-amber) 24%, var(--color-border));
+  background: color-mix(in srgb, var(--brand-amber) 7%, var(--color-surface));
+}
+
+.dream-signal-quote {
+  border-left: 3px solid color-mix(in srgb, var(--brand-amber) 55%, transparent);
+  padding: 0.25rem 0 0.25rem 0.875rem;
+}
+
+/* Dream DNA — 탐색/커뮤니티 */
+.dream-dna-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dream-dna-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+}
+
 .nav-item-motion {
   transition: color 0.2s, background 0.2s, transform 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }

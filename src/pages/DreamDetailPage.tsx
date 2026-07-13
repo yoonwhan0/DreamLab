@@ -10,6 +10,8 @@ import { MyDreamFollowUpSection } from "@/components/MyDreamFollowUpSection";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { UpgradeGate } from "@/components/AccessGate";
 import { InterpretationCard } from "@/components/InterpretationCard";
+import { DreamSignalsPanel } from "@/components/DreamSignalsPanel";
+import { DreamDnaPanel } from "@/components/DreamDnaPanel";
 import { SimilarDreamsPanel } from "@/components/SimilarDreamsPanel";
 import { StatsBar } from "@/components/StatsBar";
 import { SurvivalRate } from "@/components/SurvivalRate";
@@ -47,6 +49,7 @@ export function DreamDetailPage() {
   const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
   const [stats, setStats] = useState<DreamStats | null>(null);
   const [isEstimated, setIsEstimated] = useState(true);
+  const [topMatchPercent, setTopMatchPercent] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -74,6 +77,7 @@ export function DreamDetailPage() {
       setSummary(community.summary);
       setStats(community.stats);
       setIsEstimated(community.isEstimated);
+      setTopMatchPercent(community.topMatchPercent);
     }
 
     async function load() {
@@ -250,6 +254,11 @@ export function DreamDetailPage() {
         mode={isOwnDream ? "personal" : "default"}
       />
 
+      <DreamSignalsPanel
+        interpretation={dream.interpretation}
+        cohortSize={summary?.totalCount}
+      />
+
       {isOwnDream && id && !isPreview && (
         <>
           <MyDreamFollowUpSection dream={dream} dreamId={id} />
@@ -269,6 +278,12 @@ export function DreamDetailPage() {
                 stats={stats}
                 lockOutcomes={!access.isPremium}
                 isEstimated={isEstimated}
+              />
+              <DreamDnaPanel
+                summary={summary}
+                stats={stats}
+                anchor={anchor}
+                topMatchPercent={topMatchPercent}
               />
               {summary.stories.length > 0 && (
                 <CommunityStoriesPanel
@@ -312,6 +327,12 @@ export function DreamDetailPage() {
           <DreamFortuneTrendPanel
             snapshot={buildDreamFortuneSnapshot(keyword, stats)}
             compact={!access.isPremium}
+          />
+          <DreamDnaPanel
+            summary={summary}
+            stats={stats}
+            anchor={anchor}
+            topMatchPercent={topMatchPercent}
           />
           {summary.stories.length > 0 && (
             <CommunityStoriesPanel

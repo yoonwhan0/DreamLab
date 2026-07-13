@@ -76,6 +76,49 @@ export interface ResearchAnchor {
   clusterLabel?: string;
 }
 
+/**
+ * Dream Parser 결과 — 꿈 본문에서 **추측 없이 추출한** 구조화 요소.
+ * 벡터·태그 검색과 재미 요소(상징 연결도 등)의 근거가 된다.
+ */
+export interface DreamElements {
+  /** 등장인물 (예: 어머니(고인)) */
+  people: string[];
+  /** 장소 (예: 집, 부엌) */
+  places: string[];
+  /** 행동 (예: 음식을 만들어줌) */
+  actions: string[];
+  /** 감정 (예: 따뜻함, 그리움) */
+  emotions: string[];
+  /** 사물 (예: 오므라이스) */
+  objects: string[];
+  /** 사건 (예: 음식을 남기고 떠남) */
+  events: string[];
+  /** 상징 (예: 가족, 보살핌, 애도) */
+  symbols: string[];
+}
+
+/** 연구노트 관찰 — 꿈에서 반복·연결되는 요소 요약 */
+export interface DreamObservation {
+  /** 이번 꿈에서 두드러진 반복 요소 ①②③ */
+  repeatedElements: string[];
+  /** 요소들을 잇는 축 (예: 보호 · 돌봄 · 과거 기억) */
+  axes: string[];
+  /** 관찰 메모 1~2줄 (꿈에 실제로 있던 것만) */
+  note: string;
+}
+
+/** 재미 요소 중 AI가 쓰는 정성 필드 (정량 필드는 클라이언트에서 결정론적으로 계산) */
+export interface DreamSignals {
+  /** 꿈 한줄평 */
+  oneLiner: string;
+  /** 연구소장 한마디 (말투를 매번 다르게) */
+  directorNote: string;
+  /** 이 꿈을 영화로 만든다면 — 1~3편 */
+  movies: { title: string; reason?: string }[];
+  /** 상징 연결도 (예: 어머니 → 음식 → 집 → 안정) */
+  symbolChain: string[];
+}
+
 export interface DreamInterpretation {
   /** 흔한 해몽 사이트가 말했을 법한 해석 */
   usualTake: string;
@@ -90,6 +133,12 @@ export interface DreamInterpretation {
   labObservations?: LabObservations;
   /** AI 자율 앵커 — DB·통계·유사 꿈의 1차 키 */
   researchAnchor?: ResearchAnchor;
+  /** Dream Parser 구조화 추출 */
+  elements?: DreamElements;
+  /** 연구노트 관찰 (반복 요소·연결 축) */
+  observation?: DreamObservation;
+  /** 재미 요소 정성 필드 */
+  signals?: DreamSignals;
 }
 
 export interface CommunityStory {

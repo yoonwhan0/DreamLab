@@ -2,6 +2,7 @@ import {
   DISTINCT_INTERPRETATION_NOTE,
   LEGAL_DISCLAIMER,
   type DreamInterpretation,
+  type DreamObservation,
 } from "@/types";
 
 import { ANCHOR_STOP_WORDS, mergeAiKeywords } from "@/lib/dreamAnchor";
@@ -86,16 +87,20 @@ export function InterpretationCard({
             <div>
               <p className="section-label">꿈연구소장의 관점</p>
               <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-                연구소장이 이 꿈을 심리·상징·패턴으로 풀어 쓴 해석입니다.
+                추측 없이, 꿈에 있던 장면만 관찰 → 상징 → 가능성 → 한계 순으로 봅니다.
               </p>
             </div>
             <span className="badge badge-member shrink-0">연구소장</span>
           </div>
 
+          {interpretation.observation && (
+            <ObservationBlock observation={interpretation.observation} />
+          )}
+
           {interpretation.alternativeLens && (
             <LensBlock
-              label="꿈연구소장의 관점"
-              hint="심리·상징 관점"
+              label="DreamLab Interpretation"
+              hint="관찰 → 상징 → 가능성 → 한계"
               content={interpretation.alternativeLens}
               variant="alt"
               maxLines={10}
@@ -203,6 +208,60 @@ export function InterpretationCard({
             {LEGAL_DISCLAIMER}
           </FormattedText>
         </div>
+      )}
+    </div>
+  );
+}
+
+const RANK_MARKS = ["①", "②", "③", "④"];
+
+function ObservationBlock({ observation }: { observation: DreamObservation }) {
+  const elements = observation.repeatedElements.filter((e) => e.trim().length > 0);
+  const axes = observation.axes.filter((a) => a.trim().length > 0);
+
+  if (elements.length === 0 && !observation.note) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-surface-2/70 p-4 space-y-3">
+      <div>
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted">
+          DreamLab Observation
+        </p>
+        <p className="text-[0.625rem] text-text-muted mt-0.5">
+          이번 꿈에서 반복되는 요소
+        </p>
+      </div>
+
+      {elements.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {elements.slice(0, 4).map((el, i) => (
+            <span key={el} className="dream-signal-node">
+              <span className="text-text-muted mr-1" aria-hidden>
+                {RANK_MARKS[i]}
+              </span>
+              {el}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {axes.length > 0 && (
+        <p className="text-[0.8125rem] text-text-secondary leading-relaxed">
+          이 요소들은{" "}
+          {axes.map((axis, i) => (
+            <span key={axis}>
+              <span className="font-semibold text-text">‘{axis}’</span>
+              {i < axes.length - 1 ? " · " : ""}
+            </span>
+          ))}{" "}
+          축으로 연결됩니다.
+        </p>
+      )}
+
+      {observation.note && (
+        <p className="text-[0.8125rem] text-text-muted leading-relaxed">
+          {observation.note}
+        </p>
       )}
     </div>
   );

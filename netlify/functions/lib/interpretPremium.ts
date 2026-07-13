@@ -7,6 +7,32 @@ import { COMMUNITY_REVIEW_SLOT_SYSTEM, buildCommunityReviewUserHint, EXPLORE_COM
 
 export const INTERPRET_MODEL = "gpt-4.1-nano";
 export const EMBED_MODEL = "text-embedding-3-small";
+/** 문서 크기·읽기 비용을 낮추기 위해 축소 차원 사용 */
+export const EMBED_DIMENSIONS = 256;
+
+/** 임베딩 입력용 정규 텍스트 — 구조화 요소를 우선해 의미를 압축 */
+export function buildEmbeddingText(
+  parsed: {
+    keywords: string[];
+    category: string;
+    elements?: { symbols: string[]; people: string[]; objects: string[]; actions: string[]; places: string[]; emotions: string[]; events: string[] };
+    researchAnchor?: { primary: string; secondary?: string[] };
+  },
+  title: string,
+  content: string,
+): string {
+  const e = parsed.elements;
+  const parts = [
+    parsed.researchAnchor?.primary ?? "",
+    ...(parsed.researchAnchor?.secondary ?? []),
+    ...parsed.keywords,
+    ...(e ? [...e.symbols, ...e.people, ...e.objects, ...e.actions, ...e.places, ...e.emotions, ...e.events] : []),
+    parsed.category,
+    title,
+    content.slice(0, 400),
+  ];
+  return parts.filter((p) => p && p.trim().length > 0).join(" · ").slice(0, 1200);
+}
 
 export const INTERPRET_GENERATION = {
   temperature: 0.94,
@@ -15,46 +41,70 @@ export const INTERPRET_GENERATION = {
   frequency_penalty: 0.15,
 } as const;
 
-export const SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 미리보기·후기 생성 AI입니다.
-해몽을 예언처럼 단정하지 말고, 꿈 장면과 30일 뒤 실제 기록을 비교할 수 있게 돕는 것이 목적입니다.
+const CORE_RULES = `# 절대 규칙 (어기면 실패)
+1. **추측 금지.** 사용자가 꿈에 적은 내용만 사용한다.
+2. 꿈에 **없는 사건·인물·장소를 지어내지 않는다.**
+3. 현실을 단정하지 않는다. "최근에 ~했나요?", "요즘 ~하시죠?" 처럼 **사용자 현실을 추정하는 문장 금지.**
+4. 예언·길흉 단정 금지("대박","손재","불행이 온다","꼭 ~된다").
+5. 해석은 항상 **가능성**으로만 말한다("~일 수 있습니다","~로 자주 읽힙니다").
 
-## 톤 (가장 중요)
-- 사람이 커뮤니티·카톡·블로그에 **직접 쓴 것처럼** 생생하게
-- 시간·장소·감각·대사·몸 반응(손 떨림, 심장, 잠에서 깬 뒤 느낌) 구체적으로
-- usualTake: 일반 해몽에서 흔히 보는 해석을 소개하되 **대박·손재·불행을 단정하지 말 것** — **이 꿈 장면만** 5~7줄
-- alternativeLens: 연구소 **심리·상징** 관점 — **이 꿈만** 풀어 쓰기. 다른 사람 후기·통계·"비슷한 꿈 꾼 사람" **언급 금지**
-- psychology, symbol — **당신 꿈** 감정·상징만. communityEstimate·labObservations에만 타인 데이터
-- reflection — **연구소 해몽과 완전히 다른 톤**. 친한 사람이 카톡으로 편하게 묻듯이. **질문 2~4개**(각 줄이 ?로 끝나게). 예: "평소엔 이런 꿈 잘 안 꾸시죠?", "불안했던 장면이 현실에선 반대로 풀리는 경우도 있어요 — 그때 마음은 어땠을까요?", "주변 사람과의 관계를 더 깊게 보고 싶은 마음은 없으세요?" 꿈은 종종 **반대로** 읽힌다는 점을 부드럽게 언급 가능. 단정·예언·연구소 말투 금지
-- communityEstimate.stories **10~12건**, dreamSnippet **3~4문장**, afterStory **2~4문장**
+# 1단계 — Dream Parser (꿈에서 그대로 추출, 없으면 빈 배열)
+elements: 꿈 본문에 실제로 등장한 것만.
+- people(인물), places(장소), actions(행동), emotions(감정), objects(사물), events(사건), symbols(상징)
+- 상징(symbols)은 등장 요소에서 **보편적으로 연결되는 개념**만 (예: 음식→돌봄/기억). 억지 확장 금지.
 
-## 금지 (AI 티)
-- "복잡한 상황", "새로운 시작", "긍정적인 변화", "성장과 변화", "의미로 다가"
-- "관련된 장면", "비슷한 분위기", "선명하게 남은 꿈이었어요" 템플릿
-- "대박", "손재", "소름", "불행이 닥친다", "예언", "금단", "당신만 모른다"
-- stories에 사용자 원문·scenePhrases 복붙 / 사용자와 **같은 장면**
+# 2단계 — 관찰 (observation)
+- repeatedElements: 이 꿈에서 두드러진 요소 2~4개 (elements에서 고름)
+- axes: 그 요소들을 잇는 축 2~3개 (예: "보호","돌봄","과거 기억")
+- note: 꿈에 실제로 있던 장면만 근거로 1~2줄`;
 
-## researchAnchor (DB용)
-- primary, secondary 2~4, scenePhrases, clusterLabel
+export const SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)"의 분석 AI입니다.
+글을 잘 쓰는 것보다 **근거 있는 관찰**을 제공하는 것이 목적입니다. 꿈 장면과 30일 뒤 실제 기록을 비교할 수 있게 돕습니다.
 
-## 해몽 (생생·길게, usualTake·alternativeLens 각 5~8줄)
-usualTake, alternativeLens, symbol, psychology, reflection — **이 꿈 장면만**. 타인 후기는 labObservations·communityEstimate에만
+${CORE_RULES}
 
-## labObservations (타인·커뮤니티 패턴)
-sceneNote 생생 1~2줄, commonBehaviors 구체적 3~4, relatedSearches
+# 3단계 — 해석 (반드시 이 순서)
+usualTake: 인터넷·전통 해몽에서 이 장면을 흔히 어떻게 읽는지 소개. **이 꿈 장면만**, 길흉 단정 금지, 3~6줄.
+alternativeLens(연구소 해석): 아래 순서를 지켜 4~7줄.
+  ① 관찰 — 꿈에 있던 장면을 다시 짚는다.
+  ② 상징 — 그 요소가 보편적으로 어떤 상징으로 등장하는지.
+  ③ 가능성 — 그래서 어떤 감정 정리 과정일 **수 있는지** (단정 금지).
+  ④ 한계 — "꿈 하나만으로 현재 상태를 판단할 수는 없습니다" 류로 마무리.
+symbol: 핵심 상징 2~4개를 짧게.
+psychology: 꿈이 보여주는 감정의 형태만. 현실 추정 금지, 2~4줄.
+reflection: 부드러운 질문 2~3개(각 줄 ?로 끝). **꿈과 감정에 대해서만** 묻고, 현실 사건을 단정·추정하지 말 것.
 
-## communityEstimate
-- stories **10~12** — profile은 항상 "익명 기록", dreamTitle 한 줄
-- 서로 다른 결말·장면·문체
+# 4단계 — 재미 신호 (signals)
+- oneLiner: 이 꿈을 한 줄로 (예: "마음이 아직 따뜻한 기억을 꺼내고 있습니다.")
+- directorNote: 연구소장 한마디. 매번 말투를 다르게, 1~2줄. 가볍게, 단정 금지.
+- movies: 이 꿈의 정서와 닮은 영화 1~3편 (title, reason 짧게). 실제 영화만.
+- symbolChain: 상징 흐름을 화살표 순서 배열로 (예: ["어머니","음식","집","안정"]) 3~5개.
+
+# labObservations (타인·커뮤니티 패턴 — 여기서만 타인 데이터)
+sceneNote 1~2줄, commonBehaviors 3~4개, relatedSearches.
+
+# researchAnchor (DB 색인용)
+primary, secondary 2~4, scenePhrases(원문 문장 그대로), clusterLabel.
+
+# communityEstimate
+stories 10~12건, profile은 항상 "익명 기록", dreamSnippet 3~4문장, afterStory 2~4문장, 서로 다른 결말.
+사용자 원문·scenePhrases를 stories에 복붙하지 말 것.
+
+# 금지 표현 (AI 티)
+"복잡한 상황","새로운 시작","긍정적인 변화","성장과 변화","의미로 다가","관련된 장면","비슷한 분위기".
 
 ${COMMUNITY_REVIEW_SLOT_SYSTEM}
 
-JSON만 (stories 10개 이상):
+JSON만 출력 (stories 10개 이상):
 {
+  "elements": { "people": [], "places": [], "actions": [], "emotions": [], "objects": [], "events": [], "symbols": [] },
+  "observation": { "repeatedElements": [], "axes": [], "note": "..." },
   "usualTake": "...",
   "alternativeLens": "...",
   "symbol": "...",
   "psychology": "...",
   "reflection": "...",
+  "signals": { "oneLiner": "...", "directorNote": "...", "movies": [{ "title": "...", "reason": "..." }], "symbolChain": [] },
   "keywords": ["..."],
   "researchAnchor": { "primary": "...", "secondary": [], "scenePhrases": [], "clusterLabel": "..." },
   "category": "family|love|career|anxiety|fortune|general",
@@ -63,24 +113,32 @@ JSON만 (stories 10개 이상):
   "communityEstimate": { "stories": [ ... ], "totalCount": 0, "withFollowUpCount": 0 }
 }`;
 
-export const EXPLORE_SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 탐색 미리보기 AI입니다.
-해몽을 예언처럼 단정하지 말고, 꿈 장면과 30일 뒤 실제 기록을 비교할 수 있게 돕는 것이 목적입니다.
+export const EXPLORE_SYSTEM_PROMPT = `당신은 "꿈연구소(DreamLab)" 탐색 분석 AI입니다.
+글솜씨보다 **근거 있는 관찰**이 목적입니다. 꿈 장면과 30일 뒤 기록을 비교할 수 있게 돕습니다.
 
-## 톤
-- usualTake: 일반 해몽 5~7줄 — **이 꿈 장면만**
-- alternativeLens: 심리·상징 5~8줄 — **이 꿈만**, 타인 후기 언급 금지
-- reflection: **친구가 카톡으로 편하게 묻듯** 질문 2~4개 (각 줄 ?로 끝). 연구소 말투 금지. 꿈이 반대로 읽힐 수 있음을 부드럽게
-- psychology, symbol — 이 꿈만
+${CORE_RULES}
+
+# 해석 (순서 준수)
+- usualTake: 일반 해몽 3~6줄 — 이 꿈 장면만, 길흉 단정 금지
+- alternativeLens: 관찰 → 상징 → 가능성 → 한계 순서 4~7줄. 타인 후기 언급 금지
+- symbol, psychology: 이 꿈만, 현실 추정 금지
+- reflection: 부드러운 질문 2~3개(각 줄 ?로 끝). 꿈·감정에 대해서만, 현실 단정 금지
+
+# signals
+oneLiner, directorNote(매번 말투 다르게), movies 1~3편(실제 영화), symbolChain 3~5개.
 
 ${EXPLORE_COMMUNITY_REVIEW_SYSTEM}
 
 JSON만:
 {
+  "elements": { "people": [], "places": [], "actions": [], "emotions": [], "objects": [], "events": [], "symbols": [] },
+  "observation": { "repeatedElements": [], "axes": [], "note": "..." },
   "usualTake": "...",
   "alternativeLens": "...",
   "symbol": "...",
   "psychology": "...",
   "reflection": "...",
+  "signals": { "oneLiner": "...", "directorNote": "...", "movies": [{ "title": "...", "reason": "..." }], "symbolChain": [] },
   "keywords": ["..."],
   "researchAnchor": { "primary": "...", "secondary": [], "scenePhrases": [], "clusterLabel": "..." },
   "category": "family|love|career|anxiety|fortune|general",
@@ -108,6 +166,26 @@ export interface ParsedInterpretation {
     secondary?: string[];
     scenePhrases?: string[];
     clusterLabel?: string;
+  };
+  elements?: {
+    people: string[];
+    places: string[];
+    actions: string[];
+    emotions: string[];
+    objects: string[];
+    events: string[];
+    symbols: string[];
+  };
+  observation?: {
+    repeatedElements: string[];
+    axes: string[];
+    note: string;
+  };
+  signals?: {
+    oneLiner: string;
+    directorNote: string;
+    movies: { title: string; reason?: string }[];
+    symbolChain: string[];
   };
   communityEstimate: Record<string, unknown>;
 }
@@ -360,6 +438,10 @@ export function enrichInterpretation(
     if (!hasPivot(altOut)) altOut = weavePivot(altOut, seed);
   }
 
+  const elements = normalizeElements(raw.elements, keywords, anchor);
+  const observation = normalizeObservation(raw.observation, elements, keywords, anchor);
+  const signals = normalizeSignals(raw.signals, observation, anchor, seed);
+
   return {
     ...raw,
     usualTake: usualOut,
@@ -370,6 +452,119 @@ export function enrichInterpretation(
     keywords,
     labObservations,
     researchAnchor,
+    elements,
+    observation,
+    signals,
+  };
+}
+
+function cleanList(raw: unknown, limit: number): string[] {
+  if (!Array.isArray(raw)) return [];
+  return (raw as unknown[])
+    .map((v) => String(v).trim())
+    .filter((v) => v.length >= 1)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, limit);
+}
+
+function normalizeElements(
+  raw: ParsedInterpretation["elements"],
+  keywords: string[],
+  anchor: string,
+): ParsedInterpretation["elements"] {
+  const e = (raw ?? {}) as Record<string, unknown>;
+  const elements = {
+    people: cleanList(e.people, 5),
+    places: cleanList(e.places, 5),
+    actions: cleanList(e.actions, 5),
+    emotions: cleanList(e.emotions, 5),
+    objects: cleanList(e.objects, 5),
+    events: cleanList(e.events, 5),
+    symbols: cleanList(e.symbols, 5),
+  };
+  // 완전 비었으면 최소한 앵커·키워드로 상징을 채움
+  const total = Object.values(elements).reduce((n, arr) => n + arr.length, 0);
+  if (total === 0) {
+    elements.symbols = [anchor, ...keywords].filter(
+      (v, i, a) => v.length >= 2 && a.indexOf(v) === i,
+    ).slice(0, 3);
+  }
+  return elements;
+}
+
+function normalizeObservation(
+  raw: ParsedInterpretation["observation"],
+  elements: ParsedInterpretation["elements"],
+  keywords: string[],
+  anchor: string,
+): ParsedInterpretation["observation"] {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const pool = elements
+    ? [
+        ...elements.people,
+        ...elements.objects,
+        ...elements.symbols,
+        ...elements.actions,
+      ]
+    : [];
+  const repeatedElements = cleanList(o.repeatedElements, 4);
+  const axes = cleanList(o.axes, 3);
+  return {
+    repeatedElements:
+      repeatedElements.length > 0
+        ? repeatedElements
+        : [...pool, anchor, ...keywords]
+            .filter((v, i, a) => v.length >= 2 && a.indexOf(v) === i)
+            .slice(0, 3),
+    axes: axes.length > 0 ? axes : elements?.symbols.slice(0, 3) ?? [anchor],
+    note:
+      typeof o.note === "string" && o.note.trim().length >= 4
+        ? String(o.note).trim()
+        : `이번 꿈에서는 ${anchor} 요소가 반복해서 나타났습니다.`,
+  };
+}
+
+const DIRECTOR_NOTES = [
+  "이 꿈은 크게 해석하려 하지 않아도 됩니다. 기억이 마음을 한번 스쳐 지나간 정도일 수 있어요.",
+  "이런 꿈은 시간이 지나면 뜻보다 감정이 더 오래 남습니다.",
+  "무언가를 예고한다기보다, 마음이 정리 중이라는 신호에 가깝습니다.",
+  "꿈은 답을 주지 않아요. 다만 지금 어떤 감정이 큰지는 보여줍니다.",
+];
+
+function normalizeSignals(
+  raw: ParsedInterpretation["signals"],
+  observation: ParsedInterpretation["observation"],
+  anchor: string,
+  seed: number,
+): ParsedInterpretation["signals"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const movies = Array.isArray(s.movies)
+    ? (s.movies as unknown[])
+        .map((m) => {
+          const mm = (m ?? {}) as Record<string, unknown>;
+          return {
+            title: String(mm.title ?? "").trim(),
+            reason: mm.reason ? String(mm.reason).trim() : undefined,
+          };
+        })
+        .filter((m) => m.title.length >= 1)
+        .slice(0, 3)
+    : [];
+  const symbolChain = cleanList(s.symbolChain, 5);
+  return {
+    oneLiner:
+      typeof s.oneLiner === "string" && s.oneLiner.trim().length >= 4
+        ? String(s.oneLiner).trim()
+        : `${anchor}이(가) 남긴 감정이 오래 머무는 꿈입니다.`,
+    directorNote:
+      typeof s.directorNote === "string" && s.directorNote.trim().length >= 6
+        ? String(s.directorNote).trim()
+        : pick(DIRECTOR_NOTES, seed),
+    movies,
+    symbolChain:
+      symbolChain.length >= 2
+        ? symbolChain
+        : (observation?.repeatedElements ?? [anchor]).slice(0, 4),
   };
 }
 

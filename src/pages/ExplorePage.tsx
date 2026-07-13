@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ConversionGate } from "@/components/ConversionGate";
 import { KeywordChipRail } from "@/components/KeywordChipRail";
+import { DreamSignalsPanel } from "@/components/DreamSignalsPanel";
+import { DreamDnaPanel } from "@/components/DreamDnaPanel";
 import { MemberUnlockBanner } from "@/components/MemberUnlockBanner";
 import { AiWritingPulse } from "@/components/motion/AiWritingPulse";
 import { withMinimumDelay } from "@/lib/minimumDelay";
@@ -34,7 +36,12 @@ import {
   fetchStoryAccess,
   registerStoryViews,
 } from "@/services/storyUnlockService";
-import type { DreamStats, SimilarDreamSummary, StoryKeywordAccess } from "@/types";
+import type {
+  DreamInterpretation,
+  DreamStats,
+  SimilarDreamSummary,
+  StoryKeywordAccess,
+} from "@/types";
 import { LOADING_MORE_REVIEW, SIMILAR_MONTH_LABEL, SIMILAR_MONTH_TITLE } from "@/lib/dataCopy";
 import {
   KEYWORD_RAIL_COUNT,
@@ -67,6 +74,9 @@ export function ExplorePage() {
   const [summary, setSummary] = useState<SimilarDreamSummary | null>(null);
   const [stats, setStats] = useState<DreamStats | null>(null);
   const [isEstimated, setIsEstimated] = useState(true);
+  const [topMatchPercent, setTopMatchPercent] = useState<number | undefined>(undefined);
+  const [exploreInterpretation, setExploreInterpretation] =
+    useState<DreamInterpretation | null>(null);
   const [visibleStoryCount, setVisibleStoryCount] = useState(1);
   const [storyAccess, setStoryAccess] = useState<StoryKeywordAccess | null>(null);
   const [limitMessage, setLimitMessage] = useState("");
@@ -124,24 +134,29 @@ export function ExplorePage() {
 
         if (gen !== searchGenRef.current) return null;
 
-        return resolveCommunityData(interpretation, {
+        const community = await resolveCommunityData(interpretation, {
           embedding,
           title: q,
           content: dreamContent,
           estimate: communityEstimate,
         });
+        return { community, interpretation };
       };
 
-      const community = await withMinimumDelay(
+      const result = await withMinimumDelay(
         loadAi(),
         skipAi ? 0 : AI_WRITING_MIN_MS,
       );
 
-      if (gen !== searchGenRef.current || !community) return;
+      if (gen !== searchGenRef.current || !result) return;
+
+      const { community, interpretation } = result;
 
       setSummary(community.summary);
       setStats(community.stats);
       setIsEstimated(community.isEstimated);
+      setTopMatchPercent(community.topMatchPercent);
+      setExploreInterpretation(interpretation);
 
       const storyCap = community.summary.stories.length;
       const initialShown = Math.min(initialVisible, storyCap);
@@ -362,6 +377,18 @@ export function ExplorePage() {
                   isEstimated={isEstimated}
                 />
                 <DreamFortuneTrendPanel snapshot={buildDreamFortuneSnapshot(activeQuery, stats)} />
+                {exploreInterpretation && (
+                  <DreamSignalsPanel
+                    interpretation={exploreInterpretation}
+                    cohortSize={summary.totalCount}
+                  />
+                )}
+                <DreamDnaPanel
+                  summary={summary}
+                  stats={stats}
+                  anchor={activeQuery}
+                  topMatchPercent={topMatchPercent}
+                />
               </>
             ) : (
               <p className="text-center text-text-secondary py-8 card p-6">

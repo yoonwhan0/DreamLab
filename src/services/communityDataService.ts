@@ -7,7 +7,7 @@ import { buildCoherentStoryForKeyword } from "@/lib/coherentCommunityStory";
 import {
   buildSimilarDreamSummary,
   computeStats,
-  findSimilarDreams,
+  findScoredSimilarDreams,
 } from "@/services/dreamService";
 import type {
   CommunityEstimate,
@@ -24,6 +24,7 @@ import {
   sanitizeAiCommunityStory,
 } from "@/lib/communityStoryQuality";
 import { isStrongAnchor } from "@/lib/similarDreamMatch";
+import { collectDreamTags } from "@/lib/dreamMatch";
 
 const EXPOSURE_CACHE_MS = 5 * 60 * 1000;
 let exposureCache: DataExposureConfig | null = null;
@@ -47,6 +48,8 @@ export interface CommunityDataResult {
   summary: SimilarDreamSummary;
   stats: DreamStats;
   isEstimated: boolean;
+  /** Dream DNA — 가장 비슷한 꿈과의 매칭 점수(0~100) */
+  topMatchPercent?: number;
 }
 
 function mergeEstimate(
@@ -154,11 +157,14 @@ export async function resolveCommunityData(
     };
   }
 
-  const similar = await findSimilarDreams(
+  const scored = await findScoredSimilarDreams(
     embedding?.length ? embedding : undefined,
     interpretation.keywords,
     interpretation.category,
+    collectDreamTags(interpretation),
   );
+  const similar = scored.map((s) => s.dream);
+  const topMatchPercent = scored[0]?.score.total;
 
   if (similar.length >= minReal) {
     const anchor =
@@ -172,7 +178,7 @@ export async function resolveCommunityData(
       anchor,
     );
     const stats = computeStats(similar);
-    return { summary, stats, isEstimated: false };
+    return { summary, stats, isEstimated: false, topMatchPercent };
   }
 
   if (exposure.blendMode === "organic_only") {
@@ -189,6 +195,7 @@ export async function resolveCommunityData(
       },
       stats: computeStats(similar),
       isEstimated: false,
+      topMatchPercent,
     };
   }
 

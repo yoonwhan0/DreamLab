@@ -6,11 +6,17 @@ import {
 
   INTERPRET_MODEL,
 
+  EMBED_MODEL,
+
+  EMBED_DIMENSIONS,
+
   EXPLORE_SYSTEM_PROMPT,
 
   SYSTEM_PROMPT,
 
   buildUserMessage,
+
+  buildEmbeddingText,
 
   enrichInterpretation,
 
@@ -241,6 +247,30 @@ const handler: Handler = async (event) => {
 
 
 
+  // 임베딩 생성 — 태그·요소 기반 정규 텍스트로 (탐색 모드는 비용 절감 위해 생략)
+  if (openaiKey && !exploreMode) {
+    try {
+      const embedText = buildEmbeddingText(parsed, title, content);
+      const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: EMBED_MODEL,
+          input: embedText,
+          dimensions: EMBED_DIMENSIONS,
+        }),
+      });
+      const embedData = await embedRes.json();
+      const vec = embedData?.data?.[0]?.embedding;
+      if (Array.isArray(vec)) embedding = vec as number[];
+    } catch (err) {
+      console.error("Embedding error:", err);
+    }
+  }
+
   try {
 
     await recordAiUsage({ provider: aiProvider, success: true });
@@ -280,6 +310,12 @@ const handler: Handler = async (event) => {
         labObservations: parsed.labObservations,
 
         researchAnchor: parsed.researchAnchor,
+
+        elements: parsed.elements,
+
+        observation: parsed.observation,
+
+        signals: parsed.signals,
 
       },
 
@@ -392,6 +428,12 @@ function normalizeParsed(
     labObservations,
 
     researchAnchor,
+
+    elements: raw.elements as ParsedInterpretation["elements"],
+
+    observation: raw.observation as ParsedInterpretation["observation"],
+
+    signals: raw.signals as ParsedInterpretation["signals"],
 
     communityEstimate: {
 
