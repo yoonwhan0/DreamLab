@@ -119,9 +119,9 @@ export function WriteDreamPage() {
       {!submitting && (
         <CuriosityTease
           title="가입하면 같은 꿈 후기를 볼 수 있어요"
-          body="비회원은 내 꿈 해몽만 가능합니다. 회원이 되면 탐색에서 한 달 뒤 후기를 한 건씩 볼 수 있어요."
-          cta="탐색 알아보기"
-          to="/explore"
+          body="비회원은 내 꿈 해몽만 가능합니다. 회원이 되면 기록한 꿈에서 감지된 키워드로 한 달 뒤 후기를 한 건씩 볼 수 있어요."
+          cta="회원 혜택 보기"
+          to="/my"
         />
       )}
     </div>

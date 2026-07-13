@@ -1,6 +1,6 @@
 # 09. 개발 로그 — 처음부터 지금까지 (전체 상세)
 
-> **2026-07-10 기준**  
+> **2026-07-13 기준**  
 > 체크리스트: [03-development-status.md](./03-development-status.md)  
 > 아키텍처: [02-architecture.md](./02-architecture.md)
 
@@ -766,4 +766,56 @@ scripts/sync-branch-env.mjs
 
 ---
 
-마지막 업데이트: **2026-07-10**
+## Phase 14 — Dream Parser · 임베딩 검색 · 재미 신호 (2026-07-13)
+
+### 14.1 배경 / 요청
+
+- AI가 상상·창작하지 말고 **꿈의 핵심 요소만** 추출 후 해석
+- 유사 꿈 검색을 LLM이 아닌 **태그·벡터 스코어링**으로
+- 연구소장 톤: 추론 범위 제한, `관찰 → 상징 → 가능성 → 한계`
+- "AI 생성" 티 축소 → **연구소 관측/해석** 표기
+- 재미 요소 + 탐색 품질 강화
+
+### 14.2 해석 파이프라인 개편 (`interpret-dream.ts` · `interpretPremium.ts`)
+
+1. **Dream Parser** — `elements`(인물·장소·행동·감정·사물·사건·상징) 추출, 추측 금지
+2. `observation` — 반복 요소 · 연결 축 · 관찰 메모
+3. 해석 순서 강제 + 현실 단정·예언 금지 (`CORE_RULES`)
+4. `signals` — 한줄평 · 소장 한마디 · 영화 · 상징 연결도
+5. `text-embedding-3-small` **256d** 임베딩 생성 (OpenAI 키 있을 때, exploreMode 제외)
+
+### 14.3 유사 꿈 스코어링 (`dreamMatch.ts` · `dreamService.ts`)
+
+```
+score = 0.4·벡터 코사인 + 0.4·태그 Jaccard + 0.2·감정 겹침
+MATCH_THRESHOLD = 70 미만 제외 → 점수 내림차순
+```
+
+- `saveDream`이 `embedding` Firestore 저장, 없으면 태그·감정 폴백
+- 최상위 점수 = Dream DNA 유사도 % (`communityDataService.topMatchPercent`)
+
+### 14.4 재미 요소 (`dreamSignals.ts` · UI)
+
+| 정량(결정론) | 정성(AI) |
+|-------------|----------|
+| 희귀도·감정온도·꿈 MBTI (시드 기반, 저장 안 함) | 한줄평·소장 한마디·영화·상징 연결도 |
+
+- `DreamSignalsPanel` — 신호 모음
+- `DreamDnaPanel` — DNA %·공동 키워드 TOP3·이후 후기 분포
+- `InterpretationCard` — 관측 블록 + "DreamLab 해석" 라벨
+
+### 14.5 핵심 파일
+
+- `netlify/functions/interpret-dream.ts`, `netlify/functions/lib/interpretPremium.ts`
+- `src/lib/dreamMatch.ts`, `src/lib/dreamSignals.ts`
+- `src/services/dreamService.ts`, `src/services/communityDataService.ts`
+- `src/components/DreamSignalsPanel.tsx`, `DreamDnaPanel.tsx`, `InterpretationCard.tsx`
+- `src/types/index.ts` (`DreamElements` · `DreamObservation` · `DreamSignals`)
+
+### 14.6 알려진 이슈
+
+- Windows `npm run build:functions`(`bundle-netlify-functions.mjs`)에서 `npx`/`/dev/null` ENOENT — **환경 문제**, esbuild 직접 실행 시 정상. 코드 변경 무관.
+
+---
+
+마지막 업데이트: **2026-07-13**

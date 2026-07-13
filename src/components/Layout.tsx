@@ -15,7 +15,7 @@ import { showDemoUi } from "@/demo/demoData";
 const navItems: { path: string; label: string; icon: NavIconKey }[] = [
   { path: "/", label: "홈", icon: "home" },
   { path: "/write", label: "기록", icon: "write" },
-  { path: "/explore", label: "탐색", icon: "explore" },
+  { path: "/my-dreams", label: "아카이브", icon: "archive" },
   { path: "/my", label: "마이", icon: "user" },
 ];
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CommunityStoriesPanel } from "@/components/CommunityStoriesPanel";
+import { CuriosityTease } from "@/components/CuriosityTease";
 import { CommunityStatPreview } from "@/components/CommunityStatPreview";
 import { DreamFortuneTrendPanel } from "@/components/DreamFortuneTrendPanel";
 import { buildDreamFortuneSnapshot } from "@/lib/dreamFortuneTrends";
@@ -52,6 +53,7 @@ export function DreamDetailPage() {
   const [topMatchPercent, setTopMatchPercent] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showCohort, setShowCohort] = useState(false);
 
   const isPreview = id === "preview";
   const isOwnDream = useMemo(
@@ -263,7 +265,16 @@ export function DreamDetailPage() {
         <>
           <MyDreamFollowUpSection dream={dream} dreamId={id} />
 
-          {access.isMember && summary && stats && summary.totalCount > 0 && (
+          {access.isMember && summary && stats && summary.totalCount > 0 && !showCohort && (
+            <CuriosityTease
+              title={`"${keyword}" 꿈, 한 달 뒤엔?`}
+              body="같은 키워드로 기록한 사람들의 30일 뒤 후기와 통계를 확인하세요."
+              cta="한 달 뒤 후기 보기"
+              onAction={() => setShowCohort(true)}
+            />
+          )}
+
+          {access.isMember && summary && stats && summary.totalCount > 0 && showCohort && (
             <section className="space-y-4">
               <div className="text-center space-y-1">
                 <p className="section-label">비슷한 꿈을 꾼 사람들</p>
@@ -303,14 +314,6 @@ export function DreamDetailPage() {
               )}
             </section>
           )}
-
-          <p className="text-center text-xs text-text-muted leading-relaxed px-2">
-            더 많은 비슷한 꿈·통계는{" "}
-            <Link to="/explore" className="text-primary font-medium hover:underline">
-              탐색
-            </Link>
-            에서 볼 수 있어요.
-          </p>
         </>
       )}
 
@@ -349,7 +352,7 @@ export function DreamDetailPage() {
       {isPreview ? (
         <UpgradeGate
           title="Google로 가입하면 저장됩니다"
-          description="꿈연구소 해몽은 이미 보셨어요. 가입하면 30일 타이머·탐색·저장이 열립니다."
+          description="꿈연구소 해몽은 이미 보셨어요. 가입하면 30일 타이머·후기·저장이 열립니다."
           ctaLabel={CTA_SIGNUP}
           onCta={() =>
             openSignupSheet("Google로 가입하면 이 꿈이 저장되고 30일 여정이 시작됩니다.")

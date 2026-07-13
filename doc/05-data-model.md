@@ -40,7 +40,7 @@
 | `interpretation` | object | DreamInterpretation |
 | `keywords` | string[] | **탐색 쿼리용** (top-level) |
 | `category` | string | |
-| `embedding` | number[]? | (저장 로직 미사용 가능) |
+| `embedding` | number[]? | **256d 축소 임베딩** (`text-embedding-3-small`) — 유사 꿈 코사인 재정렬용. OpenAI 키 있을 때만 생성·저장 (~2KB) |
 | `createdAt`, `followUpDueAt` | Timestamp | |
 | `followUp` | object? | 30일 후기 |
 | `followUpReminderSent` | boolean? | |
@@ -65,6 +65,26 @@
 ```ts
 { primary, secondary?, scenePhrases?, clusterLabel? }
 ```
+
+### `interpretation` — Dream Parser · 관찰 · 신호 (2026-07-13 추가)
+
+```ts
+// Dream Parser — 꿈 본문에서 추측 없이 추출
+elements?: {
+  people, places, actions, emotions, objects, events, symbols: string[]
+}
+// 연구노트 관찰 (반복 요소 · 연결 축)
+observation?: { repeatedElements: string[]; axes: string[]; note: string }
+// 재미 요소 정성 필드 (정량값은 클라이언트에서 결정론적 계산)
+signals?: {
+  oneLiner: string;          // 꿈 한줄평
+  directorNote: string;      // 연구소장 한마디
+  movies: { title; reason? }[];
+  symbolChain: string[];     // 상징 연결도 (어머니→음식→집→안정)
+}
+```
+
+- 정량 재미 요소(희귀도·감정온도·꿈 MBTI)는 **저장하지 않음** — `dreamSignals.ts`가 매 렌더 시 시드 기반으로 재계산.
 
 ---
 
@@ -134,4 +154,4 @@ dreams delete: 본인 | isAdmin
 | Admin 시드 엑셀 | ✅ seed | 탐색 ≥5건 시 실데이터 |
 | AI communityEstimate | ❌ | 세션/화면만 |
 
-마지막 업데이트: **2026-07-10**
+마지막 업데이트: **2026-07-13**

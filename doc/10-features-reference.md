@@ -122,7 +122,16 @@
 | Netlify 프로덕션 | `POST /api/interpret-dream` |
 | 로컬 Vite | `scripts/vite-dev-api-plugin.ts` 동일 라우트 |
 
-**출력:** `DreamInterpretation` + `communityEstimate` (세션/캐시만, **DB 미저장**)
+**출력:** `DreamInterpretation` + `communityEstimate` (세션/캐시만, **DB 미저장**) + `embedding`(256d)
+
+**해석 파이프라인 (2026-07-13):**
+
+1. **Dream Parser** — 본문에서 `elements`(인물·장소·행동·감정·사물·사건·상징) 추출, **추측·창작 금지**
+2. **관찰**(`observation`) — 반복 요소·연결 축·관찰 메모
+3. **해석** — `관찰 → 상징 → 가능성 → 한계` 순서, 현실 단정·예언 금지 (연구소 톤)
+4. **신호**(`signals`) — 한줄평·소장 한마디·영화 매칭·상징 연결도
+
+- UI 라벨: "DreamLab 관측 / DreamLab 해석" — AI 티 축소
 
 ### 커뮤니티 데이터 병합 (`communityDataService.ts`)
 
@@ -138,7 +147,29 @@
 - **시드 데이터:** `userId: dreamlab-seed-data`, `isPublic: true`
 - **AI 후기는 DB에 재저장되지 않음** — 무한 학습 루프 없음
 
-### 유사 꿈 · 후기 품질
+### 유사 꿈 검색 — 스코어링 (2026-07-13)
+
+`findScoredSimilarDreams` (`dreamService.ts` + `dreamMatch.ts`):
+
+```
+score = 0.4 · 벡터 코사인(256d 임베딩)
+      + 0.4 · 태그 겹침(Jaccard: keywords+elements)
+      + 0.2 · 감정 겹침
+→ MATCH_THRESHOLD(70) 미만 제외 → 점수 내림차순
+```
+
+- 임베딩 없는 레거시/시드 데이터는 태그·감정 가중치로 폴백
+- 최상위 점수 = **Dream DNA 유사도 %** (`DreamDnaPanel`)
+
+### 재미 요소 (2026-07-13)
+
+| 요소 | 위치 | 산출 |
+|------|------|------|
+| 오늘의 희귀도 · 감정온도 · 꿈 MBTI | `DreamSignalsPanel` | `dreamSignals.ts` 시드 결정론 |
+| 한줄평 · 소장 한마디 · 영화 · 상징 연결도 | `DreamSignalsPanel` | AI `signals` |
+| Dream DNA % · 공동 키워드 TOP3 · 이후 후기 분포 | `DreamDnaPanel` | 스코어링 + 커뮤니티 통계 |
+
+### 후기 품질
 
 - `similarDreamVariation.ts` — 같은 결·다른 장면 변주
 - `communityStoryQuality.ts` — 사용자 원문과 겹치는 AI 스토리 필터

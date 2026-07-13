@@ -116,20 +116,20 @@ export function MyPage() {
 
       {access.isMember && !access.isPremium && dreams.length === 0 && (
         <CuriosityTease
-          title="탐색에서 비슷한 꿈 후기 보기"
-          body="꿈을 기록하면 내 아카이브 운세 그래프가 쌓입니다. 탐색에서 같은 꿈 후기도 볼 수 있어요."
-          cta="탐색으로 가기"
-          to="/explore"
+          title="꿈을 기록하면 같은 꿈 후기가 열려요"
+          body="꿈을 기록하면 내 아카이브 운세 그래프가 쌓이고, 감지된 키워드로 같은 꿈의 한 달 뒤 후기를 볼 수 있어요."
+          cta="꿈 기록하기"
+          to="/write"
         />
       )}
 
       {access.isGuest && (
         <CuriosityTease
           title="Google로 가입 · 꿈 저장"
-          body="Google로 가입하면 내 꿈 저장·30일 알림·탐색 후기 열람이 열립니다."
+          body="Google로 가입하면 내 꿈 저장·30일 알림·같은 꿈 후기 열람이 열립니다."
           cta={CTA_SIGNUP}
           onAction={() =>
-            openSignupSheet("Google로 가입하면 꿈 저장·30일 알림·탐색이 열립니다.")
+            openSignupSheet("Google로 가입하면 꿈 저장·30일 알림·후기 열람이 열립니다.")
           }
         />
       )}

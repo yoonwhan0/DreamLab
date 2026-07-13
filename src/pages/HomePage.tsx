@@ -84,10 +84,10 @@ export function HomePage() {
         <Reveal delay={170}>
           <CuriosityTease
             title="로그인 · 가입 · 꿈 저장"
-            body="가입하면 탐색에서 같은 꿈 후기를 더 볼 수 있어요. 이미 계정이 있으면 로그인하세요."
+            body="가입하면 내가 기록한 꿈에서 감지된 키워드로 같은 꿈 후기를 볼 수 있어요. 이미 계정이 있으면 로그인하세요."
             cta={CTA_SIGNUP}
             onAction={() =>
-              openSignupSheet("탐색·후기·30일 알림을 열려면 로그인하거나 가입하세요.")
+              openSignupSheet("후기·30일 알림을 열려면 로그인하거나 가입하세요.")
             }
           />
         </Reveal>
@@ -95,10 +95,10 @@ export function HomePage() {
 
       <Reveal delay={160}>
         <AppLink
-          to="/explore"
+          to="/write"
           className="block text-center text-sm text-text-muted hover:text-primary transition-colors py-2"
         >
-          30일 뒤 결말, 더 보기 →
+          내 꿈 기록하고 30일 뒤 결말 보기 →
         </AppLink>
       </Reveal>
     </div>

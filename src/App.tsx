@@ -27,7 +27,6 @@ import { FollowUpPage } from "@/pages/FollowUpPage";
 
 import { MyDreamsPage } from "@/pages/MyDreamsPage";
 
-import { ExplorePage } from "@/pages/ExplorePage";
 import { MyPage } from "@/pages/MyPage";
 
 
@@ -73,7 +72,7 @@ export default function App() {
                           </MemberRoute>
                         }
                       />
-                      <Route path="/explore" element={<ExplorePage />} />
+                      <Route path="/explore" element={<Navigate to="/" replace />} />
                       <Route path="/about" element={<Navigate to="/#research" replace />} />
                       <Route path="/my" element={<MyPage />} />
                       <Route path="/premium" element={<Navigate to="/my#pricing" replace />} />

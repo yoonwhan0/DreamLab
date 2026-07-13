@@ -38,10 +38,10 @@ export function MemberUnlockBanner() {
           {freshUnlock ? "가입 완료 — 열람이 열렸어요" : "회원 혜택"}
         </p>
         <p className="text-xs text-text-secondary copy-lines leading-relaxed">
-          <AppLink to="/explore" className="text-primary font-medium hover:underline">
-            탐색
+          <AppLink to="/write" className="text-primary font-medium hover:underline">
+            꿈을 기록
           </AppLink>
-          에서 같은 꿈 후기를 <strong className="text-primary">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>로 볼 수 있어요.
+          하면 감지된 키워드로 같은 꿈 후기를 <strong className="text-primary">{MEMBER_FREE_STORY_VIEWS}건 무료</strong>로 볼 수 있어요.
           통계·전체 결말은 <strong className="text-primary">프리미엄 구독</strong> (앱스토어·Play)입니다.
         </p>
       </div>

@@ -75,15 +75,27 @@
 Admin 엑셀 → admin-import-dreams → dreams (userId=dreamlab-seed-data)
 
 탐색/상세 → resolveCommunityData
-    → findSimilarDreams (isPublic, keywords) — **키워드 겹침 엄격** (`similarDreamMatch.ts`)
+    → findScoredSimilarDreams (isPublic, keywords 후보) → 점수 재정렬
+       score = 0.4·벡터(코사인) + 0.4·태그 + 0.2·감정 (`dreamMatch.ts`)
+       MATCH_THRESHOLD(70점) 미만 제외, 최상위 점수 = Dream DNA %
     → ≥5건: 실데이터 / 미만: 키워드 맞춤 미리보기 (약한 앵커면 후기 생략)
 
 ※ 후기·통계는 세션·화면만 — DB 재저장 없음
 ```
 
-## AI 파이프라인 (`researchAnchor`)
+## AI 파이프라인 (2026-07-13 개편)
 
-키워드·클러스터 = **AI 1차**, 코드 = 정리·폴백 (`dreamAnchor.ts`)
+```
+꿈 입력 → interpret-dream (gpt-4.1-nano)
+  1. Dream Parser — elements(인물·장소·행동·감정·사물·사건·상징) 추출 (추측 금지)
+  2. 관찰(observation) — 반복 요소 · 연결 축
+  3. 해석 — 관찰 → 상징 → 가능성 → 한계 (현실 단정 금지)
+  4. signals — 한줄평·소장 한마디·영화·상징 연결도
+  → text-embedding-3-small (256d) 임베딩 생성 → 응답
+```
+
+- 키워드·클러스터 = **AI 1차**, 코드 = 정리·폴백 (`dreamAnchor.ts`)
+- 정량 재미 요소(희귀도·감정온도·꿈 MBTI) = 클라이언트 결정론적 계산 (`dreamSignals.ts`)
 
 ## 로컬 개발
 
