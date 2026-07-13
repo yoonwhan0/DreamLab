@@ -87,7 +87,7 @@ export function InterpretationCard({
             <div>
               <p className="section-label">꿈연구소장의 관점</p>
               <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-                추측 없이, 꿈에 있던 장면만 관찰 → 상징 → 가능성 → 한계 순으로 봅니다.
+                추측 없이, 꿈에 있던 장면만 관측 → 상징 → 수렴 → 한계 순으로 겨눕니다.
               </p>
             </div>
             <span className="badge badge-member shrink-0">연구소장</span>
@@ -100,7 +100,7 @@ export function InterpretationCard({
           {interpretation.alternativeLens && (
             <LensBlock
               label="DreamLab Interpretation"
-              hint="관찰 → 상징 → 가능성 → 한계"
+              hint="관측 → 상징 → 수렴 → 한계"
               content={interpretation.alternativeLens}
               variant="alt"
               maxLines={10}

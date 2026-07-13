@@ -63,7 +63,7 @@ const handler: Handler = async (event) => {
           ],
           response_format: { type: "json_object" },
           temperature: INTERPRET_GENERATION.temperature,
-          max_tokens: 900,
+          max_tokens: 1200,
         }),
       });
       const data = await res.json();
@@ -88,7 +88,7 @@ const handler: Handler = async (event) => {
             generationConfig: {
               responseMimeType: "application/json",
               temperature: INTERPRET_GENERATION.temperature,
-              maxOutputTokens: 900,
+              maxOutputTokens: 1200,
             },
           }),
         },

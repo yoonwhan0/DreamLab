@@ -73,6 +73,8 @@ export function DreamDetailPage() {
   const [saving, setSaving] = useState(false);
   const [showCohort, setShowCohort] = useState(false);
   const [cohortLoading, setCohortLoading] = useState(false);
+  const [cohortStories, setCohortStories] = useState<CommunityStory[]>([]);
+  const [cohortMoreLoading, setCohortMoreLoading] = useState(false);
 
   const isPreview = id === "preview";
   const isOwnDream = useMemo(
@@ -103,6 +105,10 @@ export function DreamDetailPage() {
 
     async function load() {
       if (!id) return;
+
+      // 다른 꿈으로 이동 시 코호트 열람 상태 초기화
+      setShowCohort(false);
+      setCohortStories([]);
 
       if (id === "demo") {
         setDream(DEMO_DREAM);
@@ -221,6 +227,9 @@ export function DreamDetailPage() {
   const rawCluster = dream.interpretation.researchAnchor?.clusterLabel?.trim() ?? "";
   const keyword = rawCluster && !isAsciiSlug(rawCluster) ? rawCluster : anchor;
 
+  const storyCap = access.isPremium ? PREMIUM_MAX_STORY_VIEWS : MEMBER_FREE_STORY_VIEWS;
+
+  // 첫 열람 — 통계를 불러오고 사례는 "한 건만" 심도 있게 정제해 보여준다.
   async function handleLoadCohort() {
     if (!dream || cohortLoading) return;
     setCohortLoading(true);
@@ -232,44 +241,57 @@ export function DreamDetailPage() {
         estimate: dream.communityEstimate,
       });
 
-      let stories = community.summary.stories;
-      let estimated = community.isEstimated;
-
-      // 저장된 실제/AI 후기가 없으면(합성) → 지금 이 시점에 AI로 후기 생성
-      // 순차 생성 + 앞 제목 회피(avoidTitles)로 서로 다른 후기가 나오게 함
-      if (community.isEstimated) {
-        const wanted = access.isPremium
-          ? PREMIUM_MAX_STORY_VIEWS
-          : MEMBER_FREE_STORY_VIEWS;
-        const generated: CommunityStory[] = [];
-        for (let i = 0; i < wanted; i++) {
-          try {
-            const s = await generateExploreStorySlot(
-              dream.title,
-              dream.content,
-              i,
-              generated.map((g) => g.dreamTitle),
-            );
-            const key = s.dreamTitle.trim();
-            if (key && !generated.some((g) => g.dreamTitle.trim() === key)) {
-              generated.push(s);
-            }
-          } catch {
-            break; // 일부라도 생성됐으면 그것만 사용
-          }
-        }
-        // AI 생성분이 있으면 하드코딩 템플릿 대신 사용, 없으면 후기 영역 생략
-        stories = generated;
-        estimated = generated.length === 0 ? estimated : false;
-      }
-
-      setSummary({ ...community.summary, stories });
+      setSummary(community.summary);
       setStats(community.stats);
-      setIsEstimated(estimated);
+      setIsEstimated(community.isEstimated);
       setTopMatchPercent(community.topMatchPercent);
+
+      let first: CommunityStory[] = [];
+      if (!community.isEstimated && community.summary.stories.length > 0) {
+        // 실제 관측 기록이 있으면 그중 한 건
+        first = community.summary.stories.slice(0, 1);
+      } else {
+        // 합성 코호트 → 데이터 정제 방식으로 한 건 생성
+        try {
+          const s = await generateExploreStorySlot(dream.title, dream.content, 0, []);
+          first = [s];
+        } catch {
+          first = [];
+        }
+      }
+      setCohortStories(first);
     } finally {
       setCohortLoading(false);
       setShowCohort(true);
+    }
+  }
+
+  // 추가 열람 — 한 번에 한 건씩, 앞 제목을 피해 서로 다른 사례로 정제한다.
+  async function handleLoadMoreStory() {
+    if (!dream || cohortMoreLoading) return;
+    if (cohortStories.length >= storyCap) return;
+    setCohortMoreLoading(true);
+    try {
+      const idx = cohortStories.length;
+      if (!isEstimated && summary && summary.stories[idx]) {
+        const next = summary.stories[idx]!;
+        setCohortStories((prev) => [...prev, next]);
+      } else {
+        const s = await generateExploreStorySlot(
+          dream.title,
+          dream.content,
+          idx,
+          cohortStories.map((g) => g.dreamTitle),
+        );
+        const key = s.dreamTitle.trim();
+        setCohortStories((prev) =>
+          key && prev.some((g) => g.dreamTitle.trim() === key) ? prev : [...prev, s],
+        );
+      }
+    } catch {
+      /* 실패 시 조용히 무시 — 이미 열린 사례는 유지 */
+    } finally {
+      setCohortMoreLoading(false);
     }
   }
 
@@ -341,12 +363,12 @@ export function DreamDetailPage() {
               className="btn-primary w-full !min-h-[4rem] flex-col gap-0.5 py-3 disabled:opacity-60"
             >
               <span className="text-base font-bold">
-                {cohortLoading ? "후기 불러오는 중..." : `“${keyword}” 한 달 뒤 후기 보기`}
+                {cohortLoading ? "사례를 정제하는 중..." : `“${keyword}” 30일 뒤 사례 열람`}
               </span>
               <span className="text-xs font-normal opacity-85">
                 {cohortLoading
-                  ? "AI가 비슷한 꿈의 30일 뒤 후기를 정리하고 있어요"
-                  : "누르면 같은 키워드로 기록한 사람들의 30일 뒤 결과를 불러와요 →"}
+                  ? "같은 계열로 기록된 사람들의 30일 뒤를 데이터에서 찾고 있어요"
+                  : "같은 키워드로 기록된 사람들의 30일 뒤를 한 건씩 정제해 보여드려요 →"}
               </span>
             </button>
           )}
@@ -360,13 +382,15 @@ export function DreamDetailPage() {
             )}
 
           {access.isMember && showCohort && summary && stats && summary.totalCount > 0 && (
-            <section className="space-y-4">
-              <div className="text-center space-y-1">
-                <p className="section-label">비슷한 꿈을 꾼 사람들</p>
-                <p className="text-xs text-text-muted copy-lines px-2">
-                  꿈연구소 해몽과 별도 — 같은 유형·키워드로 기록된 사람들의 한 달 뒤 데이터입니다.
+            <section className="space-y-5">
+              <div className="text-center space-y-1.5">
+                <p className="section-label">관측 기록 · 같은 계열의 30일 뒤</p>
+                <p className="text-xs text-text-muted copy-lines px-2 leading-relaxed">
+                  해몽이 아닙니다. 같은 유형·키워드로 분류된 기록을 데이터에서 찾아,
+                  한 건씩 정제해 보여드립니다.
                 </p>
               </div>
+
               <CommunityStatPreview
                 keyword={keyword}
                 totalCount={summary.totalCount}
@@ -382,24 +406,41 @@ export function DreamDetailPage() {
                 topMatchPercent={topMatchPercent}
                 interpretation={dream.interpretation}
               />
-              {summary.stories.length > 0 && (
-                <CommunityStoriesPanel
-                  stories={summary.stories.slice(
-                    0,
-                    access.isPremium ? PREMIUM_MAX_STORY_VIEWS : MEMBER_FREE_STORY_VIEWS,
+
+              {cohortStories.length > 0 ? (
+                <div className="space-y-3">
+                  <CommunityStoriesPanel
+                    stories={cohortStories}
+                    title={`“${keyword}” 계열 · 관측 사례`}
+                    variant="full"
+                    keyword={keyword}
+                    isEstimated={isEstimated}
+                  />
+
+                  {cohortStories.length < storyCap ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleLoadMoreStory()}
+                      disabled={cohortMoreLoading}
+                      className="btn-secondary w-full disabled:opacity-60"
+                    >
+                      {cohortMoreLoading
+                        ? "다음 사례를 정제하는 중..."
+                        : `다음 사례 1건 더 열기  ·  ${cohortStories.length}/${storyCap}`}
+                    </button>
+                  ) : (
+                    !access.isPremium && (
+                      <p className="text-center text-xs text-text-muted copy-lines px-4 leading-relaxed">
+                        회원은 사례 {MEMBER_FREE_STORY_VIEWS}건까지 열람돼요. 프리미엄은
+                        한 꿈당 {PREMIUM_MAX_STORY_VIEWS}건까지 볼 수 있어요.
+                      </p>
+                    )
                   )}
-                  title={`"${keyword}" — 다른 사람들은?`}
-                  variant="compact"
-                  blurLocked={!access.isPremium}
-                  lockedCount={
-                    access.isPremium
-                      ? 0
-                      : PREMIUM_MAX_STORY_VIEWS - MEMBER_FREE_STORY_VIEWS
-                  }
-                  blurPreviewStory={summary.stories[MEMBER_FREE_STORY_VIEWS]}
-                  keyword={anchor}
-                  isEstimated={isEstimated}
-                />
+                </div>
+              ) : (
+                <p className="text-center text-xs text-text-muted copy-lines px-2 py-4 leading-relaxed">
+                  아직 정제된 사례가 없어요. 잠시 후 다시 시도해 주세요.
+                </p>
               )}
             </section>
           )}
@@ -436,6 +477,7 @@ export function DreamDetailPage() {
           {summary.stories.length > 0 && (
             <CommunityStoriesPanel
               stories={summary.stories.slice(0, access.isPremium ? summary.stories.length : 1)}
+              keyword={keyword}
               blurLocked={!access.isPremium}
               lockedCount={Math.max(summary.stories.length - 1, 8)}
               blurPreviewStory={summary.stories[1]}

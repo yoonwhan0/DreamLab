@@ -36,8 +36,8 @@ export function CommunityStoriesPanel({
   lockedCount,
   blurPreviewStory: _blurPreviewStory,
   isEstimated: _isEstimated = false,
-  keyword: _keyword,
-  centered = false,
+  keyword,
+  centered: _centered = false,
 }: CommunityStoriesPanelProps) {
   const access = useAccessPolicy();
   const { openSignupSheet } = useSignupSheet();
@@ -85,8 +85,8 @@ export function CommunityStoriesPanel({
         >
           <StoryContent
             story={first}
-            centered={centered}
             variant={resolvedVariant}
+            matchLabel={keyword}
             dreamTeaseBlur={dreamTeaseBlur}
             onDreamTeaseSignup={
               dreamTeaseBlur
@@ -104,7 +104,11 @@ export function CommunityStoriesPanel({
               key={story.id}
               className="rounded-xl border border-border bg-surface-2 p-4 space-y-3"
             >
-              <StoryContent story={story} centered={centered} variant={resolvedVariant} />
+              <StoryContent
+                story={story}
+                variant={resolvedVariant}
+                matchLabel={keyword}
+              />
             </article>
           ))}
         </div>
@@ -139,14 +143,15 @@ export function CommunityStoriesPanel({
 
 function StoryContent({
   story,
-  centered = false,
   variant = "full",
+  matchLabel,
   dreamTeaseBlur = false,
   onDreamTeaseSignup,
 }: {
   story: CommunityStory;
-  centered?: boolean;
   variant?: "full" | "compact" | "minimal";
+  /** 이 사례가 사용자 꿈과 어떤 계열로 겹치는지(데이터 매칭 근거) */
+  matchLabel?: string;
   /** 비회원 미리보기 — 꿈 본문만 하단 블러, 30일 후는 선명 */
   dreamTeaseBlur?: boolean;
   onDreamTeaseSignup?: () => void;
@@ -177,63 +182,55 @@ function StoryContent({
     );
   }
 
-  const align = centered ? "text-center" : "";
+  const cleanMatch = matchLabel?.replace(/ 꿈$/, "").trim();
 
   return (
-    <div className={`space-y-3 ${align}`}>
-      {centered ? (
-        <div className="space-y-2">
-          <p className="text-xs text-text-muted tabular-nums">
-            {formatStoryProfile(story.profile)}
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs text-text-muted">
+            {formatStoryProfile(story.profile)} · {story.recordedDaysAgo}일 전 관측
           </p>
-          <p className="font-medium text-text leading-snug">{story.dreamTitle}</p>
-          <div className="flex justify-center">
-            <EmotionIconGroup ids={story.emotions} size="sm" />
-          </div>
+          <p className="mt-1 font-medium text-text leading-snug line-clamp-1">
+            사례 · {story.dreamTitle}
+          </p>
         </div>
-      ) : (
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs text-text-muted tabular-nums">
-              {formatStoryProfile(story.profile)}
-            </p>
-            <p className="mt-1 font-medium text-text line-clamp-1">{story.dreamTitle}</p>
-          </div>
-          <EmotionIconGroup ids={story.emotions} size="sm" />
+        <EmotionIconGroup ids={story.emotions} size="sm" />
+      </div>
+
+      {cleanMatch && (
+        <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+          <p className="text-[0.625rem] font-semibold text-accent">데이터 매칭 근거</p>
+          <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
+            당신 꿈과 같은 <span className="text-text font-medium">‘{cleanMatch}’</span>
+            계열로 분류된 기록입니다.
+          </p>
         </div>
       )}
 
-      <div className="space-y-3 text-sm">
-        <div className="rounded-lg bg-surface/50 p-3 space-y-1.5">
-          <p className="text-xs font-semibold text-text-muted">꿈</p>
-          <DreamSnippetBlock
-            snippet={story.dreamSnippet}
-            teaseBlur={dreamTeaseBlur}
-            onTeaseSignup={onDreamTeaseSignup}
-            className="text-text-secondary"
-            maxLines={5}
-          />
-        </div>
-        <div className="rounded-lg bg-surface/50 p-3 space-y-1.5">
-          <p className="text-xs font-semibold text-text-muted">30일 후</p>
-          <FormattedBlocks
-            className="text-text-secondary"
-            maxLines={5}
-          >
-            {story.afterStory}
-          </FormattedBlocks>
-        </div>
+      <div className="space-y-1.5 text-sm">
+        <p className="text-xs font-semibold text-text-muted">이 사람의 꿈</p>
+        <DreamSnippetBlock
+          snippet={story.dreamSnippet}
+          teaseBlur={dreamTeaseBlur}
+          onTeaseSignup={onDreamTeaseSignup}
+          className="text-text-secondary leading-relaxed"
+          maxLines={12}
+        />
       </div>
 
-      <div
-        className={`flex items-center gap-2 text-xs ${
-          centered ? "justify-center flex-wrap" : "justify-between"
-        }`}
-      >
+      <div className="space-y-1.5 text-sm">
+        <p className="text-xs font-semibold text-text-muted">
+          30일 뒤, 이 사람은 이렇게 적었습니다
+        </p>
+        <FormattedBlocks className="text-text-secondary leading-relaxed" maxLines={12}>
+          {story.afterStory}
+        </FormattedBlocks>
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-border pt-3 text-xs">
+        <span className="text-text-muted">그 결과</span>
         <span className="chip chip-primary">{OUTCOME_CATEGORIES[story.outcomeCategory]}</span>
-        {variant === "full" && (
-          <span className="text-text-muted">{story.recordedDaysAgo}일 전</span>
-        )}
       </div>
     </div>
   );
