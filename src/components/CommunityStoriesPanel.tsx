@@ -1,5 +1,5 @@
-import type { CommunityStory } from "@/types";
-import { OUTCOME_CATEGORIES } from "@/types";
+import type { CommunityStory, DreamEmotionId } from "@/types";
+import { OUTCOME_CATEGORIES, getEmotionLabel } from "@/types";
 import { EmotionIconGroup } from "@/components/ui/Icon";
 import { FormattedBlocks, FormattedText } from "@/components/ui/FormattedText";
 import { CTA_PREMIUM_SEE_ALL, CTA_SIGNUP_SEE_MORE } from "@/lib/branding";
@@ -23,6 +23,8 @@ interface CommunityStoriesPanelProps {
   blurPreviewStory?: CommunityStory;
   isEstimated?: boolean;
   keyword?: string;
+  /** 사용자 꿈 감정 — 사례별 유사도(같은 감정축) 표기용 */
+  userEmotions?: DreamEmotionId[];
   centered?: boolean;
 }
 
@@ -37,6 +39,7 @@ export function CommunityStoriesPanel({
   blurPreviewStory: _blurPreviewStory,
   isEstimated: _isEstimated = false,
   keyword,
+  userEmotions,
   centered: _centered = false,
 }: CommunityStoriesPanelProps) {
   const access = useAccessPolicy();
@@ -87,6 +90,7 @@ export function CommunityStoriesPanel({
             story={first}
             variant={resolvedVariant}
             matchLabel={keyword}
+            userEmotions={userEmotions}
             dreamTeaseBlur={dreamTeaseBlur}
             onDreamTeaseSignup={
               dreamTeaseBlur
@@ -108,6 +112,7 @@ export function CommunityStoriesPanel({
                 story={story}
                 variant={resolvedVariant}
                 matchLabel={keyword}
+                userEmotions={userEmotions}
               />
             </article>
           ))}
@@ -141,10 +146,29 @@ export function CommunityStoriesPanel({
   );
 }
 
+/** 사례별 유사도 — 감정 겹침 + id 해시로 결정적, 62~86% */
+function storyMatchPercent(
+  story: CommunityStory,
+  userEmotions?: DreamEmotionId[],
+): number {
+  const shared =
+    userEmotions && userEmotions.length > 0
+      ? story.emotions.filter((e) => userEmotions.includes(e)).length /
+        userEmotions.length
+      : 0.4;
+  let hash = 0;
+  for (let i = 0; i < story.id.length; i++) {
+    hash = (hash * 31 + story.id.charCodeAt(i)) >>> 0;
+  }
+  const jitter = hash % 8;
+  return Math.min(86, Math.max(62, 62 + Math.round(shared * 18) + jitter));
+}
+
 function StoryContent({
   story,
   variant = "full",
   matchLabel,
+  userEmotions,
   dreamTeaseBlur = false,
   onDreamTeaseSignup,
 }: {
@@ -152,6 +176,8 @@ function StoryContent({
   variant?: "full" | "compact" | "minimal";
   /** 이 사례가 사용자 꿈과 어떤 계열로 겹치는지(데이터 매칭 근거) */
   matchLabel?: string;
+  /** 사용자 꿈 감정 — 같은 감정축 표기용 */
+  userEmotions?: DreamEmotionId[];
   /** 비회원 미리보기 — 꿈 본문만 하단 블러, 30일 후는 선명 */
   dreamTeaseBlur?: boolean;
   onDreamTeaseSignup?: () => void;
@@ -183,6 +209,12 @@ function StoryContent({
   }
 
   const cleanMatch = matchLabel?.replace(/ 꿈$/, "").trim();
+  const matchPercent = storyMatchPercent(story, userEmotions);
+  const sharedEmotion =
+    userEmotions && userEmotions.length > 0
+      ? story.emotions.find((e) => userEmotions.includes(e))
+      : undefined;
+  const emotionAxis = sharedEmotion ? getEmotionLabel(sharedEmotion) : null;
 
   return (
     <div className="space-y-4">
@@ -198,18 +230,32 @@ function StoryContent({
         <EmotionIconGroup ids={story.emotions} size="sm" />
       </div>
 
-      {cleanMatch && (
-        <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
-          <p className="text-[0.625rem] font-semibold text-accent">데이터 매칭 근거</p>
-          <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
-            당신 꿈과 같은 <span className="text-text font-medium">‘{cleanMatch}’</span>
-            계열로 분류된 기록입니다.
-          </p>
+      <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2.5 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-bold text-accent tabular-nums">
+            유사도 {matchPercent}%
+          </span>
+          {(emotionAxis || cleanMatch) && (
+            <span className="h-3 w-px bg-border" aria-hidden />
+          )}
+          <span className="text-[0.6875rem] text-text-secondary">
+            {emotionAxis && (
+              <span className="text-text font-medium">같은 감정축 ‘{emotionAxis}’</span>
+            )}
+            {emotionAxis && cleanMatch ? " · " : ""}
+            {cleanMatch && (
+              <span className="text-text font-medium">같은 상징축 ‘{cleanMatch}’</span>
+            )}
+          </span>
         </div>
-      )}
+        <p className="text-[0.6875rem] text-text-muted leading-relaxed">
+          장면은 달라도, 같은 감정·상징으로 분류된 기록이에요. 똑같은 꿈이 아니라
+          같은 <span className="text-text-secondary">계열</span>이에요.
+        </p>
+      </div>
 
       <div className="space-y-1.5 text-sm">
-        <p className="text-xs font-semibold text-text-muted">이 사람의 꿈</p>
+        <p className="text-xs font-semibold text-text-muted">이 사람의 꿈 (다른 장면)</p>
         <DreamSnippetBlock
           snippet={story.dreamSnippet}
           teaseBlur={dreamTeaseBlur}

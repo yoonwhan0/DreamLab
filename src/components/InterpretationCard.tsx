@@ -87,7 +87,7 @@ export function InterpretationCard({
             <div>
               <p className="section-label">꿈연구소장의 관점</p>
               <p className="text-[0.6875rem] text-text-muted mt-0.5 leading-relaxed">
-                추측 없이, 꿈에 있던 장면만 관측 → 상징 → 수렴 → 한계 순으로 겨눕니다.
+                추측 없이, 꿈에 있던 장면만 관찰 → 상징 → 가능성 → 한계 순으로 봅니다.
               </p>
             </div>
             <span className="badge badge-member shrink-0">연구소장</span>
@@ -99,8 +99,8 @@ export function InterpretationCard({
 
           {interpretation.alternativeLens && (
             <LensBlock
-              label="DreamLab Interpretation"
-              hint="관측 → 상징 → 수렴 → 한계"
+              label="연구소장의 해석"
+              hint="관찰 → 상징 → 가능성 → 한계"
               content={interpretation.alternativeLens}
               variant="alt"
               maxLines={10}
@@ -137,51 +137,6 @@ export function InterpretationCard({
               <ReflectionDialogue content={interpretation.reflection} />
             </InterpretationTierBlur>
           </div>
-
-          {interpretation.labObservations && (
-            <InterpretationTierBlur
-              lock={premiumLock}
-              label="비슷한 꿈을 꾼 사람들"
-              preview={
-                <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-2">
-                  <p className="text-[0.6875rem] font-semibold text-primary">비슷한 꿈을 꾼 사람들</p>
-                  <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={5}>
-                    {interpretation.labObservations.sceneNote}
-                  </FormattedBlocks>
-                </div>
-              }
-            >
-              <div className="rounded-xl border border-primary/25 bg-primary-soft/20 p-4 space-y-3">
-                <div>
-                  <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-primary">
-                    비슷한 꿈을 꾼 사람들
-                  </p>
-                  <p className="text-[0.625rem] text-text-muted mt-0.5">
-                    같은 유형·키워드로 기록된 사람들의 패턴 (해몽과는 별도)
-                  </p>
-                </div>
-                <FormattedBlocks className="text-[0.875rem] text-text-secondary" maxLines={5}>
-                  {interpretation.labObservations.sceneNote}
-                </FormattedBlocks>
-                {interpretation.labObservations.commonBehaviors.length > 0 && (
-                  <ul className="space-y-1.5 text-[0.8125rem] text-text-secondary list-disc pl-4">
-                    {interpretation.labObservations.commonBehaviors.map((b) => (
-                      <li key={b}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-                {interpretation.labObservations.relatedSearches.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {interpretation.labObservations.relatedSearches.map((k) => (
-                      <span key={k} className="chip text-xs">
-                        #{k}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </InterpretationTierBlur>
-          )}
         </div>
       </InterpretationTierBlur>
 
@@ -224,11 +179,8 @@ function ObservationBlock({ observation }: { observation: DreamObservation }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2/70 p-4 space-y-3">
       <div>
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted">
-          DreamLab Observation
-        </p>
-        <p className="text-[0.625rem] text-text-muted mt-0.5">
-          이번 꿈에서 반복되는 요소
+        <p className="text-[0.6875rem] font-semibold text-text-muted">
+          이번 꿈에서 반복된 것
         </p>
       </div>
 

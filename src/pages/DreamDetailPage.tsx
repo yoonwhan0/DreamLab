@@ -399,13 +399,15 @@ export function DreamDetailPage() {
                 lockOutcomes={!access.isPremium}
                 isEstimated={isEstimated}
               />
-              <DreamDnaPanel
-                summary={summary}
-                stats={stats}
-                anchor={anchor}
-                topMatchPercent={topMatchPercent}
-                interpretation={dream.interpretation}
-              />
+              {access.isPremium && (
+                <DreamDnaPanel
+                  summary={summary}
+                  stats={stats}
+                  anchor={anchor}
+                  topMatchPercent={topMatchPercent}
+                  interpretation={dream.interpretation}
+                />
+              )}
 
               {cohortStories.length > 0 ? (
                 <div className="space-y-3">
@@ -414,6 +416,7 @@ export function DreamDetailPage() {
                     title={`“${keyword}” 계열 · 관측 사례`}
                     variant="full"
                     keyword={keyword}
+                    userEmotions={dream.emotions}
                     isEstimated={isEstimated}
                   />
 
@@ -467,17 +470,20 @@ export function DreamDetailPage() {
             snapshot={buildDreamFortuneSnapshot(keyword, stats)}
             compact={!access.isPremium}
           />
-          <DreamDnaPanel
-            summary={summary}
-            stats={stats}
-            anchor={anchor}
-            topMatchPercent={topMatchPercent}
-            interpretation={dream.interpretation}
-          />
+          {access.isPremium && (
+            <DreamDnaPanel
+              summary={summary}
+              stats={stats}
+              anchor={anchor}
+              topMatchPercent={topMatchPercent}
+              interpretation={dream.interpretation}
+            />
+          )}
           {summary.stories.length > 0 && (
             <CommunityStoriesPanel
               stories={summary.stories.slice(0, access.isPremium ? summary.stories.length : 1)}
               keyword={keyword}
+              userEmotions={dream.emotions}
               blurLocked={!access.isPremium}
               lockedCount={Math.max(summary.stories.length - 1, 8)}
               blurPreviewStory={summary.stories[1]}
